@@ -2,7 +2,15 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0C12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="מסלול הברזל">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 <title>מסלול הברזל</title>
 <meta name="description" content="סימולציית קריירה בתעשיית הטכנולוגיה: נהלו חברה, השקיעו במו״פ, גייסו טאלנטים, רכשו סטארטאפים והחליטו מתי לשבור את הפרדיגמה. העולם מגיב להשקעות, לא לשעון.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +36,7 @@
   --shadow:0 20px 44px -26px rgba(0,0,0,.95);
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
 body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 h1,h2,h3,h4{font-family:var(--display);font-weight:800;margin:0;letter-spacing:-.02em;text-wrap:balance}
 button,select,input,textarea{font-family:inherit;font-size:inherit;color:inherit}
@@ -44,8 +52,10 @@ button{cursor:pointer;border:0;background:none}
   backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:9px 20px}
 .bar-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:1560px;margin:0 auto}
 .who{display:flex;align-items:center;gap:10px;min-width:190px}
-.who .badge{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-family:var(--display);
-  font-weight:900;font-size:15px;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(255,122,69,.3)}
+.who .badge{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-family:var(--display);
+  font-weight:900;font-size:15px;color:var(--accent);border:1px solid rgba(255,122,69,.34);
+  background:linear-gradient(150deg,rgba(255,122,69,.24),rgba(255,122,69,.07));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .who b{display:block;font-family:var(--display);font-size:15px;line-height:1.15}
 .who span{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.09em}
 .stats{display:flex;flex:1;gap:0;flex-wrap:wrap}
@@ -53,8 +63,10 @@ button{cursor:pointer;border:0;background:none}
 .stat:first-child{border-right:0}
 .stat i{display:block;font-style:normal;font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em}
 .stat b{display:block;font-family:var(--mono);font-size:15.5px;font-weight:700;letter-spacing:-.04em}
-.turn{background:var(--accent);color:#170A03;border-radius:10px;padding:10px 22px;font-weight:700;font-size:15px;
-  box-shadow:0 8px 24px -12px var(--accent);transition:filter .12s,transform .1s}
+.turn{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#170A03;border-radius:10px;
+  padding:10px 22px;font-weight:700;font-size:15px;letter-spacing:-.01em;
+  box-shadow:0 10px 28px -14px var(--accent),inset 0 1px 0 rgba(255,255,255,.28);
+  transition:filter .12s,transform .1s}
 .turn:hover{filter:brightness(1.09)} .turn:active{transform:translateY(1px)}
 .turn[disabled]{opacity:.4;cursor:not-allowed}
 .turn.ghost{background:transparent;color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line);padding:10px 14px}
@@ -89,18 +101,22 @@ nav.rail{position:sticky;top:76px;display:flex;flex-direction:column;gap:1px}
 }
 
 /* ═══════════ cards ═══════════ */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;box-shadow:var(--shadow)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;box-shadow:var(--shadow);min-width:0;overflow-wrap:anywhere}
 .card+.card{margin-top:16px}
-.card>header{display:flex;align-items:baseline;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.card>header{display:flex;align-items:baseline;gap:10px;margin-bottom:13px;flex-wrap:wrap;
+  padding-bottom:9px;border-bottom:1px solid var(--line-soft)}
 .card>header h2{font-size:16.5px}
 .card>header p{margin:0;font-size:12.5px;color:var(--ink-3)}
 .card>header .right{margin-inline-start:auto}
 .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
-.tile{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:11px 13px}
+.tile{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:11px 13px;min-width:0;overflow-wrap:anywhere}
 .tile i{display:block;font-style:normal;font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
 .tile b{display:block;font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.045em;margin-top:1px}
 .tile small{color:var(--ink-3);font-size:11.5px;display:block;margin-top:1px}
-.tile.hi{border-color:rgba(255,122,69,.3);background:linear-gradient(180deg,var(--accent-glow),var(--panel-2))}
+.tile.hi{border-color:rgba(255,122,69,.32);background:linear-gradient(160deg,var(--accent-glow),var(--panel-2) 62%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.tile{transition:border-color .14s}
+.card{position:relative}
 
 /* meters */
 .meter{height:5px;background:var(--raise);border-radius:99px;overflow:hidden}
@@ -122,7 +138,7 @@ nav.rail{position:sticky;top:76px;display:flex;flex-direction:column;gap:1px}
 
 /* tables */
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-.scroll{overflow-x:auto}
+.scroll{overflow-x:auto;max-width:100%}
 th{text-align:right;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;
   padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
@@ -134,7 +150,7 @@ tr.me td:first-child{box-shadow:inset -2px 0 0 var(--accent)}
 /* controls */
 .btn{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 14px;font-weight:600;font-size:13.5px;color:var(--ink);transition:border-color .12s,background .12s}
 .btn:hover{border-color:var(--accent);background:var(--raise)}
-.btn.pri{background:var(--accent);color:#170A03;border-color:transparent;font-weight:700}
+.btn.pri{background:linear-gradient(135deg,var(--accent-2),var(--accent));color:#170A03;border-color:transparent;font-weight:700;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
 .btn.pri:hover{filter:brightness(1.08)}
 .btn.sm{padding:3px 10px;font-size:12px;border-radius:7px}
 .btn.bad{color:var(--bad);border-color:rgba(242,84,91,.35)}
@@ -164,25 +180,27 @@ input[type=checkbox]{accent-color:var(--accent)}
 .dot.i{background:var(--cyan)}.dot.a{background:var(--accent)}.dot.v{background:var(--violet)}
 
 /* charts */
-svg.ch{width:100%;height:auto;display:block;overflow:visible}
-.legend{display:flex;gap:13px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-top:9px}
+svg.ch{width:100%;height:auto;display:block;overflow:visible;max-width:100%}
+.legend{display:flex;gap:13px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-top:9px;min-width:0}
 .legend i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-inline-end:5px}
 
 /* modal */
-.scrim{position:fixed;inset:0;z-index:80;background:rgba(4,6,11,.8);backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto}
+.scrim{position:fixed;inset:0;z-index:80;background:rgba(4,6,11,.82);backdrop-filter:blur(4px);
+  display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;overscroll-behavior:contain}
 .scrim[hidden]{display:none}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:15px;max-width:620px;width:100%;
-  box-shadow:0 44px 90px -34px #000;overflow:hidden;animation:pop .2s ease-out}
+  box-shadow:0 44px 90px -34px #000;animation:pop .2s ease-out;
+  margin:auto;display:flex;flex-direction:column;max-height:calc(100dvh - 32px);overflow:hidden}
 .modal.wide{max-width:940px}
 @keyframes pop{from{transform:translateY(12px) scale(.985);opacity:0}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.modal{animation:none}.meter>span{transition:none}}
-.modal .top{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel-2);display:flex;gap:10px;align-items:center}
+.modal .top{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel-2);display:flex;gap:10px;align-items:center;flex:0 0 auto}
 .modal .top h3{font-size:17.5px;flex:1}
-.modal .bd{padding:18px 20px;max-height:66vh;overflow-y:auto}
+.modal .bd{padding:18px 20px;overflow-y:auto;flex:1 1 auto;-webkit-overflow-scrolling:touch}
 .modal .bd p{margin:0 0 11px;color:var(--ink-2)}
-.modal .ft{padding:13px 20px;border-top:1px solid var(--line);background:var(--panel-2);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.x{color:var(--ink-3);font-size:21px;line-height:1;padding:2px 6px}
+.modal .ft{padding:13px 20px;border-top:1px solid var(--line);background:var(--panel-2);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;flex:0 0 auto;padding-bottom:calc(13px + env(safe-area-inset-bottom))}
+.x{color:var(--ink-2);font-size:22px;line-height:1;min-width:38px;min-height:38px;border-radius:9px;flex:0 0 auto}
+.x:hover,.x:active{background:var(--raise);color:var(--ink)}
 .choice{display:block;width:100%;text-align:right;background:var(--panel-2);border:1px solid var(--line);
   border-radius:10px;padding:11px 14px;margin-bottom:9px;transition:border-color .12s,background .12s}
 .choice:hover{border-color:var(--accent);background:var(--raise)}
@@ -191,18 +209,104 @@ svg.ch{width:100%;height:auto;display:block;overflow:visible}
 
 /* intro */
 .intro{max-width:1080px;margin:0 auto;padding:6vh 20px 60px}
+.intro{position:relative}
+.intro::before{content:'';position:absolute;top:-12vh;right:-10vw;width:70vw;height:52vh;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(255,122,69,.13),transparent 72%);filter:blur(8px);z-index:-1}
 .intro .kick{font-family:var(--mono);color:var(--accent);letter-spacing:.24em;text-transform:uppercase;font-size:11px}
 .intro h1{font-size:clamp(38px,7vw,68px);font-weight:900;line-height:.98;margin:10px 0 8px}
 .intro .lead{color:var(--ink-2);font-size:17px;max-width:70ch}
 .rule{height:1px;background:linear-gradient(90deg,var(--accent),transparent);margin:26px 0}
 .pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:12px;margin-top:16px}
-.co{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:right;transition:border-color .12s,transform .12s}
+.co{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:right;
+  transition:border-color .14s,transform .14s,box-shadow .14s}
+.co:hover{box-shadow:0 16px 34px -22px #000}
 .co:hover{border-color:var(--accent);transform:translateY(-2px)}
 .co.on{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-glow),var(--panel))}
 .co b{display:block;font-family:var(--display);font-size:17px}
 .co .tag{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.08em}
 .co .d{font-size:12.5px;color:var(--ink-2);margin-top:7px;min-height:52px}
 .co .kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--ink-3);border-top:1px solid var(--line-soft);padding-top:6px;margin-top:6px}
+
+/* ═══════════ מסכי מגע וטלפונים ═══════════ */
+.dock{display:none}
+.only-sm{display:none}
+.only-lg{display:block}
+@media (max-width:900px){
+  body{font-size:15.5px}
+  .wrap{padding:12px 12px 96px}
+  .bar{padding:8px 12px calc(8px + env(safe-area-inset-top))}
+  .bar-in{gap:10px}
+  .who{min-width:0;flex:1}
+  .who b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw}
+  .bar-in>.row{margin-inline-start:0}
+  /* כפתור התור עובר לתחתית, בטווח האגודל */
+  #nextBtn{display:none}
+  .dock{display:block;position:fixed;bottom:0;right:0;left:0;z-index:60;
+    background:linear-gradient(180deg,rgba(10,12,18,.72),var(--ground) 42%);
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+  .dock button{width:100%;padding:14px;font-size:16.5px;border-radius:12px}
+  /* מדדים: רצועה נגללת */
+  .stats{order:3;width:100%;overflow-x:auto;flex-wrap:nowrap;gap:0;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  .stats::-webkit-scrollbar{display:none}
+  .stat{min-width:auto;padding:0 12px;flex:0 0 auto}
+  .stat b{font-size:14.5px}
+  .stat i{font-size:9.5px;letter-spacing:.06em}
+  /* ניווט: שורת שבבים נגללת ודביקה */
+  nav.rail{position:sticky;top:0;z-index:30;background:var(--ground);
+    margin:-12px -12px 12px;padding:8px 12px;border-bottom:1px solid var(--line-soft);gap:6px;
+    -webkit-mask-image:linear-gradient(to left,transparent,#000 18px,#000 calc(100% - 18px),transparent);
+    mask-image:linear-gradient(to left,transparent,#000 18px,#000 calc(100% - 18px),transparent)}
+  .rail button{padding:9px 14px;font-size:14px;border-radius:99px;background:var(--panel);min-height:40px}
+  .rail button.on{box-shadow:none;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent)}
+  /* רשתות: שני טורים גם בנייד כדי לא למתוח את הדף */
+  .c3,.c4{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .c2,.c21,.c12{grid-template-columns:1fr;gap:10px}
+  .cols.c2.pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cols{gap:10px}
+  .card{padding:13px 14px;border-radius:11px}
+  .card+.card{margin-top:12px}
+  .tile b{font-size:18px}
+  .tile{padding:10px 11px}
+  /* טבלאות: להסתיר עמודות משניות ולאפשר גלילה נוחה */
+  .scroll{-webkit-overflow-scrolling:touch}
+  th,td{padding:7px 6px;font-size:13px}
+  .sm-hide{display:none}
+  .only-sm{display:block}
+  .only-lg{display:none}
+  .card>header{gap:6px}
+  .card>header .right{margin-inline-start:0;width:100%}
+  .card>header .right .btn{width:100%}
+  table{font-size:13px}
+  /* מודאל כגיליון תחתון */
+  .scrim{padding:0;align-items:flex-end}
+  .modal,.modal.wide{max-width:100%;border-radius:16px 16px 0 0;margin:0;
+    max-height:92dvh;border-bottom:0}
+  .modal .top{padding:13px 16px}
+  .modal .top h3{font-size:16.5px}
+  .modal .bd{padding:15px 16px}
+  .modal .ft{padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+  .modal .ft .btn{flex:1;text-align:center;padding:12px;font-size:15px}
+  .choice{padding:13px 14px}
+  /* שליטה במגע */
+  input[type=range]{height:34px}
+  input[type=range]::-webkit-slider-thumb{width:24px;height:24px;margin-top:-10px}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px}
+  .btn{padding:9px 14px;min-height:40px}
+  .btn.sm{padding:6px 11px;min-height:32px}
+  select,input[type=text],input[type=number]{padding:10px;font-size:16px}
+  .intro{padding:4vh 14px 40px}
+  .pickgrid{grid-template-columns:1fr;gap:10px}
+  .legend{font-size:11px;gap:9px}
+}
+@media (max-width:420px){
+  .c3,.c4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .who b{max-width:32vw}
+  .stat{padding:0 10px}
+}
+@media (display-mode:standalone){
+  .bar{padding-top:calc(8px + env(safe-area-inset-top))}
+}
 </style>
 </head>
 <body>
@@ -222,6 +326,7 @@ svg.ch{width:100%;height:auto;display:block;overflow:visible}
     <nav class="rail" id="rail" aria-label="ניווט"></nav>
     <main id="view" tabindex="-1"></main>
   </div></div>
+  <div class="dock"><button class="turn" id="nextBtn2">חודש הבא ←</button></div>
 </div>
 
 <div class="scrim" id="modal" hidden role="dialog" aria-modal="true"></div>
@@ -1364,11 +1469,14 @@ function drawIntro(){
       <label class="f" style="max-width:220px;margin:0"><span>זרע עולם (אופציונלי)</span><input type="text" id="seed" placeholder="לדוגמה: 2025"></label>
       <button class="btn pri" id="go" style="padding:11px 26px;font-size:15.5px" ${PICK?'':'disabled'}>כניסה לתפקיד</button>
       <button class="btn" id="load">טעינת משחק שמור</button>
-    </div>`;
+      <button class="btn" id="installBtn" data-install style="display:none">התקנה כאפליקציה</button>
+    </div>
+    <p class="mut" style="font-size:12.5px;margin-top:18px">המשחק רץ גם בטלפון, ואפשר להתקין אותו כאפליקציה שעובדת בלי אינטרנט.</p>`;
   $('intro').querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>{PICK=b.dataset.co;drawIntro();});
   $('go').onclick=()=>{if(!PICK)return;S=newGame(PICK,$('seed').value.trim());boot();};
   $('load').style.display=[0,1,2,3].some(i=>slotInfo(i))?'':'none';
   $('load').onclick=()=>saveModal();
+  $('installBtn').onclick=doInstall; paintInstall();
 }
 function boot(){$('intro').hidden=true;$('app').hidden=false;drawRail();render();}
 function save(){saveTo(0);}
@@ -1396,7 +1504,7 @@ function topbar(){
   $('coDate').textContent=dateEn(S.t)+' · Q'+(Math.floor(turnM(S.t)/3)+1);
   const items=[
     ['מזומן','$'+rnd1(c.cash,0)+'B',c.cash>c.baseRev*2?'':'down'],
-    ['רווח תפעולי (שנה)','$'+rnd1(op12,1)+'B',op12>0?'up':'down'],
+    ['רווח תפעולי (שנה)',h.length?'$'+rnd1(op12,1)+'B':'—',h.length?(op12>0?'up':'down'):''],
     ['נתח שוק',rnd1((c.share||0)*100,1)+'%',''],
     ['מוניטין מנכ״ל',Math.round(S.career.rep),S.career.rep>60?'up':S.career.rep<35?'down':''],
     ['דירקטוריון',Math.round(c.board),c.board>55?'up':c.board<30?'down':''],
@@ -1414,6 +1522,7 @@ function render(){
   badge('talent',S.talent.filter(t=>t.creativity+t.efficiency>150).length);
   badge('ma',S.startups.length);
   badge('career',S.career.offers.length);
+  paintInstall();
 }
 const me=()=>S.cos[S.me];
 function paraOf(p){return S.para[p]||{ready:0,mat:0,share:0,open:false};}
@@ -1440,7 +1549,7 @@ function vDash(){
   return `
   <div class="cols c4">
     <div class="tile hi"><i>הכנסות 12 ח׳</i><b>$${rnd1(rev12,0)}B</b><small>חודש אחרון ${B(c.rev||0)}</small></div>
-    <div class="tile"><i>רווח תפעולי 12 ח׳</i><b class="${op12>0?'up':'down'}">$${rnd1(op12,1)}B</b><small>ציפיית דירקטוריון ${B((c.expect||0)*12)}</small></div>
+    <div class="tile"><i>רווח תפעולי 12 ח׳</i><b class="${c.hist.length?(op12>0?'up':'down'):''}">${c.hist.length?'$'+rnd1(op12,1)+'B':'—'}</b><small>${c.hist.length?'ציפיית דירקטוריון '+B((c.expect||0)*12):'הרבעון הראשון עוד לא נסגר'}</small></div>
     <div class="tile"><i>נתח שוק מכשירים</i><b>${rnd1((c.share||0)*100,1)}%</b><small>${top?'המובילה: '+top.n+' '+rnd1((top.share||0)*100,1)+'%':''}</small></div>
     <div class="tile"><i>שוק עולמי</i><b>$${rnd1(S.market.total,0)}B</b><small>לחודש · ${PK.filter(p=>paraOf(p).open).length} קטגוריות פתוחות</small></div>
   </div>
@@ -1530,13 +1639,13 @@ function vMarket(){
     </tbody></table></div>
   </div>
   <div class="card"><header><h2>טבלת הליגה</h2><p>כל חברה מסומלצת באותו מנוע בדיוק — כולל שלנו</p></header>
-    <div class="scroll"><table><thead><tr><th>חברה</th><th class="n">הכנסה/ח׳</th><th class="n">רווח/ח׳</th><th class="n">נתח</th><th class="n">מזומן</th><th class="n">מותג</th><th>מיקוד נוכחי</th><th class="n">מגמה</th></tr></thead><tbody>
+    <div class="scroll"><table><thead><tr><th>חברה</th><th class="n">הכנסה/ח׳</th><th class="n">רווח/ח׳</th><th class="n">נתח</th><th class="n sm-hide">מזומן</th><th class="n sm-hide">מותג</th><th class="sm-hide">מיקוד נוכחי</th><th class="n sm-hide">מגמה</th></tr></thead><tbody>
     ${all.map(x=>`<tr class="${x.id===S.me?'me':''}">
       <td><b>${esc(x.n)}</b>${x.distress>2?' <span class="pill p-bad">בקשיים</span>':''}<br><small class="mut">${x.tag}</small></td>
       <td class="n">${B(x.rev||0)}</td><td class="n ${(x.op||0)>0?'up':'down'}">${B(x.op||0)}</td>
-      <td class="n">${rnd1((x.share||0)*100,1)}%</td><td class="n">${B(x.cash)}</td><td class="n">${Math.round(x.brand)}</td>
-      <td>${x.style?PARA[x.style.focus].n:'—'}</td>
-      <td class="n">${CH.spark((x.hist||[]).slice(-14).map(h=>h.rev),x.id===S.me?'var(--accent)':'var(--cyan)')}</td></tr>`).join('')}
+      <td class="n">${rnd1((x.share||0)*100,1)}%</td><td class="n sm-hide">${B(x.cash)}</td><td class="n sm-hide">${Math.round(x.brand)}</td>
+      <td class="sm-hide">${x.style?PARA[x.style.focus].n:'—'}</td>
+      <td class="n sm-hide">${CH.spark((x.hist||[]).slice(-14).map(h=>h.rev),x.id===S.me?'var(--accent)':'var(--cyan)')}</td></tr>`).join('')}
     </tbody></table></div>
   </div>
   <div class="card"><header><h2>מוצרים מובילים בשוק</h2></header>
@@ -1566,7 +1675,7 @@ function vRnd(){
       <td class="n">${rnd1(lvl,1)}</td>
       <td class="n ${lead?'up':'down'}">${lead?'—':'−'+rnd1(fr-lvl,1)}</td>
       <td style="min-width:120px"><input type="range" data-alloc="${k}" min="0" max="20" step="0.5" value="${c.alloc[k]||0}"></td>
-      <td class="n">${spend>0.005?'$'+rnd1(spend,2)+'B':'—'}</td></tr>`;}).join('');
+      <td class="n sm-hide">${spend>0.005?'$'+rnd1(spend,2)+'B':'—'}</td></tr>`;}).join('');
   return `
   <div class="card">
     <header><h2>מו״פ וטכנולוגיה</h2><p>22 צמתי ידע · כאן נקבע אילו קטגוריות ייפתחו בעולם</p></header>
@@ -1588,7 +1697,7 @@ function vRnd(){
         c:mine>=st.ready-0.5?'':'c'};}))}
   </div>
   ${TGROUPS.map(g=>`<div class="card"><header><h2>${g}</h2></header>
-    <div class="scroll"><table><thead><tr><th>צומת ידע</th><th class="n">אצלנו</th><th class="n">מול העולם</th><th>הקצאה</th><th class="n">שנתי</th></tr></thead><tbody>${grp(g)}</tbody></table></div></div>`).join('')}`;
+    <div class="scroll"><table><thead><tr><th>צומת ידע</th><th class="n">אצלנו</th><th class="n">מול העולם</th><th>הקצאה</th><th class="n sm-hide">שנתי</th></tr></thead><tbody>${grp(g)}</tbody></table></div></div>`).join('')}`;
 }
 
 /* ── מוצרים ────────────────────────────────────────────────────────────── */
@@ -1617,14 +1726,39 @@ function vProd(){
         <button class="btn sm bad" data-act="kill" data-id="${p.id}">בטל</button></td></tr>`;}).join('')}
     </tbody></table></div></div>`:''}
   <div class="card"><header><h2>בשוק</h2><p>מחיר ותקציב שיווק ניתנים לשינוי בכל חודש</p></header>
-    <div class="scroll"><table><thead><tr><th>מוצר</th><th class="n">ביקורות</th><th class="n">מפרט</th><th class="n">מחיר</th><th class="n">עלות</th><th class="n">שוליים</th><th class="n">הכנסה/ח׳</th><th style="min-width:140px">שיווק</th></tr></thead><tbody>
+    <div class="only-sm">
+    ${live.map(p=>{const bom=bomOf(S,c,p),marg=1-bom/p.price;const age=S.t-p.launch;
+      return `<div class="tile" style="margin-bottom:10px">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div style="min-width:0"><b style="font-family:var(--display);font-size:15px">${esc(p.name)}</b>
+            <div class="mut" style="font-size:11.5px">${PARA[p.para].n} · גיל ${age} ח׳${p.legacy?' · דור קודם':''}</div></div>
+          ${p.review?`<span class="pill ${p.review>=8?'p-good':p.review>=6?'p-cy':'p-bad'}">${p.review}/10</span>`:''}
+        </div>
+        <div class="row" style="gap:0;justify-content:space-between;margin:10px 0;border-block:1px solid var(--line-soft);padding:8px 0">
+          <div><div class="mut" style="font-size:10.5px">מפרט</div><div class="num" style="font-size:15px">${Math.round(p.score)}</div></div>
+          <div><div class="mut" style="font-size:10.5px">שוליים</div><div class="num ${marg>0.4?'up':marg>0.2?'':'down'}" style="font-size:15px">${rnd1(marg*100,0)}%</div></div>
+          <div style="text-align:left"><div class="mut" style="font-size:10.5px">הכנסה/ח׳</div><div class="num" style="font-size:15px">${B(p.lastRev||0)}</div></div>
+        </div>
+        <div class="row" style="gap:8px">
+          <span class="mut" style="font-size:12px;min-width:38px">מחיר</span>
+          <input type="number" data-price="${p.id}" value="${p.price}" step="10" style="width:96px">
+          <span class="mut" style="font-size:11.5px">עלות $${Math.round(bom)}</span>
+        </div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <span class="mut" style="font-size:12px;min-width:38px">שיווק</span>
+          <input type="range" data-mkt="${p.id}" min="0" max="${rnd1(Math.max(0.1,c.baseRev*0.09),2)}" step="0.005" value="${p.mkt}" style="flex:1">
+          <span class="num" style="font-size:12px;min-width:46px">$${Math.round(p.mkt*1000)}M</span>
+        </div>
+      </div>`;}).join('')||'<p class="mut">אין מוצרים בשוק.</p>'}
+    </div>
+    <div class="scroll only-lg"><table><thead><tr><th>מוצר</th><th class="n">ביקורות</th><th class="n sm-hide">מפרט</th><th class="n">מחיר</th><th class="n sm-hide">עלות</th><th class="n">שוליים</th><th class="n">הכנסה/ח׳</th><th style="min-width:140px">שיווק</th></tr></thead><tbody>
     ${live.map(p=>{const bom=bomOf(S,c,p),marg=1-bom/p.price;const age=S.t-p.launch;
       return `<tr><td><b>${esc(p.name)}</b>${p.legacy?' <span class="pill p-mut">דור קודם</span>':''}${p.hype>0.1?' <span class="pill p-warn">הייפ</span>':''}
         <br><small class="mut">${PARA[p.para].n} · גיל ${age} ח׳${p.keynote?' · '+KEYNOTE[p.keynote].n:''}</small></td>
       <td class="n">${p.review?`<span class="pill ${p.review>=8?'p-good':p.review>=6?'p-cy':'p-bad'}">${p.review}/10</span>${age<4?'<br><small class="mut">משפיע על הרבעון</small>':''}`:'<span class="mut">—</span>'}</td>
-      <td class="n">${Math.round(p.score)}</td>
+      <td class="n sm-hide">${Math.round(p.score)}</td>
       <td class="n"><input type="number" data-price="${p.id}" value="${p.price}" step="10" style="width:84px"></td>
-      <td class="n">$${Math.round(bom)}</td>
+      <td class="n sm-hide">$${Math.round(bom)}</td>
       <td class="n ${marg>0.4?'up':marg>0.2?'':'down'}">${rnd1(marg*100,0)}%</td>
       <td class="n">${B(p.lastRev||0)}</td>
       <td><div class="row"><input type="range" data-mkt="${p.id}" min="0" max="${rnd1(Math.max(0.1,c.baseRev*0.09),2)}" step="0.005" value="${p.mkt}" style="flex:1">
@@ -1686,7 +1820,7 @@ function vMA(){
   const targets=vals(S.cos).filter(x=>x.id!==S.me&&(x.distress>2||x.baseRev<c.baseRev*0.55));
   return `
   <div class="card"><header><h2>מיזוגים ורכישות</h2><p>לקנות טכנולוגיה במקום לפתח אותה — כשהזמן שווה יותר מהכסף</p></header>
-    <div class="cols c2">
+    <div class="cols c2 pair">
       <div class="tile"><i>מזומן פנוי</i><b>${B(c.cash)}</b></div>
       <div class="tile"><i>חוב</i><b>${B(c.debt)}</b><small>ריבית ${rnd1(S.macro.rate*100,1)}% לשנה</small></div>
     </div>
@@ -1906,18 +2040,39 @@ function vHelp(){
     </tbody></table></div>
     <h3 style="margin:18px 0 8px;font-size:16px">כישלון הוא לא סוף המשחק</h3>
     <p>דירקטוריון שמאבד אמון יפטר אתכם. המוניטין ייפגע, ותתחילו מחדש מסטארטאפ קטן — באותו עולם, מול אותם יריבים. רק מוניטין שנשרף עד הסוף מסיים את הסיפור.</p>
-    <div class="row" style="margin-top:14px"><button class="btn bad" data-act="restart">משחק חדש</button></div>
+    <h3 style="margin:18px 0 8px;font-size:16px">התקנה על הטלפון</h3>
+    <p>אפשר להוסיף את המשחק למסך הבית ולשחק במסך מלא, גם בלי חיבור לאינטרנט. ההתקדמות נשמרת במכשיר.</p>
+    <div class="row" style="margin-top:14px">
+      <button class="btn pri" data-act="install" data-install style="display:none">התקנה כאפליקציה</button>
+      <button class="btn" data-act="save">שמירה וטעינה</button>
+      <button class="btn bad" data-act="restart">משחק חדש</button></div>
   </div>`;
 }
 
 /* ── מודאלים ───────────────────────────────────────────────────────────── */
-function modal(html,cls){
-  const m=$('modal'); m.hidden=false;
-  m.innerHTML=`<div class="modal ${cls||''}">${html}</div>`;
-  m.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{closeModal();next();});
+let MODAL_CLOSE=null;
+function modal(html,cls,onClose){
+  const m=$('modal');
+  MODAL_CLOSE=onClose===undefined?dismiss:onClose;
+  try{
+    m.hidden=false;
+    m.innerHTML=`<div class="modal ${cls||''}">${html}</div>`;
+    m.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{closeModal();next();});
+    m.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{if(MODAL_CLOSE)MODAL_CLOSE();else{closeModal();render();}});
+  }catch(err){
+    /* גלגל הצלה: אם חלון נכשל ברינדור, אסור שהמשחק יינעל */
+    m.hidden=false;
+    m.innerHTML='<div class="modal"><div class="top"><h3>שגיאה בהצגת החלון</h3></div>'+
+      '<div class="bd"><p>משהו השתבש בהצגת החלון הזה. המשחק ממשיך כרגיל.</p></div>'+
+      '<div class="ft"><button class="btn pri" data-close>סגירה</button></div></div>';
+    m.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{closeModal();next();});
+  }
   return m;
 }
-function closeModal(){$('modal').hidden=true;$('modal').innerHTML='';}
+function closeModal(){$('modal').hidden=true;$('modal').innerHTML='';MODAL_CLOSE=null;}
+/* סגירה כללית — גם בלחיצה על הרקע, כי בטלפון אין Escape */
+function dismiss(){closeModal();next();}
+$('modal').addEventListener('click',e=>{if(e.target&&e.target.id==='modal'){if(MODAL_CLOSE)MODAL_CLOSE();else dismiss();}});
 function next(){ if(Q.length){const f=Q.shift();f();} else {render();save();} }
 
 function newProdModal(){
@@ -2098,9 +2253,13 @@ function contractModal(comp){
 }
 
 function eventModal(e){
-  modal(`<div class="top"><span class="pill ${e.k==='b'?'p-bad':e.k==='w'?'p-warn':e.k==='g'?'p-good':'p-acc'}">${dateHe(S.t)}</span><h3>${e.t}</h3></div>
+  const skip=()=>{news(S,`<b>${e.t}</b> — ההנהלה בחרה לא להגיב בשלב זה.`,'w');
+    log(S,`${e.t}: לא התקבלה החלטה.`,'w');closeModal();next();};
+  modal(`<div class="top"><span class="pill ${e.k==='b'?'p-bad':e.k==='w'?'p-warn':e.k==='g'?'p-good':'p-acc'}">${dateHe(S.t)}</span>
+      <h3>${e.t}</h3><button class="x" data-x title="דחיית ההחלטה">×</button></div>
     <div class="bd"><p style="color:var(--ink)">${e.d}</p>
-      ${e.o.map((o,i)=>`<button class="choice" data-opt="${i}"><b>${o.t}</b><span>${o.d||''}</span></button>`).join('')}</div>`);
+      ${e.o.map((o,i)=>`<button class="choice" data-opt="${i}"><b>${o.t}</b><span>${o.d||''}</span></button>`).join('')}
+      <p class="mut" style="font-size:12px;margin-top:4px">אפשר גם לא להחליט — אבל גם זו החלטה.</p></div>`,'',skip);
   $('modal').querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{
     const o=e.o[+b.dataset.opt];
     const res=o.fn(S)||'';
@@ -2123,8 +2282,9 @@ function firedModal(end){
       </div>
       <p class="mut">הקריירה נמשכת. אותו עולם, אותם יריבים — הפעם מלמטה.</p>
     </div>
-    <div class="ft"><button class="btn pri" id="rebirth">להתחיל מחדש מסטארטאפ</button></div>`);
-  $('rebirth').onclick=()=>{fireMe(S,end.reason);closeModal();V='dash';drawRail();render();save();};
+    <div class="ft"><button class="btn pri" id="rebirth">להתחיל מחדש מסטארטאפ</button></div>`,'',()=>go());
+  const go=()=>{fireMe(S,end.reason);closeModal();V='dash';drawRail();render();save();};
+  $('rebirth').onclick=go;
 }
 function overModal(end){
   modal(`<div class="top"><span class="pill p-bad">${dateHe(S.t)}</span><h3>${end.t}</h3></div>
@@ -2136,8 +2296,8 @@ function overModal(end){
         <div class="tile"><i>קטגוריות שנפתחו</i><b>${PK.filter(p=>paraOf(p).open).length}/${PK.length}</b></div>
       </div>
       <p class="mut">העולם ממשיך בלעדיך: ${PK.filter(p=>paraOf(p).open).map(p=>PARA[p].n).join(' · ')}</p></div>
-    <div class="ft"><button class="btn pri" id="again">משחק חדש</button></div>`);
-  $('again').onclick=()=>{localStorage.removeItem(SAVE);location.reload();};
+    <div class="ft"><button class="btn pri" id="again">משחק חדש</button></div>`,'',null);
+  $('again').onclick=()=>{location.reload();};
 }
 
 /* ── חיווט ─────────────────────────────────────────────────────────────── */
@@ -2155,6 +2315,8 @@ function wire(){
 function act(a,d){
   const c=me();
   if(a==='newprod')newProdModal();
+  else if(a==='install')doInstall();
+  else if(a==='save')saveModal();
   else if(a==='goto'){V=d.v;drawRail();render();}
   else if(a==='shift'){const p=c.products.find(x=>x.id===+d.id);const n=+d.d;
     if(p&&p.launch+n>S.t){p.launch+=n;render();}}
@@ -2174,7 +2336,7 @@ function act(a,d){
 }
 
 /* ── תור ───────────────────────────────────────────────────────────────── */
-$('nextBtn').onclick=()=>{
+function endTurn(){
   if(!S||S.over)return;
   S.spotHist=S.spotHist||[]; S.spotHist.push(Object.assign({},S.spot)); if(S.spotHist.length>40)S.spotHist.shift();
   const r=step(S);
@@ -2186,12 +2348,42 @@ $('nextBtn').onclick=()=>{
   }
   render();
   next();
-};
+}
+$('nextBtn').onclick=endTurn;
+$('nextBtn2').onclick=endTurn;
 $('saveBtn').onclick=()=>saveModal();
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&!$('modal').hidden){closeModal();render();}
-  if(e.key==='Enter'&&$('modal').hidden&&S&&!S.over&&document.activeElement.tagName!=='INPUT')$('nextBtn').click();
+  if(e.key==='Escape'&&!$('modal').hidden){if(MODAL_CLOSE)MODAL_CLOSE();else dismiss();}
+  if(e.key==='Enter'&&$('modal').hidden&&S&&!S.over&&document.activeElement.tagName!=='INPUT')endTurn();
 });
+/* ── התקנה כאפליקציה ───────────────────────────────────────────────────── */
+let INSTALL_EVT=null;
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL_EVT=e;paintInstall();});
+window.addEventListener('appinstalled',()=>{INSTALL_EVT=null;paintInstall();});
+function canInstall(){return !isStandalone();}
+function paintInstall(){
+  document.querySelectorAll('[data-install]').forEach(b=>{b.style.display=canInstall()?'':'none';});
+}
+function doInstall(){
+  if(INSTALL_EVT){INSTALL_EVT.prompt();INSTALL_EVT.userChoice.finally(()=>{INSTALL_EVT=null;paintInstall();});return;}
+  modal(`<div class="top"><h3>התקנה על הטלפון</h3><button class="x" data-x>×</button></div>
+    <div class="bd">
+      <p>אפשר להוסיף את המשחק למסך הבית ולהפעיל אותו כמו אפליקציה — במסך מלא, בלי שורת כתובת, וגם בלי חיבור לאינטרנט.</p>
+      ${isIOS()?`<div class="tile"><i>ספארי · אייפון ואייפד</i>
+        <div style="margin-top:6px;font-size:14px;line-height:1.9">1. לחיצה על כפתור <b>שיתוף</b> (הריבוע עם החץ)<br>
+        2. גלילה ובחירה ב־<b>הוספה למסך הבית</b><br>3. אישור</div></div>`:
+       `<div class="tile"><i>כרום · אנדרואיד</i>
+        <div style="margin-top:6px;font-size:14px;line-height:1.9">1. תפריט שלוש הנקודות בפינה<br>
+        2. <b>התקנת אפליקציה</b> או <b>הוספה למסך הבית</b></div></div>`}
+      <p class="mut" style="font-size:12.5px;margin-top:12px">ההתקנה עובדת כשהמשחק נפתח מכתובת אינטרנט. אם פתחתם קובץ מקומי, הדפדפן לא יציע התקנה.</p>
+    </div>
+    <div class="ft"><button class="btn pri" data-x>הבנתי</button></div>`);
+}
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
 drawIntro();
 /* UI_END */
 </script>

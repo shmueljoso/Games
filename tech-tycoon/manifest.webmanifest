@@ -1,0 +1,20 @@
+{
+  "name": "מסלול הברזל — סימולציית קריירה",
+  "short_name": "מסלול הברזל",
+  "description": "סימולציית קריירה בתעשיית הטכנולוגיה: מנהלים חברה, מממנים מו״פ, ומחליטים איזו טכנולוגיה תיוולד.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0A0C12",
+  "theme_color": "#0A0C12",
+  "categories": ["games", "business", "simulation"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
