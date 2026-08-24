@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מסלול הברזל</title>
+<meta name="description" content="סימולציית קריירה בתעשיית הטכנולוגיה: נהלו חברה, השקיעו במו״פ, גייסו טאלנטים, רכשו סטארטאפים והחליטו מתי לשבור את הפרדיגמה. העולם מגיב להשקעות, לא לשעון.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600&family=Heebo:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* ═══════════ tokens ═══════════ */
+:root{
+  --ground:#0A0C12; --sunk:#070911;
+  --panel:#141824; --panel-2:#1A2030; --raise:#222941;
+  --line:#252C40; --line-soft:#1C2233;
+  --ink:#E9ECF6; --ink-2:#98A2BD; --ink-3:#69738F;
+  --accent:#FF7A45;        /* אנחנו */
+  --accent-2:#FFA173;
+  --accent-glow:rgba(255,122,69,.14);
+  --cyan:#3ED9E8;          /* השוק והמתחרים */
+  --violet:#8B7BFF;        /* טכנולוגיה ופרדיגמות */
+  --good:#3FCF8E; --bad:#F2545B; --warn:#F0B429;
+  --r:12px;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --body:'Assistant',system-ui,'Segoe UI',sans-serif;
+  --display:'Heebo','Assistant',system-ui,sans-serif;
+  --shadow:0 20px 44px -26px rgba(0,0,0,.95);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);font-weight:800;margin:0;letter-spacing:-.02em;text-wrap:balance}
+button,select,input,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:5px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.up{color:var(--good)} .down{color:var(--bad)} .flat{color:var(--ink-3)}
+.mut{color:var(--ink-3)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ═══════════ command bar ═══════════ */
+.bar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(10,12,18,.99),rgba(10,12,18,.94));
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:9px 20px}
+.bar-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:1560px;margin:0 auto}
+.who{display:flex;align-items:center;gap:10px;min-width:190px}
+.who .badge{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-family:var(--display);
+  font-weight:900;font-size:15px;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(255,122,69,.3)}
+.who b{display:block;font-family:var(--display);font-size:15px;line-height:1.15}
+.who span{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.09em}
+.stats{display:flex;flex:1;gap:0;flex-wrap:wrap}
+.stat{padding:1px 15px;border-right:1px solid var(--line-soft);min-width:92px}
+.stat:first-child{border-right:0}
+.stat i{display:block;font-style:normal;font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em}
+.stat b{display:block;font-family:var(--mono);font-size:15.5px;font-weight:700;letter-spacing:-.04em}
+.turn{background:var(--accent);color:#170A03;border-radius:10px;padding:10px 22px;font-weight:700;font-size:15px;
+  box-shadow:0 8px 24px -12px var(--accent);transition:filter .12s,transform .1s}
+.turn:hover{filter:brightness(1.09)} .turn:active{transform:translateY(1px)}
+.turn[disabled]{opacity:.4;cursor:not-allowed}
+.turn.ghost{background:transparent;color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line);padding:10px 14px}
+.turn.ghost:hover{color:var(--ink)}
+
+/* ═══════════ layout ═══════════ */
+.wrap{max-width:1560px;margin:0 auto;padding:18px 20px 80px}
+main{scroll-margin-top:78px}
+.shell{display:grid;grid-template-columns:206px minmax(0,1fr);gap:18px;align-items:start}
+nav.rail{position:sticky;top:76px;display:flex;flex-direction:column;gap:1px}
+.rail button{display:flex;align-items:center;gap:10px;width:100%;text-align:right;padding:9px 12px;border-radius:9px;
+  color:var(--ink-2);font-weight:600;font-size:14.5px;transition:background .12s,color .12s}
+.rail button:hover{background:var(--panel)}
+.rail button.on{background:var(--panel-2);color:var(--ink);box-shadow:inset 2px 0 0 var(--accent)}
+.rail button .ic{width:16px;height:16px;flex:none;opacity:.85}
+.rail button em{margin-inline-start:auto;font-style:normal;font-family:var(--mono);font-size:10.5px;
+  background:var(--accent);color:#170A03;border-radius:99px;padding:0 6px;font-weight:700}
+.rail .grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;color:var(--ink-3);padding:14px 12px 5px;text-transform:uppercase}
+
+.cols{display:grid;gap:16px}
+.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.c21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.c12{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+@media(max-width:1240px){.c4{grid-template-columns:repeat(2,minmax(0,1fr))}.c21,.c12{grid-template-columns:1fr}}
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:6px}
+  .rail button{width:auto;white-space:nowrap}.rail .grp,.rail .ic{display:none}
+  .c2,.c3,.c4{grid-template-columns:1fr}
+}
+
+/* ═══════════ cards ═══════════ */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;box-shadow:var(--shadow)}
+.card+.card{margin-top:16px}
+.card>header{display:flex;align-items:baseline;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.card>header h2{font-size:16.5px}
+.card>header p{margin:0;font-size:12.5px;color:var(--ink-3)}
+.card>header .right{margin-inline-start:auto}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.tile{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:11px 13px}
+.tile i{display:block;font-style:normal;font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
+.tile b{display:block;font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.045em;margin-top:1px}
+.tile small{color:var(--ink-3);font-size:11.5px;display:block;margin-top:1px}
+.tile.hi{border-color:rgba(255,122,69,.3);background:linear-gradient(180deg,var(--accent-glow),var(--panel-2))}
+
+/* meters */
+.meter{height:5px;background:var(--raise);border-radius:99px;overflow:hidden}
+.meter>span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .45s cubic-bezier(.2,.8,.3,1)}
+.meter.v>span{background:var(--violet)} .meter.c>span{background:var(--cyan)}
+.meter.g>span{background:var(--good)} .meter.w>span{background:var(--warn)} .meter.b>span{background:var(--bad)}
+.meter.tall{height:8px}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:1px 9px;border-radius:99px;font-family:var(--mono);
+  font-size:11px;font-weight:700;white-space:nowrap}
+.p-good{background:rgba(63,207,142,.14);color:var(--good)}
+.p-warn{background:rgba(240,180,41,.14);color:var(--warn)}
+.p-bad{background:rgba(242,84,91,.15);color:var(--bad)}
+.p-acc{background:var(--accent-glow);color:var(--accent)}
+.p-cy{background:rgba(62,217,232,.12);color:var(--cyan)}
+.p-vi{background:rgba(139,123,255,.14);color:var(--violet)}
+.p-mut{background:var(--raise);color:var(--ink-3)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+.scroll{overflow-x:auto}
+th{text-align:right;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;
+  padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tbody tr:hover{background:var(--panel-2)}
+td.n,th.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:left;letter-spacing:-.04em;white-space:nowrap}
+tr.me td{background:rgba(255,122,69,.06)}
+tr.me td:first-child{box-shadow:inset -2px 0 0 var(--accent)}
+
+/* controls */
+.btn{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 14px;font-weight:600;font-size:13.5px;color:var(--ink);transition:border-color .12s,background .12s}
+.btn:hover{border-color:var(--accent);background:var(--raise)}
+.btn.pri{background:var(--accent);color:#170A03;border-color:transparent;font-weight:700}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.sm{padding:3px 10px;font-size:12px;border-radius:7px}
+.btn.bad{color:var(--bad);border-color:rgba(242,84,91,.35)}
+.btn.bad:hover{border-color:var(--bad);background:rgba(242,84,91,.1)}
+.btn[disabled]{opacity:.35;cursor:not-allowed}
+.btn[disabled]:hover{border-color:var(--line);background:var(--panel-2)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+label.f{display:block;margin-bottom:12px}
+label.f>span{display:block;font-size:12px;color:var(--ink-2);margin-bottom:5px;font-weight:600}
+select,input[type=text],input[type=number]{width:100%;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+input[type=range]{width:100%;background:transparent;-webkit-appearance:none;appearance:none;height:18px;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--raise);border-radius:99px}
+input[type=range]::-moz-range-track{height:4px;background:var(--raise);border-radius:99px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-5px;border-radius:99px;background:var(--accent);border:2px solid var(--panel);cursor:grab}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:99px;background:var(--accent);border:2px solid var(--panel);cursor:grab}
+input[type=checkbox]{accent-color:var(--accent)}
+.seg{display:flex;gap:5px;flex-wrap:wrap}
+.seg button{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.seg button.on{background:var(--accent-glow);border-color:var(--accent);color:var(--accent)}
+
+/* feed */
+.feed{display:flex;flex-direction:column;gap:0;max-height:420px;overflow-y:auto}
+.feed .it{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:13px;align-items:flex-start}
+.feed time{font-family:var(--mono);font-size:10px;color:var(--ink-3);flex:none;padding-top:3px;min-width:48px}
+.dot{width:6px;height:6px;border-radius:99px;flex:none;margin-top:6px;background:var(--ink-3)}
+.dot.g{background:var(--good)}.dot.w{background:var(--warn)}.dot.b{background:var(--bad)}
+.dot.i{background:var(--cyan)}.dot.a{background:var(--accent)}.dot.v{background:var(--violet)}
+
+/* charts */
+svg.ch{width:100%;height:auto;display:block;overflow:visible}
+.legend{display:flex;gap:13px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-top:9px}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-inline-end:5px}
+
+/* modal */
+.scrim{position:fixed;inset:0;z-index:80;background:rgba(4,6,11,.8);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto}
+.scrim[hidden]{display:none}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:15px;max-width:620px;width:100%;
+  box-shadow:0 44px 90px -34px #000;overflow:hidden;animation:pop .2s ease-out}
+.modal.wide{max-width:940px}
+@keyframes pop{from{transform:translateY(12px) scale(.985);opacity:0}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.modal{animation:none}.meter>span{transition:none}}
+.modal .top{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel-2);display:flex;gap:10px;align-items:center}
+.modal .top h3{font-size:17.5px;flex:1}
+.modal .bd{padding:18px 20px;max-height:66vh;overflow-y:auto}
+.modal .bd p{margin:0 0 11px;color:var(--ink-2)}
+.modal .ft{padding:13px 20px;border-top:1px solid var(--line);background:var(--panel-2);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.x{color:var(--ink-3);font-size:21px;line-height:1;padding:2px 6px}
+.choice{display:block;width:100%;text-align:right;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:10px;padding:11px 14px;margin-bottom:9px;transition:border-color .12s,background .12s}
+.choice:hover{border-color:var(--accent);background:var(--raise)}
+.choice b{display:block;font-size:14.5px}
+.choice span{display:block;font-size:12.5px;color:var(--ink-3);margin-top:2px}
+
+/* intro */
+.intro{max-width:1080px;margin:0 auto;padding:6vh 20px 60px}
+.intro .kick{font-family:var(--mono);color:var(--accent);letter-spacing:.24em;text-transform:uppercase;font-size:11px}
+.intro h1{font-size:clamp(38px,7vw,68px);font-weight:900;line-height:.98;margin:10px 0 8px}
+.intro .lead{color:var(--ink-2);font-size:17px;max-width:70ch}
+.rule{height:1px;background:linear-gradient(90deg,var(--accent),transparent);margin:26px 0}
+.pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:12px;margin-top:16px}
+.co{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:right;transition:border-color .12s,transform .12s}
+.co:hover{border-color:var(--accent);transform:translateY(-2px)}
+.co.on{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-glow),var(--panel))}
+.co b{display:block;font-family:var(--display);font-size:17px}
+.co .tag{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.08em}
+.co .d{font-size:12.5px;color:var(--ink-2);margin-top:7px;min-height:52px}
+.co .kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--ink-3);border-top:1px solid var(--line-soft);padding-top:6px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div id="intro" class="intro"></div>
+
+<div id="app" hidden>
+  <header class="bar"><div class="bar-in">
+    <div class="who"><div class="badge" id="coBadge">S</div><div><b id="coName">—</b><span id="coDate">—</span></div></div>
+    <div class="stats" id="statBar"></div>
+    <div class="row">
+      <button class="turn ghost" id="saveBtn">שמירה</button>
+      <button class="turn" id="nextBtn">חודש הבא ←</button>
+    </div>
+  </div></header>
+  <div class="wrap"><div class="shell">
+    <nav class="rail" id="rail" aria-label="ניווט"></nav>
+    <main id="view" tabindex="-1"></main>
+  </div></div>
+</div>
+
+<div class="scrim" id="modal" hidden role="dialog" aria-modal="true"></div>
+
+<script>
+"use strict";
+/* ENGINE_START ══════════════════════════════════════════════════════════════
+   מנוע הסימולציה. ללא תלות ב-DOM — ניתן להרצה ולבדיקה בנפרד מהממשק.
+   עיקרון מרכזי: אין תאריכים קשיחים. פרדיגמה טכנולוגית נפתחת כאשר *הידע
+   בתעשייה* חוצה סף — והידע הזה הוא סכום ההשקעות של השחקן והמתחרים.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── §1 עזרים ───────────────────────────────────────────────────────────── */
+const MONTHS_HE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const MONTHS_EN=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const Y0=2025;
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rnd1=(v,d)=>{const p=Math.pow(10,d===undefined?1:d);return Math.round(v*p)/p;};
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const keys=Object.keys;
+const vals=Object.values;
+function hash32(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+/* מחולל אקראיות דטרמיניסטי — נשמר במצב כדי ששמירה/טעינה ישחזרו בדיוק את העולם */
+function rand(G){let s=G.rs>>>0||123456789;s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0;G.rs=s;return s/4294967296;}
+const rr=(G,a,b)=>a+rand(G)*(b-a);
+const ri=(G,a,b)=>Math.floor(rr(G,a,b+1));
+const pick=(G,a)=>a[Math.floor(rand(G)*a.length)];
+const turnY=t=>Y0+Math.floor(t/12);
+const turnM=t=>t%12;
+const dateHe=t=>MONTHS_HE[turnM(t)]+' '+turnY(t);
+const dateEn=t=>MONTHS_EN[turnM(t)]+" '"+String(turnY(t)).slice(2);
+
+/* ── §2 עץ הטכנולוגיה ───────────────────────────────────────────────────── */
+const TECH={
+  litho:      {n:'ליתוגרפיה מתקדמת',   g:'סיליקון'},
+  chipDesign: {n:'תכן מעבדים',          g:'סיליקון'},
+  packaging:  {n:'אריזת שבבים',         g:'סיליקון'},
+  memory:     {n:'זיכרון בפס רחב',      g:'סיליקון'},
+  mfgAuto:    {n:'אוטומציית ייצור',     g:'סיליקון'},
+  aiModel:    {n:'מודלי יסוד',          g:'בינה'},
+  edgeAI:     {n:'בינה על המכשיר',      g:'בינה'},
+  voiceNLU:   {n:'הבנת שפה טבעית',      g:'בינה'},
+  autonomy:   {n:'אוטונומיה והחלטה',    g:'בינה'},
+  microled:   {n:'מיקרו-LED ואופטיקה',  g:'תצוגה'},
+  flexDisplay:{n:'מסכים גמישים',        g:'תצוגה'},
+  holo:       {n:'הקרנה מרחבית',        g:'תצוגה'},
+  spatial:    {n:'מיפוי מרחבי',         g:'חישה'},
+  optics:     {n:'חיישנים אופטיים',     g:'חישה'},
+  bioSense:   {n:'חיישנים ביולוגיים',   g:'חישה'},
+  neural:     {n:'ממשק מוח-מכונה',      g:'חישה'},
+  battery:    {n:'צפיפות אנרגיה',       g:'אנרגיה וחומר'},
+  wireless:   {n:'הולכת אנרגיה',        g:'אנרגיה וחומר'},
+  materials:  {n:'חומרים מתקדמים',      g:'אנרגיה וחומר'},
+  nanoFab:    {n:'ננו-ייצור',           g:'אנרגיה וחומר'},
+  actuators:  {n:'מפעילים ומנועים',     g:'תנועה ורשת'},
+  net6g:      {n:'קישוריות דור הבא',    g:'תנועה ורשת'},
+  platform:   {n:'פלטפורמה, חנות ושירותים', g:'מסחר ופלטפורמה'},
+  distribution:{n:'הפצה וקשרי ערוץ',    g:'מסחר ופלטפורמה'}
+};
+const TK=keys(TECH);
+/* רמת הידע הגבוהה בעולם לכל צומת בתחילת 2025. רמות החברות נגזרות מכאן,
+   וזה מה שקובע אילו פרדיגמות סגורות בהתחלה ומי צריך לממן את פתיחתן. */
+const FRONT0={litho:74,chipDesign:88,packaging:72,memory:86,mfgAuto:68,
+ aiModel:82,edgeAI:60,voiceNLU:74,autonomy:44,microled:52,flexDisplay:64,holo:26,
+ spatial:54,optics:68,bioSense:50,neural:16,battery:56,wireless:38,materials:62,
+ nanoFab:40,actuators:42,net6g:58,platform:76,distribution:70};
+const TGROUPS=['סיליקון','בינה','תצוגה','חישה','אנרגיה וחומר','תנועה ורשת','מסחר ופלטפורמה'];
+
+/* ── §3 פרדיגמות — קטגוריות המוצר שהעולם יכול לקנות ────────────────────────
+   viability = סף הידע התעשייתי שמעליו נפתח שוק צרכני אמיתי.
+   אף פרדיגמה לא נפתחת בתאריך. היא נפתחת כשמישהו מימן אותה מספיק.        */
+const PARA={
+  phone:  {n:'סמארטפון',        short:'טלפון', price:640, el:1.25, dev:8,  nre:1.1,
+           en:{chipDesign:.22,edgeAI:.20,microled:.13,battery:.15,net6g:.13,materials:.17}, viab:30,
+           recipe:{wafer:70,memory:58,display:62,battery:26,sensors:40,rare:12,assembly:18}},
+  fold:   {n:'מכשיר מתקפל',     short:'מתקפל',price:1390,el:1.05, dev:11, nre:1.7,
+           en:{flexDisplay:.34,materials:.23,chipDesign:.14,battery:.16,microled:.13}, viab:60,
+           recipe:{wafer:82,memory:70,display:250,battery:34,sensors:46,rare:22,assembly:38}},
+  glasses:{n:'משקפי בינה',      short:'משקפיים',price:720,el:1.15, dev:13, nre:2.1,
+           en:{optics:.20,microled:.20,edgeAI:.18,battery:.16,spatial:.16,materials:.10}, viab:58,
+           recipe:{wafer:44,memory:26,display:120,battery:22,sensors:74,rare:18,assembly:26}},
+  ambient:{n:'בינה סביבתית',    short:'סביבתי',price:290, el:1.45, dev:9,  nre:1.3,
+           en:{aiModel:.28,voiceNLU:.26,edgeAI:.16,net6g:.14,bioSense:.16}, viab:66,
+           recipe:{wafer:26,memory:22,display:0,battery:14,sensors:38,rare:7,assembly:12}},
+  robot:  {n:'רובוט אישי',      short:'רובוט', price:2900,el:0.95, dev:17, nre:3.4,
+           en:{actuators:.28,autonomy:.28,aiModel:.17,battery:.15,materials:.12}, viab:62,
+           recipe:{wafer:120,memory:90,display:40,battery:260,sensors:210,rare:95,assembly:180}},
+  neural: {n:'ממשק עצבי',       short:'עצבי',  price:1950,el:1.00, dev:20, nre:4.2,
+           en:{neural:.40,bioSense:.24,nanoFab:.22,edgeAI:.14}, viab:70,
+           recipe:{wafer:96,memory:40,display:0,battery:30,sensors:180,rare:44,assembly:70}}
+};
+const PK=keys(PARA);
+
+/* ── רכיבי המכשיר (Device Configurator) ────────────────────────────────
+   כל מודול קושר צומת ידע לרכיב בשרשרת האספקה: הדרגה קובעת גם כמה
+   מהידע שלכם מתבטא במוצר וגם כמה הוא עולה לייצר.                      */
+const PARTS={
+  chip:    {n:'מעבד',            node:'chipDesign', comp:'wafer',   w:.22, t:['דור קודם','סטנדרטי','מוביל','דגל','מותאם אישית']},
+  camera:  {n:'מערך צילום',      node:'optics',     comp:'sensors', w:.17, t:['בסיסי','כפול','משולש','חיישן גדול','פריסקופ מקצועי']},
+  display: {n:'מסך',             node:'microled',   comp:'display', w:.16, t:['LCD','OLED','OLED 120Hz','LTPO','מיקרו-LED']},
+  battery: {n:'סוללה וטעינה',    node:'battery',    comp:'battery', w:.14, t:['קטנה','סטנדרטית','גדולה','טעינה מהירה','צפיפות גבוהה']},
+  memory:  {n:'זיכרון ואחסון',   node:'memory',     comp:'memory',  w:.13, t:['מינימלי','בסיסי','נדיב','גבוה','מקסימלי']},
+  build:   {n:'חומרים ומארז',    node:'materials',  comp:'rare',    w:.18, t:['פלסטיק','אלומיניום','זכוכית','טיטניום','חומר מרוכב']}
+};
+const PTK=keys(PARTS);
+const TIER_COST=[0.58,0.78,1,1.36,1.95];
+const TIER_Q   =[0.42,0.72,1,1.23,1.44];
+function defCfg(t){const o={};PTK.forEach(k=>o[k]=t||3);return o;}
+function cfgOf(p){ if(p.cfg)return p.cfg; return defCfg(p.spec||3); }
+function cfgQuality(p){const c=cfgOf(p);return sum(PTK.map(k=>PARTS[k].w*TIER_Q[(c[k]||3)-1]));}
+function avgTier(p){const c=cfgOf(p);return sum(PTK.map(k=>c[k]||3))/PTK.length;}
+
+/* ── §4 רכיבים וספקים ───────────────────────────────────────────────────── */
+const COMP={
+  wafer:   {n:'פרוסות סיליקון'},
+  memory:  {n:'זיכרון'},
+  display: {n:'מסכים'},
+  battery: {n:'תאי סוללה'},
+  sensors: {n:'חיישנים ואופטיקה'},
+  rare:    {n:'מתכות נדירות'},
+  assembly:{n:'הרכבה וכוח אדם'}
+};
+const CK=keys(COMP);
+function baseSuppliers(){return[
+ {id:'tsc', n:'Formosa Wafer', cov:['wafer','memory'],       cap:1.0, prem:0.06, rel:0.94, geo:'מזרח אסיה'},
+ {id:'lum', n:'Lumen Display', cov:['display','sensors'],    cap:0.8, prem:0.03, rel:0.90, geo:'קוריאה'},
+ {id:'volt',n:'VoltCell',      cov:['battery','rare'],       cap:0.7, prem:0.01, rel:0.86, geo:'סין'},
+ {id:'nex', n:'NexAssembly',   cov:['assembly'],             cap:1.2, prem:-0.02,rel:0.88, geo:'וייטנאם והודו'},
+ {id:'atl', n:'Atlas Minerals',cov:['rare','wafer'],         cap:0.5, prem:0.11, rel:0.96, geo:'ארה״ב ואוסטרליה'}
+];}
+
+/* ── §5 חברות ───────────────────────────────────────────────────────────── */
+/* כל חברה — כולל השחקן — מסומלצת באותו קוד בדיוק. זה מה שמאפשר להחליף
+   כיסא אמצע-משחק בלי לגעת במנוע.                                          */
+const CO_DEFS=[
+ {id:'aurum', n:'Aurum',       tag:'AUR', cash:64, brand:93, rev:27, inst:2400, playable:1,
+  d:'מותג הפרימיום הרווחי בעולם. שוליים אדירים, אקוסיסטם סגור, ותרבות שמתעבת סיכון.',
+  tech:{chipDesign:92,edgeAI:74,microled:70,materials:78,optics:80,spatial:72,platform:95,battery:64,net6g:66,aiModel:62,voiceNLU:66,bioSense:74,flexDisplay:44},
+  str:{phone:56,fold:0,glasses:9,ambient:12,robot:2,neural:3}, style:{agg:.32,ops:.10,rndShare:.085,focus:'phone'}},
+ {id:'hanwol',n:'Hanwol',      tag:'HNW', cash:92, brand:74, rev:19, inst:1500, playable:1,
+  d:'קונגלומרט אנכי: מייצר את השבבים, המסכים והסוללות של חצי מהתעשייה — כולל של היריבים.',
+  tech:{litho:80,chipDesign:70,packaging:74,memory:90,mfgAuto:76,flexDisplay:86,microled:74,platform:60,battery:70,materials:74,edgeAI:60,optics:72,net6g:68},
+  str:{phone:38,fold:62,glasses:8,ambient:9,robot:6,neural:2}, style:{agg:.52,ops:.22,rndShare:.11,focus:'fold'}},
+ {id:'orbit', n:'Orbit',       tag:'ORB', cash:98, brand:81, rev:8.5, inst:3200, playable:1,
+  d:'בעלת מערכת ההפעלה ומודל הבינה שכולם מריצים. חלשה בחומרה, חזקה בכל השאר.',
+  tech:{aiModel:95,voiceNLU:90,edgeAI:78,autonomy:74,spatial:70,platform:92,net6g:64,chipDesign:66,optics:64,bioSense:56},
+  str:{phone:9,fold:4,glasses:14,ambient:26,robot:8,neural:4}, style:{agg:.44,ops:.14,rndShare:.19,focus:'ambient'}},
+ {id:'meili', n:'Meili',       tag:'MLI', cash:14, brand:64, rev:8, inst:800, playable:1,
+  d:'מכונת נפח. מתמחרת מתחת לכולם, נכנסת לכל קטגוריה חדשה תוך רבעון, ומרוויחה אחוזים בודדים.',
+  tech:{chipDesign:56,edgeAI:58,microled:56,battery:66,materials:58,flexDisplay:60,platform:62,optics:56,net6g:60,mfgAuto:70},
+  str:{phone:33,fold:16,glasses:7,ambient:11,robot:9,neural:1}, style:{agg:.78,ops:.30,rndShare:.075,focus:'phone'}},
+ {id:'dragon',n:'Long Yuan',   tag:'LYN', cash:23, brand:60, rev:11, inst:850, playable:1,
+  d:'נחסמה מהשרשרת המערבית ובנתה אחת משלה. ריבונות טכנולוגית בכל מחיר.',
+  tech:{litho:62,chipDesign:66,packaging:70,memory:70,flexDisplay:74,edgeAI:64,aiModel:66,net6g:82,materials:68,actuators:58,autonomy:60,platform:66},
+  str:{phone:28,fold:24,glasses:9,ambient:10,robot:14,neural:3}, style:{agg:.70,ops:.42,rndShare:.14,focus:'fold'}},
+ {id:'kite',  n:'Kite Labs',   tag:'KTE', cash:2.4, brand:47, rev:0.7, inst:30, playable:1,
+  d:'מותג פולחן קטן עם עיצוב מבריק ואפס תזרים. כל השקה היא הימור קיומי.',
+  tech:{chipDesign:44,edgeAI:52,microled:50,materials:56,optics:52,spatial:48,battery:46,platform:46},
+  str:{phone:4,fold:2,glasses:5,ambient:4,robot:1,neural:1}, style:{agg:.62,ops:.18,rndShare:.16,focus:'glasses'}},
+ {id:'chroma', n:'Chroma',      tag:'CHR', cash:17, brand:61, rev:9, inst:950, playable:1,
+  d:'תמנון מותגים תחת גג אחד — כל קהל והמותג שלו. מובילה בטעינה מהירה ובחיישני צילום, עם נוכחות פיזית עצומה בשווקים מתפתחים.',
+  tech:{battery:90,wireless:84,optics:80,mfgAuto:74,distribution:80,microled:66,materials:64,chipDesign:58,memory:58,flexDisplay:60,edgeAI:56,platform:52},
+  str:{phone:26,fold:12,glasses:6,ambient:8,robot:4,neural:1}, style:{agg:.74,ops:.28,rndShare:.09,focus:'phone'},
+  traits:{multibrand:1,reach:.45}},
+ {id:'sahara', n:'Sahara',      tag:'SHR', cash:3.1, brand:38, rev:3.4, inst:700, playable:1,
+  d:'שולטת בשווקים המתעוררים: מכשירים בעלות רצפה, עמידות גבוהה, ורשת הפצה לא מקוונת שאיש לא מצליח לשחזר.',
+  tech:{distribution:97,mfgAuto:82,battery:70,materials:62,memory:48,optics:44,microled:42,chipDesign:40,platform:40,edgeAI:38},
+  str:{phone:15,fold:2,glasses:2,ambient:4,robot:1,neural:0}, style:{agg:.66,ops:.22,rndShare:.045,focus:'phone'},
+  traits:{reach:1,costEff:.85}},
+ {id:'cinematix',n:'CineMatix', tag:'CNX', cash:6.2, brand:66, rev:2.1, inst:70, playable:1,
+  d:'מותג נישה לצלמים ולאנשי אודיו: מוכר מעט מאוד מכשירים — ומספק את חיישני הצילום לחצי מהמתחרות בשוק.',
+  tech:{optics:97,microled:78,materials:76,bioSense:70,packaging:70,nanoFab:66,chipDesign:56,memory:56,platform:50},
+  str:{phone:5,fold:1,glasses:4,ambient:2,robot:1,neural:2}, style:{agg:.34,ops:.14,rndShare:.19,focus:'glasses'},
+  traits:{b2b:1}},
+ {id:'echo',   n:'Echo',        tag:'ECH', cash:5.4, brand:52, rev:4.2, inst:300, playable:1,
+  d:'מותג ותיק שחזר לחיים עם מתקפלים במחיר מיינסטרים ועם שליטה במדפים של ספקיות הסלולר באמריקה.',
+  tech:{flexDisplay:78,distribution:88,materials:66,battery:62,microled:58,platform:54,chipDesign:52,memory:54,edgeAI:50},
+  str:{phone:12,fold:14,glasses:3,ambient:4,robot:2,neural:0}, style:{agg:.58,ops:.20,rndShare:.08,focus:'fold'},
+  traits:{carrier:.9}},
+ /* לא ניתנות לבחירה — יריבות בלבד */
+ {id:'helio', n:'Helio',       tag:'HLO', cash:41, brand:58, rev:3.4, inst:500, playable:0,
+  d:'ענקית רשת ומחשוב ענן שנכנסה לחומרה מהדלת האחורית.',
+  tech:{aiModel:80,edgeAI:68,net6g:78,autonomy:70,actuators:62,spatial:66,platform:70,chipDesign:60},
+  str:{phone:7,fold:3,glasses:11,ambient:18,robot:16,neural:5}, style:{agg:.55,ops:.26,rndShare:.17,focus:'robot'}},
+ {id:'vega',  n:'Vega Systems',tag:'VGA', cash:29, brand:52, rev:1.6, inst:120, playable:0,
+  d:'קבלנית ביטחון לשעבר. פטנטים בחישה, בננו-ייצור ובממשק עצבי.',
+  tech:{neural:52,bioSense:74,nanoFab:72,optics:70,materials:66,packaging:62,litho:58,platform:40},
+  str:{phone:3,fold:1,glasses:6,ambient:5,robot:7,neural:12}, style:{agg:.48,ops:.36,rndShare:.21,focus:'neural'}}
+];
+
+/* ── §6 מאגר שמות לטאלנטים ומטרות רכישה ─────────────────────────────────── */
+const FN=['נועה','איתי','מאיה','יונתן','שירה','עומר','תמר','דניאל','ליאור','רותם','אבישי','הילה','ניר','אלה','גיא','שקד','ארז','יעל','אורי','מיכל'];
+const LN=['ברקוביץ׳','חן','נאקאמורה','אוקונקוו','פארק','זילברמן','טאן','מוראלס','אבו-חסן','לינדגרן','קומאר','דה-סילבה','וונג','אשכנזי','פטרוב','אוקאדה'];
+const ROLES={
+  eng:{n:'מהנדס/ת ליבה', w:{efficiency:.5,creativity:.3,leadership:.2}},
+  sci:{n:'מדען/ית מחקר', w:{creativity:.6,efficiency:.25,leadership:.15}},
+  des:{n:'מעצב/ת מוצר',  w:{creativity:.5,leadership:.2,efficiency:.3}},
+  exec:{n:'מנהל/ת בכיר/ה',w:{leadership:.6,efficiency:.25,creativity:.15}}
+};
+const STARTUP_N=['Nimbus','Halcyon','Torus','Basalt','Vireo','Kestrel','Oblique','Sable','Petrichor','Zenith','Cobalt','Mirage','Anvil','Lumen','Quill'];
+
+/* ── §7 יצירת מצב ────────────────────────────────────────────────────────── */
+function newGame(coId,seedStr){
+  const G={
+    rs:hash32(seedStr||String(Math.random())), seed:seedStr||'',
+    t:0, over:false, ending:null,
+    cos:{}, me:coId,
+    market:{total:70, growth:0.0026},          // $B לחודש בהוצאה צרכנית על מכשירים
+    spot:{}, suppliers:baseSuppliers(),
+    talent:[], startups:[], nextId:1,
+    macro:{tax:0.23, tariff:0, sentiment:1, shock:null, shockLeft:0, rate:0.042},
+    career:{rep:52, history:[], offers:[], firedCount:0, tenure:0, titles:[]},
+    news:[], log:[], hist:[], paraHist:[], flags:{}, ach:[],
+    ops:{esp:0,sab:0,hype:0,cin:0}, opsLog:[], heat:0,
+    pending:[]
+  };
+  CK.forEach(c=>G.spot[c]=1);
+  CO_DEFS.forEach(d=>{
+    const c={
+      id:d.id,n:d.n,tag:d.tag,d:d.d,playable:d.playable,
+      cash:d.cash, debt:d.cash*0.22, brand:d.brand, board:60,
+      tech:{}, staff:[], products:[], contracts:[],
+      rndBudget:d.rev*12*d.style.rndShare, marketing:d.rev*0.020,
+      style:Object.assign({},d.style), homeFocus:d.style.focus, baseRev:d.rev,
+      traits:Object.assign({},d.traits||{}), installed:d.inst||d.rev*85, lockin:34,
+      hist:[], opHist:[], scandal:0, counter:d.style.ops*0.5,
+      isMe:d.id===coId
+    };
+    TK.forEach(k=>{const str=d.tech[k]!==undefined?d.tech[k]:(30+hash32(d.id+k)%22);
+      c.tech[k]=clamp(FRONT0[k]*(0.52+0.48*(str/95)),3,99);});
+    /* תיק פתיחה: לכל חברה מוצר חי בכל פרדיגמה שבה יש לה נוכחות */
+    PK.forEach(p=>{
+      const s=d.str[p]||0; if(s<1)return;
+      const pr=PARA[p];
+      const prod=mkProduct(G,c,p,{name:d.tag+' '+pr.short,price:Math.round(pr.price*rr(G,.9,1.1)),spec:3,mkt:c.marketing*0.18});
+      prod.state='live'; prod.launch=-ri(G,1,9); prod.score=scoreOf(G,c,prod);
+      prod.seed=s; c.products.push(prod);
+    });
+    G.cos[d.id]=c;
+  });
+  refreshTalent(G,10); seedStartups(G,4);
+  measureParadigms(G);
+  const me=G.cos[coId];
+  G.career.titles.push({co:coId,from:0});
+  news(G,`מונית למנכ״ל ${me.n}. השוק מחכה לראות מה תעשה עם הכיסא.`,'a');
+  return G;
+}
+
+/* ── §8 מוצרים ──────────────────────────────────────────────────────────── */
+function mkProduct(G,c,para,o){
+  o=o||{};
+  return {id:G.nextId++, co:c.id, para, name:o.name||(c.tag+' '+PARA[para].short),
+    price:o.price||PARA[para].price, spec:o.spec||3, cfg:o.cfg||defCfg(o.spec||3),
+    keynote:o.keynote||0, review:0, mkt:o.mkt||0.05,
+    state:'dev', start:G.t, launch:o.launch!==undefined?o.launch:G.t+PARA[para].dev,
+    score:0, units:0, rev:0, hype:0, sabotage:0, defect:false, legacy:false, lastUnits:0};
+}
+function scoreOf(G,c,p){
+  const pr=PARA[p.para]; let base=0;
+  for(const k in pr.en) base+=(c.tech[k]||0)*pr.en[k];
+  const cf=cfgOf(p), q=cfgQuality(p);
+  /* דרגת רכיב גבוהה מאפשרת לידע שלכם באותו תחום להתבטא במוצר בפועל */
+  let edge=0;
+  PTK.forEach(k=>{edge+=PARTS[k].w*((c.tech[PARTS[k].node]||0)-58)*0.115*TIER_Q[(cf[k]||3)-1];});
+  const ready=clamp((p.launch-p.start)/pr.dev,0,1.4);
+  const rush=Math.pow(clamp(1-ready,0,1),1.5)*30;
+  const staffB=staffBonus(c)*4;
+  return clamp(base*(0.62+0.38*q)+edge+staffB-rush-(p.sabotage||0)-(p.defect?15:0),5,140);
+}
+function bomOf(G,c,p){
+  const rec=PARA[p.para].recipe, cf=cfgOf(p);
+  const tierOf={}; PTK.forEach(k=>tierOf[PARTS[k].comp]=cf[k]||3);
+  const av=avgTier(p);
+  let t=0;
+  for(const k in rec){
+    const tier=tierOf[k]!==undefined?tierOf[k]:Math.round(av);
+    t+=rec[k]*effPrice(G,c,k)*TIER_COST[clamp(tier,1,5)-1];
+  }
+  const eff=1-((c.traits&&c.traits.costEff)||0)*0.13;
+  return t*eff*(1+G.macro.tariff*0.4);
+}
+/* מחיר רכיב בפועל — חוזה נעול מגן מפני זינוק בשוק הספוט */
+function effPrice(G,c,comp){
+  const ct=(c.contracts||[]).find(x=>x.comp===comp&&x.left>0);
+  if(ct) return Math.min(ct.price, G.spot[comp]*1.02);
+  return G.spot[comp];
+}
+const KEYNOTE=[{n:'ללא אירוע',hype:0,cost:0},{n:'חשיפה סטנדרטית',hype:.20,cost:.018},{n:'כנס ראווה גלובלי',hype:.46,cost:.055}];
+function keynoteCost(c,k){return (KEYNOTE[k]||KEYNOTE[0]).cost*Math.max(0.6,c.baseRev);}
+/* ציון ביקורות: יחסי לטוב ביותר שקיים בשוק באותו רגע, ומושפע מתמורה למחיר */
+function computeReview(G,c,p){
+  let best=0;
+  for(const id in G.cos)G.cos[id].products.forEach(x=>{if(x.state==='live'&&x.para===p.para&&x.score>best)best=x.score;});
+  best=Math.max(best,p.score,30);
+  const rel=p.score/best;
+  const value=Math.pow(PARA[p.para].price/Math.max(40,p.price),0.45);
+  let r=4.6+(rel-1)*26+(value-1)*7+(p.defect?-2.8:0)+(rand(G)-0.5)*0.7;
+  if((p.hype||0)>0.35&&rel<0.92)r-=1.1;            // ציפיות מנופחות נענשות
+  return clamp(Math.round(r*10)/10,1,10);
+}
+function freshness(age){return clamp(0.32+0.95*Math.exp(-Math.max(0,age)/12),0.30,1.27);}
+function appealOf(G,c,p){
+  const pr=PARA[p.para];
+  const q=Math.pow(clamp(p.score,5,140)/70,1.75);
+  const val=Math.pow(pr.price/Math.max(40,p.price),pr.el);
+  const fr=freshness(G.t-p.launch)*(p.legacy?(c.traits&&c.traits.multibrand?0.86:0.6):1);
+  const br=0.66+0.34*(c.brand/72);
+  const norm=0.02*Math.max(0.3,c.baseRev);
+  const mk=1+clamp(p.mkt/norm-1,-0.8,3.2)*0.135;
+  const hy=1+clamp(p.hype||0,0,1)*0.75;
+  const T=c.traits||{};
+  /* הפצה פיזית רחבה שווה בעיקר במכשירים זולים */
+  const reach=1+(T.reach||0)*0.34*clamp(1.45-p.price/pr.price,0,1)*(0.6+(c.tech.distribution||40)/150);
+  const carrier=1+(T.carrier||0)*0.24*(0.6+(c.tech.distribution||40)/150);
+  const lock=1+clamp((c.lockin||0)/100,0,1)*0.17;
+  const rev=reviewFactor(G,p);
+  return q*val*fr*br*mk*hy*reach*carrier*lock*rev*(p.seed?p.seed/8:1);
+}
+/* ביקורות ההשקה מזיזות את הרבעון הראשון ואז מתפוגגות */
+function reviewFactor(G,p){
+  if(!p.review)return 1;
+  const age=G.t-p.launch;
+  if(age>4)return 1;
+  const f=1+(p.review-6.5)*0.10;
+  return clamp(lerp(f,1,age/4),0.65,1.5);
+}
+function staffBonus(c){
+  if(!c.staff.length)return 0;
+  return clamp(sum(c.staff.map(s=>s.creativity/100))*0.9,0,14);
+}
+function rndMult(c){
+  return clamp(1+sum(c.staff.map(s=>s.efficiency/100))*0.055,1,2.4)*(1+clamp(c.morale===undefined?0:(c.morale-60)/400,-.12,.12));
+}
+
+/* ── §9 מו"פ ופרדיגמות ──────────────────────────────────────────────────── */
+/* גבול הידע התעשייתי לכל צומת = הרמה הגבוהה בעולם. פרדיגמה מבשילה כאשר
+   הממוצע המשוקלל של הצמתים שמאפשרים אותה חוצה את הסף שלה.               */
+function frontier(G,k){let m=0;for(const id in G.cos){const v=G.cos[id].tech[k]||0;if(v>m)m=v;}return m;}
+function measureParadigms(G){
+  G.para=G.para||{};
+  PK.forEach(p=>{
+    const pr=PARA[p]; let r=0;
+    for(const k in pr.en) r+=frontier(G,k)*pr.en[k];
+    const prev=G.para[p]?G.para[p].ready:r;
+    G.para[p]={ready:r, open:r>=pr.viab, momentum:r-prev,
+               heat:G.para[p]?G.para[p].heat:0};
+  });
+}
+function rndTick(G,c){
+  const mo=c.rndBudget/12, mult=rndMult(c);
+  const alloc=c.alloc||defaultAlloc(c);
+  const tot=sum(TK.map(k=>alloc[k]||0))||1;
+  TK.forEach(k=>{
+    const spendY=mo*12*((alloc[k]||0)/tot);
+    if(spendY<=0){c.tech[k]=clamp(c.tech[k]-0.06,0,100);return;}
+    const lvl=c.tech[k], fr=frontier(G,k), behind=fr-lvl;
+    const catchUp=behind>0.5?1+clamp(behind,0,30)*0.026:0.68;
+    /* התמחות הצוות מאיצה צומת ספציפי */
+    const spec=1+clamp(sum(c.staff.filter(s=>s.spec===k).map(s=>s.efficiency/100))*0.16,0,0.8);
+    let gain=0.60*Math.sqrt(spendY)/(1+lvl/40)*catchUp*mult*spec;
+    gain-=0.10+lvl*0.0028;
+    c.tech[k]=clamp(lvl+gain,0,100);
+  });
+  /* פריצת דרך: תלויה ביצירתיות הצוות, לא בתאריך */
+  const chance=sum(c.staff.map(s=>s.creativity))/9000+(c.rndBudget>c.baseRev*12*0.14?0.004:0);
+  if(rand(G)<chance){
+    const alloc2=c.alloc||defaultAlloc(c);
+    const hot=TK.filter(k=>(alloc2[k]||0)>0).sort((a,b)=>(alloc2[b]||0)-(alloc2[a]||0)).slice(0,4);
+    const k=pick(G,hot.length?hot:TK);
+    c.tech[k]=clamp(c.tech[k]+rr(G,3,7),0,100);
+    if(c.isMe)news(G,`פריצת דרך במעבדות: קפיצה בלתי צפויה ב<b>${TECH[k].n}</b>.`,'v');
+    else if(rand(G)<0.4)news(G,`${c.n} מדווחת על פריצת דרך ב${TECH[k].n}.`,'i');
+  }
+}
+function defaultAlloc(c){
+  if(c.allocCache)return c.allocCache;
+  const a={}; TK.forEach(k=>a[k]=1);
+  const f=PARA[c.style.focus]; if(f)for(const k in f.en)a[k]=2+f.en[k]*14;
+  c.allocCache=a; return a;
+}
+/* ── §10 שוק דינמי ──────────────────────────────────────────────────────────
+   נתח ההוצאה של כל פרדיגמה נגזר מהבשלות הטכנולוגית שלה, מאיכות המוצר הטוב
+   ביותר שקיים בה ומחיכוך האימוץ — לא מלוח שנה.                            */
+const PULL={phone:1.0, fold:0.86, glasses:0.92, ambient:0.78, robot:0.72, neural:0.6};
+function marketTick(G){
+  measureParadigms(G);
+  const M=G.market;
+  M.base=(M.base||M.total)*(1+M.growth*G.macro.sentiment+(rand(G)-.5)*0.004);
+  const live={}; PK.forEach(p=>live[p]=[]);
+  for(const id in G.cos)G.cos[id].products.forEach(p=>{if(p.state==='live')live[p.para].push({c:G.cos[id],p});});
+  const A={};
+  PK.forEach(p=>{
+    const pr=PARA[p], st=G.para[p];
+    const mat=clamp((st.ready-pr.viab)/(100-pr.viab),0,1);
+    const best=live[p].length?Math.max.apply(null,live[p].map(x=>x.p.score)):0;
+    st.mat=mat;
+    A[p]=mat<=0?0:Math.pow(mat,1.30)*(1+best/80)*PULL[p]*(1+clamp(st.heat,-.3,1.2));
+    st.heat*=0.86;
+  });
+  /* רוחב הקטגוריות: ככל שיותר פרדיגמות בשלות, כך גדלה ההוצאה הכוללת בעולם */
+  const breadth=sum(PK.map(p=>(G.para[p].mat||0)*PULL[p]));
+  if(M.breadth0===undefined)M.breadth0=breadth;
+  M.total=M.base*clamp(1+0.62*(breadth-M.breadth0),0.72,2.8);
+  const tA=sum(PK.map(p=>A[p]))||1;
+  const res={byPara:{},byCo:{}};
+  for(const id in G.cos)res.byCo[id]={rev:0,cogs:0,units:0,mkt:0};
+  PK.forEach(p=>{
+    const spend=M.total*(A[p]/tA);
+    const st0=G.para[p];
+    st0.spend=spend; st0.share=A[p]/tA;
+    st0.sh=(st0.sh||[]).concat([st0.share]); if(st0.sh.length>14)st0.sh.shift();
+    st0.declining=st0.sh.length>6&&st0.sh[st0.sh.length-1]<st0.sh[st0.sh.length-7]*0.96;
+    const lst=live[p];
+    const ap=lst.map(x=>({...x,a:appealOf(G,x.c,x.p)}));
+    const tot=sum(ap.map(x=>x.a));
+    res.byPara[p]={spend,players:ap.length};
+    ap.forEach(x=>{
+      const rev=tot>0?spend*(x.a/tot):0;
+      const units=rev*1000/Math.max(40,x.p.price);       // מיליוני יחידות
+      const bom=bomOf(G,x.c,x.p);
+      x.p.lastUnits=units; x.p.units=(x.p.units||0)+units; x.p.rev=(x.p.rev||0)+rev; x.p.lastRev=rev;
+      const R=res.byCo[x.c.id];
+      R.rev+=rev; R.cogs+=units*bom/1000; R.units+=units; R.mkt+=x.p.mkt;
+      x.p.marg=rev>0?1-(units*bom/1000)/rev:0;
+      /* הייפ מתפוגג, ואם המוצר לא עומד בו — יש מחיר */
+      if(x.p.hype>0){
+        x.p.hype=Math.max(0,x.p.hype-0.22);
+        if(x.p.score<66&&x.p.hype>0.35&&rand(G)<0.16){
+          x.c.brand=clamp(x.c.brand-3.4,15,100); x.p.hype=0;
+          if(x.c.isMe)news(G,`גל החזרות של <b>${x.p.name}</b>: הפער בין הקמפיין למוצר התפוצץ ברשת.`,'b');
+        }
+      }
+    });
+  });
+  return res;
+}
+
+/* ── §11 שרשרת אספקה ────────────────────────────────────────────────────── */
+function supplyTick(G){
+  const sh=G.macro.shock;
+  CK.forEach(k=>{
+    let drift=(rand(G)-.5)*0.035;
+    if(sh&&sh.comp&&sh.comp.indexOf(k)>=0)drift+=0.075*(G.macro.shockLeft>0?1:0);
+    else drift-=0.012*(G.spot[k]-1);                    // חזרה לממוצע
+    G.spot[k]=clamp(G.spot[k]*(1+drift),0.55,3.4);
+  });
+  for(const id in G.cos){
+    const c=G.cos[id];
+    c.contracts.forEach(ct=>{
+      if(ct.left>0){
+        ct.left--;
+        /* Take-or-pay: משלמים על המחויבות גם אם לא ייצרנו */
+        const need=sum(c.products.filter(p=>p.state==='live').map(p=>(PARA[p.para].recipe[ct.comp]||0)*p.lastUnits))/1000;
+        const commit=ct.vol*0.7;
+        if(need<commit)c.cash-=(commit-need)*ct.price*0.001;
+      }
+    });
+    c.contracts=c.contracts.filter(ct=>ct.left>0);
+  }
+}
+function signContract(G,c,comp,months,volShare){
+  const sup=G.suppliers.filter(s=>s.cov.indexOf(comp)>=0);
+  const s=sup.length?sup.reduce((a,b)=>a.prem<b.prem?a:b):null;
+  if(!s)return null;
+  const price=G.spot[comp]*(1+s.prem+months*0.004);
+  const vol=volShare;
+  c.contracts.push({comp,price,left:months,vol,sup:s.id,signedAt:G.t,signedSpot:G.spot[comp]});
+  return {comp,price,months,sup:s};
+}
+
+/* ── §12 טאלנטים ────────────────────────────────────────────────────────── */
+function mkCandidate(G){
+  const role=pick(G,keys(ROLES));
+  const q=rr(G,0.35,1);
+  const st=v=>Math.round(clamp(v*100*rr(G,.75,1.15),18,99));
+  const c={id:G.nextId++, name:pick(G,FN)+' '+pick(G,LN), role,
+    creativity:st(q*(role==='sci'?1.15:role==='des'?1.1:.85)),
+    efficiency:st(q*(role==='eng'?1.15:.9)),
+    leadership:st(q*(role==='exec'?1.25:.8)),
+    spec:pick(G,TK), ego:rr(G,0.1,0.9), patience:100, rounds:0, from:G.t};
+  const power=(c.creativity+c.efficiency+c.leadership)/3;
+  c.ask=Math.round(clamp(Math.pow(power/50,2.6)*46,18,520));   // $M לשנה לצוות שהוא/היא מוביל/ה
+  return c;
+}
+function refreshTalent(G,n){for(let i=0;i<n;i++)G.talent.push(mkCandidate(G));}
+function talentTick(G){
+  G.talent.forEach(c=>{c.patience=clamp(c.patience+1.5,0,100);});
+  /* מועמדים מתייאשים ועוזבים; חדשים נכנסים */
+  G.talent=G.talent.filter(c=>G.t-c.from<10||rand(G)>0.35);
+  if(G.talent.length<9)refreshTalent(G,ri(G,1,3));
+  /* יריבים מגייסים מהמאגר, ולפעמים מהצוות שלנו */
+  for(const id in G.cos){
+    const c=G.cos[id]; if(c.isMe)continue;
+    if(rand(G)<0.10+c.style.agg*0.10&&G.talent.length){
+      const t=G.talent.reduce((a,b)=>(a.creativity+a.efficiency)>(b.creativity+b.efficiency)?a:b);
+      const cost=t.ask/1000;
+      if(c.cash>cost*3){hireTo(G,c,t);}
+    }
+    /* ציד ראשים אצל השחקן */
+    const me=G.cos[G.me];
+    if(me&&me.staff.length&&rand(G)<0.022*(1+c.style.agg)){
+      const target=pick(G,me.staff);
+      const loyal=0.4+(me.brand/260)+(target.equity?0.25:0)+clamp((G.career.rep-50)/220,-.2,.2);
+      if(rand(G)>loyal){
+        me.staff=me.staff.filter(s=>s!==target);
+        c.staff.push(target);
+        news(G,`<b>${target.name}</b> עוזב/ת אותנו ל${c.n}. ההצעה שם הייתה כפולה.`,'b');
+      }
+    }
+  }
+}
+function hireTo(G,c,t){
+  G.talent=G.talent.filter(x=>x!==t);
+  c.staff.push(t); c.allocCache=null;
+}
+/* מנוע המשא ומתן: מחזיר החלטה, נגד-הצעה ומחיר הסבלנות */
+function evaluateOffer(G,cand,offer){
+  const c=G.cos[G.me];
+  const prestige=clamp((c.brand-55)/180+(G.career.rep-50)/200,-0.22,0.28);
+  const reserve=cand.ask*(1+cand.ego*0.34-prestige)*(1-(offer.equity?0.11:0))*(offer.title?0.94:1);
+  const gap=(reserve-offer.salary)/reserve;
+  if(gap<=0)return {accept:true,reserve};
+  const loss=clamp(gap*105*(0.55+cand.ego*0.9),6,70);
+  cand.patience=clamp(cand.patience-loss,0,100);
+  cand.rounds++;
+  const counter=Math.round(lerp(offer.salary,reserve,0.62));
+  return {accept:false,counter,reserve,walked:cand.patience<=0,gap};
+}
+
+/* ── §13 מיזוגים ורכישות ────────────────────────────────────────────────── */
+function seedStartups(G,n){
+  for(let i=0;i<n;i++){
+    const focus=pick(G,PK), pr=PARA[focus];
+    const nodes=keys(pr.en).sort((a,b)=>pr.en[b]-pr.en[a]).slice(0,3);
+    const s={id:G.nextId++, n:pick(G,STARTUP_N)+' '+pick(G,['Labs','Systems','Micro','Dynamics','Works']),
+      focus, tech:{}, born:G.t, staff:[mkCandidate(G)]};
+    nodes.forEach(k=>s.tech[k]=Math.round(clamp(frontier(G,k)*rr(G,0.9,1.28),10,100)));
+    s.hype=rr(G,0.6,1.7);
+    s.price=Math.round((sum(vals(s.tech))/40+2)*s.hype*10)/10;
+    G.startups.push(s);
+  }
+}
+function startupTick(G){
+  G.startups.forEach(s=>{
+    keys(s.tech).forEach(k=>s.tech[k]=clamp(s.tech[k]+rr(G,0.15,0.75),0,100));
+    s.price=Math.round((sum(vals(s.tech))/40+2)*s.hype*(1+G.para[s.focus].mat*0.9)*10)/10;
+  });
+  /* יריבים חוטפים מטרות — מי שמתלבט מפסיד */
+  if(G.startups.length&&rand(G)<0.085){
+    const s=pick(G,G.startups);
+    const buyers=vals(G.cos).filter(c=>!c.isMe&&c.cash>s.price*2.4&&c.style.focus===s.focus);
+    if(buyers.length){
+      const b=pick(G,buyers);
+      acquire(G,b,s);
+      news(G,`<b>${b.n}</b> רוכשת את ${s.n} תמורת $${s.price}B. הטכנולוגיה ירדה מהשוק.`,'w');
+    }
+  }
+  if(G.startups.length<3&&rand(G)<0.3)seedStartups(G,1);
+}
+/* רכישת חברה שלמה — אפשרית בעיקר כשהיא בקשיים */
+function companyValue(G,t){
+  const rev12=sum(t.hist.slice(-12).map(h=>h.rev))||t.baseRev*12;
+  const techV=sum(TK.map(k=>t.tech[k]))/22;
+  const mult=t.distress>3?1.1:t.op>0?3.4:2.1;
+  return Math.max(1.2,Math.round((rev12*0.55*mult/6+techV*0.32+t.brand*0.05)*10)/10);
+}
+function acquireCompany(G,buyer,t){
+  buyer.cash-=companyValue(G,t);
+  TK.forEach(k=>{buyer.tech[k]=clamp(Math.max(buyer.tech[k],t.tech[k]*0.96),0,100);});
+  t.staff.forEach(p=>{if(rand(G)<0.55)buyer.staff.push(p);});
+  t.products.filter(p=>p.state==='live').sort((a,b)=>b.score-a.score).slice(0,2).forEach(p=>{
+    p.co=buyer.id; p.name=buyer.tag+' '+p.name.split(' ').slice(1).join(' '); buyer.products.push(p);
+  });
+  buyer.baseRev+=t.baseRev*0.62;
+  buyer.brand=clamp(buyer.brand*0.93+t.brand*0.12,15,100);
+  buyer.allocCache=null;
+  delete G.cos[t.id];
+  news(G,`<b>${buyer.n} רוכשת את ${t.n}.</b> התיק, הפטנטים והצוות עוברים בעלות.`,'a');
+}
+function acquire(G,c,s){
+  G.startups=G.startups.filter(x=>x!==s);
+  c.cash-=s.price;
+  keys(s.tech).forEach(k=>{c.tech[k]=clamp(Math.max(c.tech[k],s.tech[k]*0.94),0,100);});
+  s.staff.forEach(p=>{if(rand(G)<0.62)c.staff.push(p);});   // חלק מהצוות עוזב באינטגרציה
+  c.morale=clamp((c.morale===undefined?65:c.morale)-4,10,100);
+  c.allocCache=null;
+}
+
+/* ── §14 מבצעים שחורים ──────────────────────────────────────────────────── */
+function opsTick(G){
+  const me=G.cos[G.me]; if(!me)return;
+  const O=G.ops, tgtId=O.target||pickRivalId(G), tgt=G.cos[tgtId];
+  const spend=(O.esp+O.sab+O.hype+O.cin)/1000;
+  me.cash-=spend;
+  G.heat=clamp(G.heat*0.93+(O.esp+O.sab)/900,0,3);
+  me.counter=clamp(me.counter*0.9+O.cin/260,0,1.6);
+  /* ריגול */
+  if(O.esp>0&&tgt){
+    const p=clamp(O.esp/(O.esp+150+tgt.counter*220),0,0.8);
+    if(rand(G)<p){
+      const gaps=TK.filter(k=>tgt.tech[k]>me.tech[k]+3);
+      if(gaps.length){
+        const k=pick(G,gaps);
+        const before=me.tech[k];
+        me.tech[k]=clamp(me.tech[k]+(tgt.tech[k]-me.tech[k])*0.38,0,100);
+        opLog(G,`שרטוטים מ${tgt.n}: ${TECH[k].n} קפץ מ-${Math.round(before)} ל-${Math.round(me.tech[k])}.`,'a');
+      }
+    }
+    if(rand(G)<clamp(O.esp/620*(0.45+tgt.counter),0,0.5))scandal(G,'ריגול תעשייתי',tgt);
+  }
+  /* חבלה והדלפות */
+  if(O.sab>0&&tgt){
+    const dev=tgt.products.filter(x=>x.state==='dev');
+    const p=clamp(O.sab/(O.sab+190+tgt.counter*200),0,0.72);
+    if(dev.length&&rand(G)<p){
+      const d=pick(G,dev);
+      if(rand(G)<0.5){d.sabotage=(d.sabotage||0)+rr(G,5,14);opLog(G,`הדלפה מוקדמת על ${d.name} של ${tgt.n} — הציפיות נשחקו לפני ההשקה.`,'w');}
+      else {d.launch+=1;opLog(G,`שיבוש בשרשרת של ${tgt.n}: ההשקה של ${d.name} נדחתה בחודש.`,'w');}
+    }
+    if(rand(G)<clamp(O.sab/560*(0.5+tgt.counter),0,0.5))scandal(G,'הדלפות ושיבוש מכוון',tgt);
+  }
+  /* הייפ ומשפיענים */
+  if(O.hype>0){
+    const mine=me.products.filter(x=>x.state==='live').sort((a,b)=>b.launch-a.launch)[0];
+    if(mine){mine.hype=clamp((mine.hype||0)+O.hype/420,0,1);
+      G.para[mine.para].heat=clamp(G.para[mine.para].heat+O.hype/2600,0,1.2);}
+    if(rand(G)<clamp(O.hype/900,0,0.16))scandal(G,'קמפיין משפיענים מבוים',null);
+  }
+  /* יריבים תוקפים אותנו */
+  for(const id in G.cos){
+    const c=G.cos[id]; if(c.isMe)continue;
+    const intensity=c.style.ops*(0.5+c.style.agg);
+    if(rand(G)<intensity*0.09){
+      const def=clamp(me.counter,0,1.5);
+      if(rand(G)>def*0.55){
+        const dev=me.products.filter(x=>x.state==='dev');
+        if(dev.length&&rand(G)<0.5){
+          const d=pick(G,dev); d.sabotage=(d.sabotage||0)+rr(G,4,11);
+          news(G,`דליפה מוזרה על <b>${d.name}</b> הופיעה בפורומים. מישהו רוצה שההשקה תיפגע.`,'b');
+        } else {
+          const gaps=TK.filter(k=>me.tech[k]>c.tech[k]+4);
+          if(gaps.length){const k=pick(G,gaps);c.tech[k]=clamp(c.tech[k]+(me.tech[k]-c.tech[k])*0.3,0,100);
+            if(rand(G)<0.45)news(G,`${c.n} הציגה יכולת ב${TECH[k].n} שנראית חשודה עד כאב.`,'w');}
+        }
+      }
+    }
+  }
+}
+function pickRivalId(G){const o=keys(G.cos).filter(k=>k!==G.me);return o[0];}
+function opLog(G,text,k){G.opsLog.unshift({t:G.t,text,k:k||'a'});if(G.opsLog.length>60)G.opsLog.pop();news(G,text,k||'a');}
+function scandal(G,kind,tgt){
+  const me=G.cos[G.me];
+  const fine=clamp(me.cash*rr(G,0.01,0.045),0.2,6);
+  me.cash-=fine; me.brand=clamp(me.brand-rr(G,3,9),15,100);
+  me.board=clamp(me.board-rr(G,6,16),0,100);
+  G.career.rep=clamp(G.career.rep-rr(G,5,14),0,100);
+  me.scandal++;
+  G.ops={esp:0,sab:0,hype:0,cin:G.ops.cin};
+  news(G,`<b>שערוריית ${kind}.</b> ${tgt?tgt.n+' הגישה תלונה. ':''}קנס של $${rnd1(fine,1)}B, המניה צונחת והדירקטוריון דורש הסברים.`,'b');
+}
+
+/* ── §15 מאקרו ואירועים ─────────────────────────────────────────────────── */
+const EVENTS=[
+ {id:'silicon',w:6,t:'מחסור עולמי בסיליקון',k:'b',
+  d:'שריפה במפעל פרוסות מרכזי ומלחמת מחירים על קיבולת. מחירי הפרוסות והזיכרון מזנקים, וכל מי שאין לו חוזה נעול משלם מחיר ספוט.',
+  o:[{t:'לנעול חוזים ארוכים עכשיו, בכל מחיר',d:'יקר היום, מגן שנתיים',fn:(G)=>{const c=G.cos[G.me];['wafer','memory'].forEach(k=>signContract(G,c,k,18,60));G.spot.wafer*=1.3;G.spot.memory*=1.25;return'נעלנו קיבולת ל-18 חודשים במחיר שכואב. המתחרים צוחקים — לעת עתה.';}},
+    {t:'לספוג בשוק הספוט ולשמור על גמישות',d:'סיכון מלא',fn:(G)=>{G.spot.wafer*=1.45;G.spot.memory*=1.35;return'נשארנו חשופים. אם המחירים ימשיכו לעלות, כל יחידה תיוצר בהפסד.';}},
+    {t:'להאט ייצור ולהעלות מחירים לצרכן',d:'שוליים על חשבון נתח',fn:(G)=>{const c=G.cos[G.me];c.products.forEach(p=>{if(p.state==='live')p.price=Math.round(p.price*1.07);});G.spot.wafer*=1.28;return'העלינו מחירון ב-7%. הקמעונאים הזהירו אותנו מפני נטישה.';}}]},
+ {id:'tax',w:5,t:'רפורמת מס גלובלית',k:'w',
+  d:'מדינות ה-OECD מיישרות קו על מס מינימלי. מבני המס שהחברה בנתה בעשור האחרון מתבטלים.',
+  o:[{t:'לשלם ולעבור הלאה',d:'שקיפות',fn:(G)=>{G.macro.tax+=0.03;const c=G.cos[G.me];c.brand=clamp(c.brand+2,15,100);return'שילמנו את המס המלא. שלוש קרנות ESG הגדילו אחזקה.';}},
+    {t:'לובי אגרסיבי מול הרגולטור',d:'$1.5B, סיכוי לדחייה',fn:(G)=>{const c=G.cos[G.me];c.cash-=1.5;if(rand(G)<0.5){return'הרפורמה נדחתה בשנתיים. שווה כל שקל.';}G.macro.tax+=0.035;c.brand=clamp(c.brand-3,15,100);return'הלובי נכשל ודלף לעיתונות. שילמנו פעמיים.';}},
+    {t:'להעביר ייצור וקניין רוחני',d:'מורכב, יעיל',fn:(G)=>{const c=G.cos[G.me];c.cash-=0.7;G.macro.tax+=0.012;return'מבנה חדש הוקם. יעיל, חוקי, וכותרת רעה מחכה בסיבוב.';}}]},
+ {id:'pandemic',w:4,t:'סגרים בשרשרת האספקה',k:'b',
+  d:'התפרצות בריאותית סוגרת מפעלי הרכבה ונמלים. קיבולת ההרכבה בעולם נחתכת בשליש.',
+  o:[{t:'להטיס מלאי במטוסי מטען',d:'יקר ומיידי',fn:(G)=>{const c=G.cos[G.me];c.cash-=2.2;G.spot.assembly*=1.15;return'שילמנו פי חמישה על הובלה. המדפים נשארו מלאים כשהמתחרים התרוקנו.';}},
+    {t:'לפזר ייצור ליבשות נוספות',d:'איטי, קבוע',fn:(G)=>{const c=G.cos[G.me];c.cash-=3.4;c.flags=1;G.spot.assembly*=1.3;return'פתחנו שני אתרים חלופיים. ההשקעה תחזיר את עצמה במשבר הבא.';}},
+    {t:'לצמצם קווים ולחכות',d:'חינם, כואב',fn:(G)=>{G.spot.assembly*=1.42;const c=G.cos[G.me];c.products.forEach(p=>{if(p.state==='live')p.mkt*=0.7;});return'הורדנו הילוך. הנתח שנאבד לא תמיד חוזר.';}}]},
+ {id:'rare',w:5,t:'הגבלות יצוא על מתכות נדירות',k:'w',
+  d:'מעצמה מזרחית מגבילה יצוא של מגנטים ומתכות נדירות. הסוללות, המנועים והמצלמות שלנו תלויים בהן.',
+  o:[{t:'מלאי חירום לשנתיים',d:'תזרים',fn:(G)=>{const c=G.cos[G.me];c.cash-=2.6;signContract(G,c,'rare',24,80);G.spot.rare*=1.5;return'המחסנים מלאים. התזרים כואב, החשיפה ירדה לאפס.';}},
+    {t:'מו״פ לחומרים חלופיים',d:'איטי אך משחרר',fn:(G)=>{const c=G.cos[G.me];c.cash-=1.1;c.tech.materials=clamp(c.tech.materials+4,0,100);c.tech.nanoFab=clamp(c.tech.nanoFab+2.5,0,100);G.spot.rare*=1.6;return'מעבדת החומרים קיבלה את הפרויקט. בעוד שנתיים לא נהיה תלויים באיש.';}},
+    {t:'לשלם מחיר שוק ולהמשיך',d:'—',fn:(G)=>{G.spot.rare*=1.75;return'ספגנו את העלות. כל רובוט וכל סוללה התייקרו.';}}]},
+ {id:'poach',w:5,t:'מלחמת טאלנטים',k:'w',
+  d:'יריבה פותחת מרכז מו״פ מעבר לכביש ומציעה לצוות שלנו חבילות כפולות.',
+  o:[{t:'להשוות הצעות ולהוסיף אקוויטי',d:'יקר, שומר',fn:(G)=>{const c=G.cos[G.me];c.cash-=1.3;c.staff.forEach(s=>s.equity=true);return'כל הצוות קיבל מניות חסומות. הדלת נסגרה.';}},
+    {t:'לתת להם ללכת ולגייס דור חדש',d:'מרענן, מסוכן',fn:(G)=>{const c=G.cos[G.me];const lost=Math.ceil(c.staff.length*0.3);c.staff.splice(0,lost);refreshTalent(G,4);return`${lost} עזבו. המאגר התמלא בפנים חדשות וזולות יותר.`;}},
+    {t:'תביעה על הסכמי אי-תחרות',d:'משפטי ומכוער',fn:(G)=>{const c=G.cos[G.me];if(rand(G)<0.45){return'צו מניעה ניתן. הגיוסים נעצרו.';}c.brand=clamp(c.brand-4,15,100);G.career.rep=clamp(G.career.rep-4,0,100);return'התביעה נדחתה, והכותרת "החברה שתובעת את העובדים שלה" נדבקה.';}}]},
+ {id:'boom',w:4,t:'גל אופטימיות בשווקים',k:'g',
+  d:'ריביות יורדות והון זול מציף את הסקטור. שווי החברות מזנק והסטארטאפים מייקרים את עצמם.',
+  o:[{t:'לגייס חוב זול ולהשקיע במו״פ',d:'מנוף',fn:(G)=>{const c=G.cos[G.me];c.cash+=6;c.debt+=6;c.rndBudget*=1.18;return'גייסנו $6B בריבית אפסית והזרמנו למעבדות.';}},
+    {t:'למכור מניות ולמלא את הקופה',d:'דילול',fn:(G)=>{const c=G.cos[G.me];c.cash+=8;c.brand=clamp(c.brand-1,15,100);G.career.rep=clamp(G.career.rep-2,0,100);return'הנפקנו בשיא. המשקיעים הוותיקים לא אהבו את הדילול.';}},
+    {t:'לנצל לרכישות',d:'הזדמנות',fn:(G)=>{G.startups.forEach(s=>s.price*=0.8);seedStartups(G,2);return'שלחנו את צוות ה-M&A לשוק. שתי מטרות חדשות נכנסו לרשימה.';}}]},
+ {id:'crash',w:4,t:'התכווצות אשראי',k:'b',
+  d:'הריבית מזנקת והשוק נסגר. חברות שנשענו על הון זול מגלות שהמוזיקה נפסקה.',
+  o:[{t:'לחתוך 15% מהמו״פ',d:'מזומן מיידי',fn:(G)=>{const c=G.cos[G.me];c.rndBudget*=0.85;c.board=clamp(c.board+6,0,100);return'התקציב נחתך. המהנדסים מעדכנים פרופילים.';}},
+    {t:'לחתוך שיווק ולשמור על המעבדות',d:'נתח על חשבון עתיד',fn:(G)=>{const c=G.cos[G.me];c.marketing*=0.6;c.products.forEach(p=>p.mkt*=0.6);return'המעבדות לא נגעו. הקמפיינים נעלמו מהמסכים.';}},
+    {t:'להמר כפול ולקנות בזול',d:'סיכון גבוה',fn:(G)=>{const c=G.cos[G.me];c.debt+=4;c.cash+=4;c.board=clamp(c.board-8,0,100);G.startups.forEach(s=>s.price*=0.62);return'אמרנו לדירקטוריון לא. עכשיו חייבים שזה יעבוד.';}}]},
+ {id:'reg',w:4,t:'רגולציית פתיחות כפויה',k:'w',
+  d:'רגולטורים דורשים לפתוח את המערכת, לאפשר חנויות חלופיות ולתקנן מטענים וממשקים.',
+  o:[{t:'לציית במלואו',d:'שוליים יורדים, מותג עולה',fn:(G)=>{const c=G.cos[G.me];c.brand=clamp(c.brand+4,15,100);c.baseRev*=0.94;return'נפתחנו. המפתחים חגגו, הרווח מהשירותים ירד.';}},
+    {t:'ציות מינימלי ופרשנות יצירתית',d:'קנסות אפשריים',fn:(G)=>{const c=G.cos[G.me];if(rand(G)<0.5){c.cash-=2.4;c.brand=clamp(c.brand-4,15,100);return'הרגולטור לא התרשם. קנס של $2.4B.';}return'הפרשנות עברה. שמרנו על ההכנסות.';}},
+    {t:'לצאת מהשוק הבעייתי',d:'קיצוני',fn:(G)=>{const c=G.cos[G.me];c.baseRev*=0.88;c.brand=clamp(c.brand-2,15,100);G.market.total*=0.97;return'יצאנו משוק שלם. מסר חד — ומחיר חד.';}}]},
+ {id:'viral',w:4,t:'סרטון ויראלי הורס מוצר',k:'b',req:G=>G.cos[G.me].products.some(p=>p.state==='live'),
+  d:'סרטון של מכשיר שנשבר בכיס אחרי שבועיים אוסף 80 מיליון צפיות. הפורומים מלאים בהוכחות.',
+  o:[{t:'הכרה מיידית, החלפה לכולם',d:'יקר, מכבה שריפה',fn:(G)=>{const c=G.cos[G.me];c.cash-=1.9;c.brand=clamp(c.brand-1.5,15,100);G.career.rep=clamp(G.career.rep+3,0,100);return'החלפנו הכל תוך שבוע. הסיפור הפך לדוגמה לניהול משבר.';}},
+    {t:'להטיל ספק באותנטיות',d:'זול, מסוכן',fn:(G)=>{const c=G.cos[G.me];if(rand(G)<0.55){c.brand=clamp(c.brand-11,15,100);G.career.rep=clamp(G.career.rep-8,0,100);return'התגלה שהסרטון אמיתי. ההכחשה עלתה יותר מהתקלה.';}c.brand=clamp(c.brand-2,15,100);return'התברר שהמכשיר נפגע בכוונה. יצאנו בזול.';}},
+    {t:'עדכון תוכנה ושתיקה',d:'ביניים',fn:(G)=>{const c=G.cos[G.me];c.brand=clamp(c.brand-5,15,100);const p=c.products.filter(x=>x.state==='live')[0];if(p)p.sabotage=(p.sabotage||0)+6;return'שחררנו עדכון בלי הודעה. הסיפור דעך לאט.';}}]},
+ {id:'union',w:3,t:'התארגנות עובדים באתרי ההרכבה',k:'w',
+  d:'עשרות אלפי עובדי הרכבה דורשים העלאה ובטיחות. הקווים עלולים לעצור בשיא העונה.',
+  o:[{t:'להסכים לדרישות',d:'עלות קבועה',fn:(G)=>{const c=G.cos[G.me];c.cash-=1.1;G.spot.assembly*=1.08;c.brand=clamp(c.brand+3,15,100);return'ההסכם נחתם. עלות ההרכבה עלתה לתמיד.';}},
+    {t:'לזרז אוטומציה',d:'השקעה חד פעמית',fn:(G)=>{const c=G.cos[G.me];c.cash-=2.4;c.tech.mfgAuto=clamp(c.tech.mfgAuto+6,0,100);return'רובוטים במקום משמרות. יעיל — ולא יפה בעיתונות.';}},
+    {t:'להעביר ייצור למדינה זולה',d:'מהיר ומכוער',fn:(G)=>{const c=G.cos[G.me];G.spot.assembly*=0.93;c.brand=clamp(c.brand-5,15,100);G.career.rep=clamp(G.career.rep-4,0,100);return'העברנו קווים. חסכנו, ושילמנו במוניטין.';}}]},
+ {id:'patent',w:4,t:'תביעת פטנטים',k:'w',
+  d:'יריבה תובעת אותנו על הפרת פטנטים בליבת המוצר. הפיצוי המבוקש: מיליארדים.',
+  o:[{t:'להילחם בבית משפט',d:'הימור',fn:(G)=>{const c=G.cos[G.me];if(rand(G)<0.5){c.board=clamp(c.board+3,0,100);return'ניצחנו. התביעה נדחתה במלואה.';}c.cash-=3.1;return'הפסדנו. $3.1B שולמו.';}},
+    {t:'רישיון צולב',d:'שקט תמורת ידע',fn:(G)=>{const c=G.cos[G.me];c.cash-=0.9;const r=G.cos[pickRivalId(G)];TK.forEach(k=>{if(r.tech[k]>c.tech[k]+10)c.tech[k]+=2;});return'חתמנו על רישיון צולב. שני הצדדים הרוויחו ידע.';}},
+    {t:'לרכוש את התובעת',d:'אם יש מזומן',fn:(G)=>{const c=G.cos[G.me];if(c.cash<9)return'לא היה מזומן. נאלצנו להתפשר בכל זאת ($1.4B).';c.cash-=9;c.tech.packaging=clamp(c.tech.packaging+5,0,100);return'קנינו את הבעיה. הפטנטים עכשיו שלנו.';}}]},
+ {id:'defect',w:4,t:'פגם ייצור בסדרה שלמה',k:'b',req:G=>G.cos[G.me].products.some(p=>p.state==='live'&&p.lastUnits>0.3),
+  d:'ספק רכיב שינה תהליך בלי לעדכן. אחוז כשל חריג מתחיל להופיע בשטח.',
+  o:[{t:'ריקול מלא ומיידי',d:'יקר, נקי',fn:(G)=>{const c=G.cos[G.me];c.cash-=2.6;G.career.rep=clamp(G.career.rep+4,0,100);return'ריקול מלא. הלקוחות זכרו לטובה, המנהל הכספי פחות.';}},
+    {t:'להחליף רק למי שמתלונן',d:'חוסך, מצטבר',fn:(G)=>{const c=G.cos[G.me];c.cash-=0.6;c.brand=clamp(c.brand-6,15,100);return'טיפלנו בטפטופים. הדירוגים ברשת ירדו בכוכב.';}},
+    {t:'לתבוע את הספק',d:'מחזיר כסף, שורף גשר',fn:(G)=>{const c=G.cos[G.me];c.cash-=1.2;G.spot.sensors*=1.12;if(rand(G)<0.6){c.cash+=2.2;return'הספק שילם. מצאנו ספק חדש ויקר יותר.';}return'התביעה נתקעה, והספק העלה לנו מחיר.';}}]}
+];
+function macroTick(G){
+  const M=G.macro;
+  M.sentiment=clamp(lerp(M.sentiment,1,0.06)+(rand(G)-.5)*0.05,0.6,1.45);
+  if(M.shockLeft>0){M.shockLeft--;if(M.shockLeft===0)M.shock=null;}
+  else if(rand(G)<0.035){
+    const comps=[['wafer','memory'],['battery','rare'],['display'],['assembly'],['sensors']][ri(G,0,4)];
+    M.shock={comp:comps,n:comps.map(c=>COMP[c].n).join(' ו')}; M.shockLeft=ri(G,3,8);
+    news(G,`מתיחות בשרשרת האספקה: מחירי <b>${M.shock.n}</b> מתחילים לטפס.`,'w');
+  }
+}
+function drawEvent(G){
+  const pool=EVENTS.filter(e=>!G.flags['ev_'+e.id]&&(!e.req||e.req(G)));
+  if(!pool.length)return null;
+  const p=0.085+G.t*0.0006;
+  if(rand(G)>p)return null;
+  const tw=sum(pool.map(e=>e.w));
+  let r=rand(G)*tw;
+  for(const e of pool){r-=e.w;if(r<=0){G.flags['ev_'+e.id]=1;return e;}}
+  return null;
+}
+
+/* ── §16 מוחות המתחרים ──────────────────────────────────────────────────────
+   כל יריבה מקצה מו״פ, משיקה מוצרים, מתמחרת ורוכשת לפי אסטרטגיה משלה —
+   ומגיבה גם לתנופה של פרדיגמות וגם להצלחה שלנו.                          */
+function aiTick(G,c){
+  if(c.isMe)return;
+  const rev12=sum(c.hist.slice(-12).map(h=>h.rev))||c.baseRev*12;
+  c.rndBudget=lerp(c.rndBudget,rev12*c.style.rndShare,0.12);
+  /* מעקב אחרי הפרדיגמה עם התנופה הגבוהה ביותר */
+  const ranked=PK.map(p=>{
+    const st=G.para[p], pr=PARA[p];
+    const near=clamp(st.ready/pr.viab,0,1);
+    const proximity=Math.pow(near,3);
+    /* קטגוריה פתוחה שווה לפי גודלה; קטגוריה שעל הסף שווה לפי הפוטנציאל
+       להיות ראשון בה — וזה מה שגורם ליריבים לממן את העתיד לפני שהוא קיים. */
+    const upside=st.open?st.mat*PULL[p]*2.2:PULL[p]*1.9*proximity*(0.5+c.style.agg);
+    const crowd=vals(G.cos).filter(x=>x.style&&x.style.focus===p).length;
+    const home=c.homeFocus===p?0.55:(c.style.focus===p?0.3:0);
+    return {p, v:upside+st.momentum*2.6+home-crowd*0.10};
+  }).sort((a,b)=>b.v-a.v);
+  const target=ranked[0].p;
+  if(target!==c.style.focus&&rand(G)<0.045+c.style.agg*0.05){
+    c.style.focus=target; c.allocCache=null;
+    news(G,`<b>${c.n}</b> מסיטה משאבים לכיוון ${PARA[target].n}.`,'i');
+  }
+  /* אם אנחנו שולטים בפרדיגמה — הם נכנסים אליה */
+  const me=G.cos[G.me];
+  if(me&&rand(G)<0.05){
+    const mine=PK.filter(p=>{
+      const tot=sum(vals(G.cos).map(x=>sum(x.products.filter(q=>q.state==='live'&&q.para===p).map(q=>q.lastRev||0))));
+      const my=sum(me.products.filter(q=>q.state==='live'&&q.para===p).map(q=>q.lastRev||0));
+      return tot>0.4&&my/tot>0.42;
+    });
+    if(mine.length&&G.para[mine[0]].open){c.style.focus=mine[0];c.allocCache=null;}
+  }
+  /* השקות */
+  const focus=c.style.focus;
+  const hasDev=c.products.some(p=>p.state==='dev');
+  const newest=c.products.filter(p=>p.state==='live').sort((a,b)=>b.launch-a.launch)[0];
+  const stale=!newest||G.t-newest.launch>ri(G,9,15);
+  if(!hasDev&&G.para[focus].open&&stale&&c.cash>PARA[focus].nre*1.6){
+    const pr=PARA[focus];
+    const T=c.traits||{};
+    const cheap=T.reach>0.7||T.costEff>0.5;
+    const tierBase=cheap?ri(G,1,3):ri(G,2,5);
+    const cfg={}; PTK.forEach(k=>cfg[k]=clamp(tierBase+ri(G,-1,1),1,5));
+    if(T.b2b)cfg.camera=5;
+    if(T.carrier)cfg.build=clamp(cfg.build-1,1,5);
+    const p=mkProduct(G,c,focus,{name:c.tag+' '+pr.short+' '+(turnY(G.t)%100),
+      price:Math.round(pr.price*rr(G,0.82,1.14)*(cheap?0.62:c.style.agg>0.65?0.9:1)),
+      cfg, mkt:c.marketing*rr(G,0.4,0.9)});
+    p.keynote=rand(G)<0.25+c.style.agg*0.3?(rand(G)<0.35?2:1):0;
+    p.launch=G.t+Math.round(pr.dev*rr(G,0.75,1.05));
+    c.products.push(p); c.cash-=pr.nre*0.4;
+  }
+  /* תמחור תגובתי */
+  c.products.filter(p=>p.state==='live').forEach(p=>{
+    const share=p.lastRev||0;
+    if(share<0.05&&G.t-p.launch>3&&rand(G)<0.3)p.price=Math.round(p.price*0.955);
+    else if(share>0.9&&rand(G)<0.12)p.price=Math.round(p.price*1.02);
+  });
+  /* רכישות */
+  if(G.startups.length&&c.cash>16&&rand(G)<0.03+c.style.agg*0.03){
+    const s=G.startups.filter(x=>x.focus===c.style.focus)[0]||G.startups[0];
+    if(s&&c.cash>s.price*2.2){acquire(G,c,s);news(G,`${c.n} רוכשת את ${s.n} תמורת $${s.price}B.`,'i');}
+  }
+}
+
+/* ── §17 פיננסים וקריירה ────────────────────────────────────────────────── */
+function industryUnits(G){
+  let u=0; for(const id in G.cos)G.cos[id].products.forEach(p=>{if(p.state==='live')u+=p.lastUnits||0;});
+  return u;
+}
+function financeTick(G,c,sales){
+  const R=sales.byCo[c.id]||{rev:0,cogs:0,units:0,mkt:0};
+  const T=c.traits||{};
+  /* ── אקוסיסטם: בסיס מותקן, נעילת משתמשים והכנסה חוזרת ──────────────── */
+  c.installed=Math.max(0,(c.installed||0)*0.984+R.units);
+  const breadth=PK.filter(p=>c.products.some(x=>x.state==='live'&&x.para===p)).length;
+  const target=clamp(12+(c.tech.platform||40)*0.46+breadth*4.4+clamp((c.share||0)*100,0,26)*0.55,0,100);
+  c.lockin=clamp(lerp(c.lockin===undefined?34:c.lockin,target,0.12),0,100);
+  const arpu=0.34+(c.tech.platform||40)/62+c.lockin/95;   // $ למכשיר פעיל לחודש
+  const services=(c.installed*arpu)/1000;
+  c.services=services; c.arpu=arpu;
+  /* אספקת רכיבים לכל התעשייה — עסק ה-B2B */
+  const royalty=T.b2b?industryUnits(G)*(1.1+(c.tech.optics||50)/28)/1000*T.b2b:0;
+  c.royalty=royalty;
+  const other=c.baseRev*0.08*(0.9+c.brand/400);
+  const carrierCost=(T.carrier||0)*R.rev*0.055;           // סבסוד ספקיות סלולר
+  const otherOp=services*0.68+other*0.35+royalty*0.55-carrierCost;
+  const rev=R.rev+services+other+royalty;
+  const gross=(R.rev-R.cogs)+otherOp;
+  const sga=rev*0.088;
+  const mkt=R.mkt+c.marketing;
+  const rd=c.rndBudget/12;
+  const staffCost=sum(c.staff.map(s=>s.ask))/12/1000;
+  const opsCost=c.isMe?(G.ops.esp+G.ops.sab+G.ops.hype+G.ops.cin)/1000:c.baseRev*c.style.ops*0.01;
+  const op=gross-sga-mkt-rd-staffCost-opsCost;
+  const tax=op>0?op*G.macro.tax:0;
+  const interest=c.debt*G.macro.rate/12;
+  const net=op-tax-interest;
+  c.cash+=net-c.baseRev*0.02;                            // דיבידנד/החזר הון
+  if(c.cash<0){c.debt+=-c.cash+1.5;c.cash=1.5;}
+  c.rev=rev; c.op=op; c.net=net;
+  const stressed=c.cash<Math.max(1.2,c.baseRev*0.5)&&op<0;
+  c.distress=stressed?(c.distress||0)+1:0;
+  if(stressed&&!c.isMe){
+    c.rndBudget*=0.9; c.marketing*=0.9;
+    c.products.filter(x=>x.state==='dev').forEach(x=>{if(rand(G)<0.25)x.state='eol';});
+  }
+  c.share=shareOf(G,c.id);
+  c.shareHist=c.shareHist||[]; c.shareHist.push(c.share); if(c.shareHist.length>40)c.shareHist.shift();
+  c.hist.push({t:G.t,rev,op,net,units:R.units,cash:c.cash,brand:c.brand,share:c.share,services,installed:c.installed,lockin:c.lockin});
+  if(c.hist.length>140)c.hist.shift();
+  /* אמון הדירקטוריון: מול הציפייה, והציפייה עולה אחרי כל הצלחה */
+  if(c.expect===undefined)c.expect=Math.max(0.12,op*1.03);
+  const beat=op-c.expect;
+  if(G.t%3===2){
+    const q=sum(c.hist.slice(-3).map(h=>h.op))/3;
+    let d=clamp((q-c.expect)/Math.max(0.35,Math.abs(c.expect))*10,-12,9);
+    /* דירקטוריון סופר גם צמיחה: תקופת השקעה עם נתח עולה נסלחת */
+    const sh=c.shareHist, ago=sh.length>6?sh[sh.length-7]:sh[0];
+    d+=clamp((c.share-ago)*100*0.55,-3.5,3.5);
+    c.board=clamp(c.board+d,0,100);
+    c.expect=lerp(c.expect,Math.max(0.15,q)*1.04,0.5);
+  }
+  return {rev,op,net,units:R.units,beat};
+}
+function careerTick(G,f){
+  const C=G.career, me=G.cos[G.me];
+  C.tenure++;
+  const target=me.baseRev*0.12;
+  let d=clamp((f.op-target)*1.1,-2.2,2.2)*0.32;
+  d+=clamp((me.board-55)/100,-0.35,0.35);
+  C.rep=clamp(C.rep+d,0,100);
+  /* הצעות עבודה מגיעות כשהמוניטין גבוה */
+  if(C.rep>68&&G.t%4===0&&rand(G)<0.35){
+    const bigger=vals(G.cos).filter(x=>x.id!==G.me&&x.baseRev>me.baseRev*1.25&&x.board<72);
+    if(bigger.length&&!C.offers.length){
+      const o=pick(G,bigger);
+      C.offers.push({co:o.id,at:G.t,exp:G.t+3,pkg:Math.round(rr(G,12,40))});
+      news(G,`<b>שיחה דיסקרטית:</b> הדירקטוריון של ${o.n} מחפש מנכ״ל. השם שלך עלה.`,'a');
+    }
+  }
+  C.offers=C.offers.filter(o=>o.exp>G.t);
+}
+function takeOffer(G,off){
+  const from=G.cos[G.me], to=G.cos[off.co];
+  G.career.history.push({co:from.id,from:G.career.titles[G.career.titles.length-1].from,to:G.t,rep:G.career.rep});
+  from.isMe=false; to.isMe=true; G.me=to.id;
+  G.career.titles.push({co:to.id,from:G.t});
+  G.career.offers=[]; G.career.tenure=0;
+  G.ops={esp:0,sab:0,hype:0,cin:0};
+  news(G,`עברת לנהל את <b>${to.n}</b>. חבילת החתימה: $${off.pkg}M. הכיסא הקודם כבר התקרר.`,'a');
+}
+function fireMe(G,reason){
+  const from=G.cos[G.me];
+  G.career.history.push({co:from.id,from:G.career.titles[G.career.titles.length-1].from,to:G.t,rep:G.career.rep,fired:true});
+  G.career.firedCount++;
+  G.career.rep=clamp(G.career.rep-22,0,100);
+  from.isMe=false;
+  from.board=55;
+  /* נופלים לסטארטאפ — הקריירה נמשכת */
+  const st={id:'sp'+G.nextId++, n:pick(G,STARTUP_N)+' '+pick(G,['Devices','Micro','Labs']), tag:'NEW',
+    d:'סטארטאפ קטן שגייס סבב ראשון על סמך השם שלך.', playable:1,
+    cash:clamp(2.2+G.career.rep/24,1.2,6), debt:0.4, brand:clamp(22+G.career.rep/4,18,45), board:62,
+    tech:{}, staff:[], products:[], contracts:[], rndBudget:0.55, marketing:0.05,
+    baseRev:0.32, style:{agg:.6,ops:.2,rndShare:.2,focus:'glasses'}, hist:[], scandal:0, counter:0.1, isMe:true};
+  TK.forEach(k=>st.tech[k]=clamp(frontier(G,k)*rr(G,0.28,0.52),5,80));
+  G.cos[st.id]=st; G.me=st.id;
+  G.career.titles.push({co:st.id,from:G.t});
+  G.career.tenure=0; G.ops={esp:0,sab:0,hype:0,cin:0};
+  news(G,`<b>פוטרת מ${from.n}.</b> ${reason} תוך שבועיים גייסת סבב ראשון ל<b>${st.n}</b> — הפעם בלי רשת ביטחון.`,'b');
+  return st;
+}
+
+/* ── §18 תור המשחק ──────────────────────────────────────────────────────── */
+function step(G){
+  const me=G.cos[G.me];
+  macroTick(G);
+  supplyTick(G);
+  for(const id in G.cos){const c=G.cos[id];rndTick(G,c);aiTick(G,c);}
+  talentTick(G); startupTick(G);
+  opsTick(G);
+  /* השקות ופיתוח */
+  for(const id in G.cos){
+    const c=G.cos[id];
+    c.products.forEach(p=>{
+      if(p.state==='dev'&&G.t>=p.launch){
+        p.state='live'; p.score=scoreOf(G,c,p);
+        c.cash-=PARA[p.para].nre*0.6;
+        if(p.keynote){c.cash-=keynoteCost(c,p.keynote);p.hype=clamp((p.hype||0)+KEYNOTE[p.keynote].hype,0,1);}
+        /* ריבוי מותגים מאפשר להחזיק שני דורות חיים במקביל */
+        const multi=(c.traits&&c.traits.multibrand)?1:0;
+        const sibs=c.products.filter(q=>q!==p&&q.state==='live'&&q.para===p.para).sort((a,b)=>b.launch-a.launch);
+        sibs.forEach((q,i)=>{
+          if(i===0){q.legacy=true;q.price=Math.round(q.price*0.82);}
+          else if(multi&&i===1){q.legacy=true;q.price=Math.round(q.price*0.72);}
+          else q.state='eol';});
+        const risk=Math.pow(clamp(1-(p.launch-p.start)/PARA[p.para].dev,0,1),1.5)*0.8;
+        if(rand(G)<risk){p.defect=true;p.score=scoreOf(G,c,p);c.brand=clamp(c.brand-3.2,15,100);}
+        p.review=computeReview(G,c,p); p.reviewAt=G.t;
+        if(c.isMe){
+          const verdict=p.review>=8.5?'g':p.review>=6.5?'a':'b';
+          news(G,`<b>${p.name}</b> הושק${p.keynote?' ב'+KEYNOTE[p.keynote].n:''}. ציון ביקורות <b>${p.review}/10</b> · מחיר $${p.price}.`+
+            (p.defect?' המבקרים דיווחו על באגים.':''),verdict);
+        }
+        else if(p.review>8.7)news(G,`${c.n} משיקה את ${p.name} — הביקורות נותנות ${p.review}/10 ומדברות על קפיצת דור.`,'w');
+      } else if(p.state==='live'){
+        p.score=scoreOf(G,c,p);
+        if(G.t-p.launch>34&&(p.lastUnits||0)<0.03)p.state='eol';
+      }
+    });
+  }
+  const sales=marketTick(G);
+  let f=null;
+  for(const id in G.cos){const r=financeTick(G,G.cos[id],sales);if(id===G.me)f=r;}
+  careerTick(G,f);
+  G.hist.push({t:G.t,rev:f.rev,op:f.op,cash:me.cash,rep:G.career.rep,board:me.board,
+               share:shareOf(G,G.me),brand:me.brand});
+  G.paraHist.push(PK.reduce((o,p)=>{o[p]=G.para[p].ready;return o;},{t:G.t}));
+  log(G,`הכנסות $${rnd1(f.rev,2)}B · רווח תפעולי $${rnd1(f.op,2)}B · ${rnd1(f.units,1)}M יחידות`,f.op>0?'g':'b');
+  G.t++;
+  const ev=drawEvent(G);
+  const end=checkEnd(G,f);
+  return {f,sales,event:ev,end};
+}
+function shareOf(G,id){
+  let mine=0,tot=0;
+  for(const cid in G.cos)G.cos[cid].products.forEach(p=>{if(p.state==='live'){tot+=p.lastRev||0;if(cid===id)mine+=p.lastRev||0;}});
+  return tot>0?mine/tot:0;
+}
+function checkEnd(G,f){
+  const me=G.cos[G.me];
+  if(me.board<=0)return{kind:'fired',reason:'הדירקטוריון איבד סבלנות אחרי רצף רבעונים חלשים.'};
+  if(me.cash<0.4&&me.debt>me.baseRev*14)return{kind:'fired',reason:'הבנקים סירבו למחזר את החוב והשתלטו על ההנהלה.'};
+  if(G.career.rep<=3)return{kind:'over',t:'סוף הדרך',d:'המוניטין שלך נשרף עד היסוד. אף דירקטוריון בעולם לא יחזיר אותך לחדר.'};
+  return null;
+}
+function news(G,text,k){G.news.unshift({t:G.t,text,k:k||'i'});if(G.news.length>200)G.news.pop();}
+function log(G,text,k){G.log.unshift({t:G.t,text,k:k||'i'});if(G.log.length>200)G.log.pop();}
+/* ENGINE_END */
+/* UI_START ═══════════════════════════════════════════════════════════════ */
+let S=null, V='dash', PICK=null, Q=[];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const B=v=>'<span class="num" dir="ltr">$'+rnd1(v,v>=10?0:v>=1?1:2)+'B</span>';
+const M$=v=>'<span class="num" dir="ltr">$'+Math.round(v)+'M</span>';
+const P=v=>'<span class="num" dir="ltr">'+rnd1(v*100,1)+'%</span>';
+const SAVE='tech_tycoon_v2';
+const slotKey=i=>SAVE+'_s'+i;
+function slotInfo(i){try{const r=localStorage.getItem(slotKey(i));if(!r)return null;const o=JSON.parse(r);
+  return {co:o.co,t:o.t,at:o.at,rep:o.rep};}catch(e){return null;}}
+function saveTo(i){try{localStorage.setItem(slotKey(i),JSON.stringify({co:S.cos[S.me].n,t:S.t,
+  at:Date.now(),rep:Math.round(S.career.rep),s:S}));return true;}catch(e){return false;}}
+function loadFrom(i){const r=localStorage.getItem(slotKey(i));if(!r)return false;
+  try{const o=JSON.parse(r);S=o.s;return true;}catch(e){return false;}}
+function saveModal(){
+  const row=i=>{const inf=slotInfo(i);
+    return `<div class="tile" style="margin-bottom:9px">
+      <div class="row" style="justify-content:space-between">
+        <div><b style="font-family:var(--display);font-size:14.5px">${i===0?'שמירה אוטומטית':'חריץ '+i}</b>
+          <div class="mut" style="font-size:12px">${inf?esc(inf.co)+' · '+dateHe(inf.t)+' · מוניטין '+inf.rep:'ריק'}</div></div>
+        <div class="row" style="gap:6px">
+          ${i>0?`<button class="btn sm" data-save="${i}">שמירה</button>`:''}
+          <button class="btn sm ${inf?'pri':''}" data-load="${i}" ${inf?'':'disabled'}>טעינה</button>
+          ${inf?`<button class="btn sm bad" data-del="${i}">מחיקה</button>`:''}
+        </div></div></div>`;};
+  modal(`<div class="top"><h3>שמירה וטעינה</h3><button class="x" data-x>×</button></div>
+    <div class="bd">${[0,1,2,3].map(row).join('')}
+      <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px">
+        <label class="f"><span>ייצוא / ייבוא מצב מלא</span>
+          <textarea id="ioBox" style="width:100%;height:110px;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px;font-family:var(--mono);font-size:10.5px" placeholder="הדביקו כאן מצב שיוצא קודם"></textarea></label>
+        <div class="row"><button class="btn sm" id="expBtn">ייצוא לתיבה</button><button class="btn sm" id="impBtn">ייבוא מהתיבה</button></div>
+      </div>
+      <p class="mut" style="font-size:12px;margin-top:10px">השמירה נשמרת בדפדפן הזה בלבד. הייצוא מאפשר להעביר משחק בין מכשירים.</p>
+    </div>`);
+  $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+  $('modal').querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{
+    if(saveTo(+b.dataset.save)){saveModal();}else alert('השמירה נכשלה — ייתכן שאין מקום בדפדפן.');});
+  $('modal').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{
+    if(loadFrom(+b.dataset.load)){closeModal();$('intro').hidden=true;$('app').hidden=false;V='dash';drawRail();render();}
+    else alert('הטעינה נכשלה.');});
+  $('modal').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    localStorage.removeItem(slotKey(+b.dataset.del));saveModal();});
+  $('expBtn').onclick=()=>{if(!S){alert('אין משחק פעיל לייצוא.');return;}$('ioBox').value=JSON.stringify(S);$('ioBox').select();};
+  $('impBtn').onclick=()=>{try{const o=JSON.parse($('ioBox').value);if(!o||!o.cos)throw 0;
+    S=o;closeModal();$('intro').hidden=true;$('app').hidden=false;V='dash';drawRail();render();}
+    catch(e){alert('הטקסט אינו מצב משחק תקין.');}};
+}
+
+/* ── גרפים: SVG טהור, בלי ספריות חיצוניות ───────────────────────────────── */
+const CH={
+  line(series,o){
+    o=o||{}; const W=600,H=o.h||160,pd={t:10,r:10,b:20,l:42};
+    const all=[].concat.apply([],series.map(s=>s.v)); if(!all.length)return '<p class="mut">אין נתונים עדיין.</p>';
+    let mn=Math.min.apply(null,all), mx=Math.max.apply(null,all);
+    if(o.zero)mn=Math.min(0,mn); if(mx-mn<1e-6)mx=mn+1;
+    const n=Math.max.apply(null,series.map(s=>s.v.length));
+    const X=i=>pd.l+(W-pd.l-pd.r)*(n<2?0:i/(n-1));
+    const Y=v=>pd.t+(H-pd.t-pd.b)*(1-(v-mn)/(mx-mn));
+    let g='';
+    [0,.5,1].forEach(k=>{const v=mn+(mx-mn)*k;
+      g+=`<line x1="${pd.l}" y1="${Y(v)}" x2="${W-pd.r}" y2="${Y(v)}" stroke="var(--line-soft)"/>`+
+         `<text x="${pd.l-6}" y="${Y(v)+3.5}" fill="var(--ink-3)" font-size="9.5" text-anchor="end" font-family="JetBrains Mono">${rnd1(v,mx>30?0:1)}</text>`;});
+    if(mn<0&&mx>0)g+=`<line x1="${pd.l}" y1="${Y(0)}" x2="${W-pd.r}" y2="${Y(0)}" stroke="var(--ink-3)" stroke-dasharray="3 3"/>`;
+    series.forEach(s=>{
+      const d=s.v.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+      if(s.fill)g+=`<path d="${d} L${X(s.v.length-1)} ${Y(mn)} L${X(0)} ${Y(mn)} Z" fill="${s.c}" opacity=".11"/>`;
+      g+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      const L=s.v.length-1; g+=`<circle cx="${X(L)}" cy="${Y(s.v[L])}" r="3.2" fill="${s.c}"/>`;
+    });
+    if(o.xl)o.xl.forEach((t,i)=>{g+=`<text x="${X(i*(n-1)/Math.max(1,o.xl.length-1))}" y="${H-4}" fill="var(--ink-3)" font-size="9" text-anchor="middle" font-family="JetBrains Mono">${t}</text>`;});
+    return `<svg class="ch" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${o.alt||'תרשים'}">${g}</svg>`+
+      (series.length>1?`<div class="legend">${series.map(s=>`<span><i style="background:${s.c}"></i>${s.n}</span>`).join('')}</div>`:'');
+  },
+  radar(axes,sets,o){
+    o=o||{}; const R=78,C=100,W=200,H=200;
+    const N=axes.length, ang=i=>-Math.PI/2+i*2*Math.PI/N;
+    const pt=(i,v)=>[C+Math.cos(ang(i))*R*v, C+Math.sin(ang(i))*R*v];
+    let g='';
+    [.25,.5,.75,1].forEach(k=>{
+      g+=`<polygon points="${axes.map((_,i)=>pt(i,k).map(x=>x.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="var(--line)" stroke-width="${k===1?1.2:.8}"/>`;});
+    axes.forEach((a,i)=>{const p=pt(i,1.19);
+      g+=`<line x1="${C}" y1="${C}" x2="${pt(i,1)[0].toFixed(1)}" y2="${pt(i,1)[1].toFixed(1)}" stroke="var(--line)"/>`+
+         `<text x="${p[0].toFixed(1)}" y="${(p[1]+3).toFixed(1)}" fill="var(--ink-3)" font-size="8" text-anchor="middle" font-family="Assistant">${a}</text>`;});
+    sets.forEach(s=>{
+      const pts=s.v.map((v,i)=>pt(i,clamp(v,0,1)).map(x=>x.toFixed(1)).join(',')).join(' ');
+      g+=`<polygon points="${pts}" fill="${s.c}" fill-opacity=".17" stroke="${s.c}" stroke-width="2"/>`;});
+    return `<svg class="ch" viewBox="-14 -14 ${W+28} ${H+28}" role="img" aria-label="${o.alt||'השוואת יכולות'}">${g}</svg>`+
+      `<div class="legend">${sets.map(s=>`<span><i style="background:${s.c}"></i>${s.n}</span>`).join('')}</div>`;
+  },
+  donut(items,o){
+    o=o||{}; const R=54,r=34,C=70;
+    const tot=sum(items.map(i=>i.v))||1; let a=-Math.PI/2,g='';
+    items.forEach(it=>{
+      const sw=it.v/tot*Math.PI*2; if(sw<=0)return;
+      const b=a+sw, big=sw>Math.PI?1:0;
+      const x1=C+Math.cos(a)*R,y1=C+Math.sin(a)*R,x2=C+Math.cos(b)*R,y2=C+Math.sin(b)*R;
+      const x3=C+Math.cos(b)*r,y3=C+Math.sin(b)*r,x4=C+Math.cos(a)*r,y4=C+Math.sin(a)*r;
+      g+=`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 ${big} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L${x3.toFixed(1)} ${y3.toFixed(1)} A${r} ${r} 0 ${big} 0 ${x4.toFixed(1)} ${y4.toFixed(1)} Z" fill="${it.c}"/>`;
+      a=b;});
+    return `<svg class="ch" viewBox="0 0 140 140" style="max-width:150px;margin:0 auto" role="img" aria-label="${o.alt||'פילוח'}">${g}
+      <text x="70" y="66" text-anchor="middle" fill="var(--ink)" font-size="17" font-family="JetBrains Mono" font-weight="700">${o.mid||''}</text>
+      <text x="70" y="80" text-anchor="middle" fill="var(--ink-3)" font-size="8.5" font-family="Assistant">${o.sub||''}</text></svg>`;
+  },
+  bars(items){
+    return '<div style="display:flex;flex-direction:column;gap:8px">'+items.map(i=>`
+      <div><div class="row" style="justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:13px">${i.n}</span><span class="num" style="font-size:12px;color:var(--ink-2)">${i.lbl}</span></div>
+        <div class="meter ${i.c||''} ${i.tall?'tall':''}"><span style="width:${clamp(i.v*100,0,100)}%"></span></div>
+        ${i.sub?`<div style="font-size:11px;color:var(--ink-3);margin-top:2px">${i.sub}</div>`:''}</div>`).join('')+'</div>';
+  },
+  spark(v,c){
+    if(!v||v.length<2)return '';
+    const W=90,H=22,mn=Math.min.apply(null,v),mx=Math.max.apply(null,v),sp=mx-mn||1;
+    const d=v.map((x,i)=>(i?'L':'M')+(i/(v.length-1)*W).toFixed(1)+' '+(H-((x-mn)/sp)*H).toFixed(1)).join(' ');
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:90px;height:22px"><path d="${d}" fill="none" stroke="${c||'var(--cyan)'}" stroke-width="1.6"/></svg>`;
+  }
+};
+const TRAIT_TXT={
+  multibrand:['ריבוי מותגים','שני דורות יכולים לחיות במקביל באותה קטגוריה בלי לאכול זה את זה'],
+  reach:['הפצה לא מקוונת','יתרון משמעותי במכשירים זולים ובשווקים מתעוררים'],
+  costEff:['הנדסה לעלות','מוריד את עלות הייצור של כל מכשיר בכ-13%'],
+  b2b:['אספקת רכיבים','תמלוגים על כל מכשיר שנמכר בתעשייה, גם אצל המתחרים'],
+  carrier:['קשרי ספקיות סלולר','נוכחות חזקה במדפים, במחיר סבסוד שיורד מהשוליים']
+};
+function traitPills(c){
+  const T=c.traits||{}; return keys(T).filter(k=>T[k]&&TRAIT_TXT[k])
+    .map(k=>`<span class="pill p-vi" title="${TRAIT_TXT[k][1]}">${TRAIT_TXT[k][0]}</span>`).join(' ');
+}
+const PC={phone:'#FF7A45',fold:'#8B7BFF',glasses:'#3ED9E8',ambient:'#3FCF8E',robot:'#F0B429',neural:'#F2545B'};
+
+/* ── מסך פתיחה ובחירת חברה ──────────────────────────────────────────────── */
+function drawIntro(){
+  const playable=CO_DEFS.filter(c=>c.playable);
+  $('intro').innerHTML=`
+    <div class="kick">Executive Simulation · 2025</div>
+    <h1>מסלול הברזל</h1>
+    <p class="lead">אתם נכנסים לחדר ההנהלה בינואר 2025. אין תאריך שבו העולם מחליף טכנולוגיה — יש רק
+    מו״פ שמישהו מימן. אם אף חברה לא תשקיע במשקפי בינה, הקטגוריה הזאת פשוט לא תיפתח. אם תשקיעו אתם ותגיעו ראשונים,
+    השוק יזוז לכיוון שאתם בניתם. וגם ההפך: אפשר לפספס גל שמישהו אחר מימן, ולגלות שהמוצר שלכם הפך למוצר של אתמול.</p>
+    <div class="rule"></div>
+    <h2 style="font-size:20px;margin-bottom:4px">בחרו את הכיסא</h2>
+    <p class="mut" style="font-size:13.5px;margin:0">כל חברה היא רמת קושי אחרת. אם תיכשלו — לא נגמר המשחק: תפוטרו, המוניטין ייפגע, ותתחילו מחדש מסטארטאפ קטן.</p>
+    <div class="pickgrid">${playable.map(c=>`
+      <button class="co ${PICK===c.id?'on':''}" data-co="${c.id}">
+        <b>${c.n}</b><div class="tag">${c.tag} · ${c.style.focus==='phone'?'טלפונים':c.style.focus==='fold'?'מתקפלים':c.style.focus==='ambient'?'בינה סביבתית':c.style.focus==='glasses'?'משקפיים':'עתידני'}</div>
+        <div class="d">${c.d}</div>
+        ${c.traits&&keys(c.traits).length?`<div style="margin-bottom:6px">${keys(c.traits).filter(k=>TRAIT_TXT[k])
+          .map(k=>`<span class="pill p-vi">${TRAIT_TXT[k][0]}</span>`).join(' ')}</div>`:''}
+        <div class="kv"><span>הכנסה $${c.rev}B/חודש</span><span>מזומן $${c.cash}B</span></div>
+      </button>`).join('')}</div>
+    <div class="row" style="margin-top:22px">
+      <label class="f" style="max-width:220px;margin:0"><span>זרע עולם (אופציונלי)</span><input type="text" id="seed" placeholder="לדוגמה: 2025"></label>
+      <button class="btn pri" id="go" style="padding:11px 26px;font-size:15.5px" ${PICK?'':'disabled'}>כניסה לתפקיד</button>
+      <button class="btn" id="load">טעינת משחק שמור</button>
+    </div>`;
+  $('intro').querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>{PICK=b.dataset.co;drawIntro();});
+  $('go').onclick=()=>{if(!PICK)return;S=newGame(PICK,$('seed').value.trim());boot();};
+  $('load').style.display=[0,1,2,3].some(i=>slotInfo(i))?'':'none';
+  $('load').onclick=()=>saveModal();
+}
+function boot(){$('intro').hidden=true;$('app').hidden=false;drawRail();render();}
+function save(){saveTo(0);}
+
+/* ── ניווט ─────────────────────────────────────────────────────────────── */
+const TABS=[
+ {g:'ניהול'},{id:'dash',t:'לוח מחוונים'},{id:'rnd',t:'מו״פ וטכנולוגיה'},{id:'prod',t:'מוצרים והשקות'},{id:'eco',t:'אקוסיסטם ושירותים'},
+ {g:'משאבים'},{id:'talent',t:'שוק הטאלנטים'},{id:'ma',t:'מיזוגים ורכישות'},{id:'supply',t:'שרשרת אספקה'},
+ {g:'זירה'},{id:'market',t:'שוק ומתחרים'},{id:'ops',t:'תקציב שחור'},{id:'career',t:'הקריירה'},
+ {g:''},{id:'log',t:'יומן ותיעוד'},{id:'help',t:'כללי המשחק'}
+];
+function drawRail(){
+  $('rail').innerHTML=TABS.map(t=>t.g!==undefined?(t.g?`<div class="grp">${t.g}</div>`:'<div style="height:10px"></div>')
+    :`<button data-tab="${t.id}" class="${t.id===V?'on':''}">${t.t}<em id="bdg-${t.id}" style="display:none"></em></button>`).join('');
+  $('rail').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{V=b.dataset.tab;drawRail();render();$('view').focus();});
+}
+function badge(id,n){const e=$('bdg-'+id);if(!e)return;if(n){e.textContent=n;e.style.display='';}else e.style.display='none';}
+
+/* ── סרגל עליון ────────────────────────────────────────────────────────── */
+function topbar(){
+  const c=S.cos[S.me], h=c.hist, l=h[h.length-1]||{rev:0,op:0};
+  const op12=sum(h.slice(-12).map(x=>x.op))*(12/Math.max(1,Math.min(12,h.length)));
+  $('coBadge').textContent=c.tag?c.tag[0]:'?';
+  $('coName').textContent=c.n;
+  $('coDate').textContent=dateEn(S.t)+' · Q'+(Math.floor(turnM(S.t)/3)+1);
+  const items=[
+    ['מזומן','$'+rnd1(c.cash,0)+'B',c.cash>c.baseRev*2?'':'down'],
+    ['רווח תפעולי (שנה)','$'+rnd1(op12,1)+'B',op12>0?'up':'down'],
+    ['נתח שוק',rnd1((c.share||0)*100,1)+'%',''],
+    ['מוניטין מנכ״ל',Math.round(S.career.rep),S.career.rep>60?'up':S.career.rep<35?'down':''],
+    ['דירקטוריון',Math.round(c.board),c.board>55?'up':c.board<30?'down':''],
+    ['מותג',Math.round(c.brand),'']
+  ];
+  $('statBar').innerHTML=items.map(i=>`<div class="stat"><i>${i[0]}</i><b class="${i[2]}">${i[1]}</b></div>`).join('');
+}
+
+/* ── תצוגה ראשית ───────────────────────────────────────────────────────── */
+function render(){
+  topbar();
+  $('view').innerHTML=({dash:vDash,rnd:vRnd,prod:vProd,eco:vEco,talent:vTalent,ma:vMA,supply:vSupply,
+    market:vMarket,ops:vOps,career:vCareer,log:vLog,help:vHelp}[V]||vDash)();
+  wire();
+  badge('talent',S.talent.filter(t=>t.creativity+t.efficiency>150).length);
+  badge('ma',S.startups.length);
+  badge('career',S.career.offers.length);
+}
+const me=()=>S.cos[S.me];
+function paraOf(p){return S.para[p]||{ready:0,mat:0,share:0,open:false};}
+
+function vDash(){
+  const c=me(), h=c.hist.slice(-30), gh=S.hist.slice(-30);
+  const op12=sum(c.hist.slice(-12).map(x=>x.op));
+  const rev12=sum(c.hist.slice(-12).map(x=>x.rev));
+  const rivals=vals(S.cos).filter(x=>x.id!==S.me).sort((a,b)=>(b.share||0)-(a.share||0));
+  const top=rivals[0];
+  const gAvg=g=>{const ks=TK.filter(k=>TECH[k].g===g);return sum(ks.map(k=>c.tech[k]))/ks.length/100;};
+  const gAvgOf=(co,g)=>{const ks=TK.filter(k=>TECH[k].g===g);return sum(ks.map(k=>co.tech[k]))/ks.length/100;};
+  const alerts=[];
+  if(c.board<32)alerts.push(['b','אמון הדירקטוריון קריטי. עוד רבעון חלש והמינוי מסתיים.']);
+  if(c.cash<c.baseRev*1.2)alerts.push(['b','המזומן נשחק. בלי גיוס או קיצוץ, החוב ייקח פיקוד.']);
+  if(!c.products.some(p=>p.state==='dev'))alerts.push(['w','אין אף מוצר בפיתוח. תיק שלא מתחדש מאבד נתח כל חודש.']);
+  PK.forEach(p=>{const st=paraOf(p);
+    if(st.open&&!c.products.some(x=>x.state!=='eol'&&x.para===p)&&st.share>0.06)
+      alerts.push(['w',`${PARA[p].n} כבר ${rnd1(st.share*100,0)}% מהשוק — ואין לנו שם מוצר.`]);
+    if(!st.open&&st.ready/PARA[p].viab>0.93)
+      alerts.push(['i',`${PARA[p].n} על סף היתכנות מסחרית (${rnd1(st.ready,0)}/${PARA[p].viab}). מי שיהיה ראשון יגדיר את הקטגוריה.`]);});
+  if(S.heat>1.2)alerts.push(['b','רמת החשיפה של הפעילות החשאית גבוהה. עוד מבצע אחד ומישהו ידבר.']);
+
+  return `
+  <div class="cols c4">
+    <div class="tile hi"><i>הכנסות 12 ח׳</i><b>$${rnd1(rev12,0)}B</b><small>חודש אחרון ${B(c.rev||0)}</small></div>
+    <div class="tile"><i>רווח תפעולי 12 ח׳</i><b class="${op12>0?'up':'down'}">$${rnd1(op12,1)}B</b><small>ציפיית דירקטוריון ${B((c.expect||0)*12)}</small></div>
+    <div class="tile"><i>נתח שוק מכשירים</i><b>${rnd1((c.share||0)*100,1)}%</b><small>${top?'המובילה: '+top.n+' '+rnd1((top.share||0)*100,1)+'%':''}</small></div>
+    <div class="tile"><i>שוק עולמי</i><b>$${rnd1(S.market.total,0)}B</b><small>לחודש · ${PK.filter(p=>paraOf(p).open).length} קטגוריות פתוחות</small></div>
+  </div>
+  <div class="cols c4" style="margin-top:12px">
+    <div class="tile"><i>נעילת משתמשים</i><b>${Math.round(c.lockin||0)}</b><small>בסיס מותקן ${Math.round(c.installed||0)}M</small></div>
+    <div class="tile"><i>הכנסות חוזרות</i><b>${B(c.services||0)}</b><small>${rnd1((c.services||0)/Math.max(0.01,c.rev||1)*100,0)}% מההכנסות</small></div>
+    <div class="tile"><i>ביקורת אחרונה</i>${(()=>{const l=c.products.filter(p=>p.review).sort((a,b)=>b.launch-a.launch)[0];
+      return l?`<b class="${l.review>=8?'up':l.review>=6?'':'down'}">${l.review}<span class="mut" style="font-size:13px">/10</span></b><small>${esc(l.name)}</small>`:'<b class="mut">—</b><small>עוד לא הושק מוצר</small>';})()}</div>
+    <div class="tile"><i>יתרון מבני</i><b style="font-size:14px;font-family:var(--display);letter-spacing:0">${traitPills(c)||'<span class="mut">ללא</span>'}</b>
+      <small>${(()=>{const T=c.traits||{};const k=keys(T).filter(x=>T[x]&&TRAIT_TXT[x])[0];return k?TRAIT_TXT[k][1]:'חברה ללא הטיה מבנית';})()}</small></div>
+  </div>
+
+  ${alerts.length?`<div class="card" style="margin-top:16px"><header><span class="eyebrow">דורש החלטה</span></header>
+    <div class="feed">${alerts.slice(0,5).map(a=>`<div class="it"><span class="dot ${a[0]}"></span><span>${a[1]}</span></div>`).join('')}</div></div>`:''}
+
+  <div class="cols c21" style="margin-top:16px">
+    <div class="card"><header><h2>הכנסות ורווח תפעולי</h2><p>30 חודשים אחרונים</p></header>
+      ${CH.line([{n:'הכנסות',v:h.map(x=>x.rev),c:'var(--accent)',fill:1},{n:'רווח תפעולי',v:h.map(x=>x.op),c:'var(--good)',fill:1}],{zero:1,alt:'הכנסות ורווח'})}
+    </div>
+    <div class="card"><header><h2>נתח השוק שלנו</h2></header>
+      ${(()=>{
+        const ranked=vals(S.cos).sort((a,b)=>(b.share||0)-(a.share||0));
+        const top=ranked.slice(0,5);
+        if(!top.some(x=>x.id===S.me)&&S.cos[S.me])top[top.length-1]=S.cos[S.me];
+        const col=(x,i)=>x.id===S.me?'var(--accent)':['#3ED9E8','#8B7BFF','#3FCF8E','#F0B429','#69738F'][i%5];
+        const rest=ranked.filter(x=>top.indexOf(x)<0);
+        const items=top.map((x,i)=>({v:x.share||0,c:col(x,i),n:x.n}))
+          .concat([{v:sum(rest.map(x=>x.share||0)),c:'#3A4258',n:'אחרים'}]);
+        return CH.donut(items,{mid:rnd1((c.share||0)*100,1)+'%',sub:'מההוצאה העולמית'})+
+          `<div class="legend" style="justify-content:center">${items.map(it=>`<span><i style="background:${it.c}"></i>${esc(it.n)} <span class="num">${rnd1(it.v*100,1)}%</span></span>`).join('')}</div>`;
+      })()}
+    </div>
+  </div>
+
+  <div class="cols c2" style="margin-top:16px">
+    <div class="card"><header><h2>מפת הפרדיגמות</h2><p>מוכנות טכנולוגית מול סף ההיתכנות המסחרית</p></header>
+      ${CH.bars(PK.map(p=>{const st=paraOf(p),pr=PARA[p];
+        return {n:PARA[p].n+(st.open?'':' <span class="pill p-mut">סגורה</span>'),
+          v:st.ready/100, tall:1,
+          c:st.open?'':'w',
+          lbl:'מוכנות <span class="num">'+rnd1(st.ready,0)+'</span> · סף <span class="num">'+pr.viab+'</span>'+(st.open?' · <span class="num">'+rnd1(st.share*100,1)+'%</span> מהשוק':''),
+          sub:st.open?'':'נדרשות עוד '+rnd1(pr.viab-st.ready,1)+' נקודות ידע בעולם'};}))}
+      <p class="mut" style="font-size:12px;margin-top:10px">הפס מודד את <b>הידע הטוב בעולם</b>, לא את שלכם. כדי לפתוח קטגוריה צריך להוביל אותה.</p>
+    </div>
+    <div class="card"><header><h2>יכולות מול ${top?esc(top.n):'המתחרה'}</h2><p>ממוצע לפי אשכול טכנולוגי</p></header>
+      ${top?CH.radar(TGROUPS,[
+        {n:c.n,v:TGROUPS.map(g=>gAvg(g)),c:'var(--accent)'},
+        {n:top.n,v:TGROUPS.map(g=>gAvgOf(top,g)),c:'var(--cyan)'}],{alt:'רדאר יכולות'}):''}
+    </div>
+  </div>
+
+  <div class="cols c2" style="margin-top:16px">
+    <div class="card"><header><h2>המוצרים שלנו</h2><p>${c.products.filter(p=>p.state==='live').length} בשוק · ${c.products.filter(p=>p.state==='dev').length} בפיתוח</p>
+      <button class="btn sm right" data-act="newprod">מוצר חדש</button></header>
+      <div class="scroll"><table><tbody>
+      ${c.products.filter(p=>p.state!=='eol').sort((a,b)=>b.launch-a.launch).slice(0,7).map(p=>`<tr>
+        <td><b>${esc(p.name)}</b>${p.legacy?' <span class="pill p-mut">דור קודם</span>':''}${p.defect?' <span class="pill p-bad">תקלה</span>':''}
+          <br><small class="mut">${PARA[p.para].n}</small></td>
+        <td class="n">${p.state==='dev'?`<span class="pill p-vi">בפיתוח · ${dateHe(p.launch)}</span>`:(p.review?`<span class="pill ${p.review>=8?'p-good':p.review>=6?'p-cy':'p-bad'}">${p.review}/10</span>`:'ציון '+Math.round(p.score))}</td>
+        <td class="n">$${p.price}</td>
+        <td class="n">${p.state==='live'?B(p.lastRev||0)+'/ח׳':''}</td></tr>`).join('')||'<tr><td class="mut">אין מוצרים.</td></tr>'}
+      </tbody></table></div>
+    </div>
+    <div class="card"><header><h2>מבזקים</h2></header>
+      <div class="feed">${S.news.slice(0,9).map(n=>`<div class="it"><time>${dateEn(n.t)}</time><span class="dot ${n.k}"></span><span>${n.text}</span></div>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+/* ── שוק ומתחרים ───────────────────────────────────────────────────────── */
+function vMarket(){
+  const c=me();
+  const all=vals(S.cos).sort((a,b)=>(b.share||0)-(a.share||0));
+  const paraRev=p=>{const o={};for(const id in S.cos)o[id]=sum(S.cos[id].products.filter(x=>x.state==='live'&&x.para===p).map(x=>x.lastRev||0));return o;};
+  return `
+  <div class="card"><header><h2>מבנה השוק</h2><p>איך $${rnd1(S.market.total,0)}B של הוצאה חודשית מתחלקים בין הקטגוריות</p></header>
+    <div class="scroll"><table><thead><tr><th>קטגוריה</th><th class="n">מוכנות</th><th class="n">נתח מהשוק</th><th class="n">היקף חודשי</th><th>מי מוביל</th><th class="n">אנחנו</th></tr></thead><tbody>
+    ${PK.map(p=>{const st=paraOf(p), rv=paraRev(p);
+      const lead=keys(rv).sort((a,b)=>rv[b]-rv[a])[0];
+      const mine=rv[S.me]||0, tot=sum(vals(rv))||1;
+      return `<tr><td><b>${PARA[p].n}</b><br><small class="mut">${st.open?'פתוחה':'סגורה — נדרש עוד ידע'}</small></td>
+        <td class="n"><span class="pill ${st.open?'p-good':'p-mut'}" dir="ltr">${rnd1(st.ready,0)} / ${PARA[p].viab}</span></td>
+        <td class="n">${rnd1(st.share*100,1)}%</td>
+        <td class="n">${B(st.spend||0)}</td>
+        <td>${st.open&&rv[lead]>0?esc(S.cos[lead].n)+' <span class="mut">'+rnd1(rv[lead]/tot*100,0)+'%</span>':'—'}</td>
+        <td class="n ${mine>0?'up':'mut'}">${mine>0?rnd1(mine/tot*100,1)+'%':'—'}</td></tr>`;}).join('')}
+    </tbody></table></div>
+  </div>
+  <div class="card"><header><h2>טבלת הליגה</h2><p>כל חברה מסומלצת באותו מנוע בדיוק — כולל שלנו</p></header>
+    <div class="scroll"><table><thead><tr><th>חברה</th><th class="n">הכנסה/ח׳</th><th class="n">רווח/ח׳</th><th class="n">נתח</th><th class="n">מזומן</th><th class="n">מותג</th><th>מיקוד נוכחי</th><th class="n">מגמה</th></tr></thead><tbody>
+    ${all.map(x=>`<tr class="${x.id===S.me?'me':''}">
+      <td><b>${esc(x.n)}</b>${x.distress>2?' <span class="pill p-bad">בקשיים</span>':''}<br><small class="mut">${x.tag}</small></td>
+      <td class="n">${B(x.rev||0)}</td><td class="n ${(x.op||0)>0?'up':'down'}">${B(x.op||0)}</td>
+      <td class="n">${rnd1((x.share||0)*100,1)}%</td><td class="n">${B(x.cash)}</td><td class="n">${Math.round(x.brand)}</td>
+      <td>${x.style?PARA[x.style.focus].n:'—'}</td>
+      <td class="n">${CH.spark((x.hist||[]).slice(-14).map(h=>h.rev),x.id===S.me?'var(--accent)':'var(--cyan)')}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>
+  <div class="card"><header><h2>מוצרים מובילים בשוק</h2></header>
+    <div class="scroll"><table><thead><tr><th>מוצר</th><th>חברה</th><th>קטגוריה</th><th class="n">ציון</th><th class="n">מחיר</th><th class="n">הכנסה/ח׳</th></tr></thead><tbody>
+    ${vals(S.cos).reduce((a,x)=>a.concat(x.products.filter(p=>p.state==='live').map(p=>({p,x}))),[])
+      .sort((a,b)=>(b.p.lastRev||0)-(a.p.lastRev||0)).slice(0,12)
+      .map(o=>`<tr class="${o.x.id===S.me?'me':''}"><td>${esc(o.p.name)}</td><td>${esc(o.x.n)}</td>
+        <td><span class="pill" style="background:${PC[o.p.para]}22;color:${PC[o.p.para]}">${PARA[o.p.para].n}</span></td>
+        <td class="n">${Math.round(o.p.score)}</td><td class="n">$${o.p.price}</td><td class="n">${B(o.p.lastRev||0)}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+/* ── מו"פ ──────────────────────────────────────────────────────────────── */
+function vRnd(){
+  const c=me();
+  if(!c.alloc){c.alloc={};TK.forEach(k=>c.alloc[k]=1);const f=PARA[c.style.focus];if(f)for(const k in f.en)c.alloc[k]=2+f.en[k]*14;}
+  const tot=sum(TK.map(k=>c.alloc[k]||0))||1;
+  const rev12=sum(c.hist.slice(-12).map(h=>h.rev))||c.baseRev*12;
+  const grp=g=>TK.filter(k=>TECH[k].g===g).map(k=>{
+    const lvl=c.tech[k], fr=frontier(S,k), lead=lvl>=fr-0.5;
+    const spend=c.rndBudget*((c.alloc[k]||0)/tot);
+    const spec=c.staff.filter(s=>s.spec===k).length;
+    return `<tr>
+      <td style="min-width:150px"><b>${TECH[k].n}</b>${lead?' <span class="pill p-acc">מובילים</span>':''}
+        ${spec?` <span class="pill p-vi">${spec} מומחים</span>`:''}
+        <div class="meter ${lead?'':'c'}" style="margin-top:5px;max-width:150px"><span style="width:${lvl}%"></span></div></td>
+      <td class="n">${rnd1(lvl,1)}</td>
+      <td class="n ${lead?'up':'down'}">${lead?'—':'−'+rnd1(fr-lvl,1)}</td>
+      <td style="min-width:120px"><input type="range" data-alloc="${k}" min="0" max="20" step="0.5" value="${c.alloc[k]||0}"></td>
+      <td class="n">${spend>0.005?'$'+rnd1(spend,2)+'B':'—'}</td></tr>`;}).join('');
+  return `
+  <div class="card">
+    <header><h2>מו״פ וטכנולוגיה</h2><p>22 צמתי ידע · כאן נקבע אילו קטגוריות ייפתחו בעולם</p></header>
+    <div class="cols c3" style="margin-bottom:14px">
+      <div class="tile"><i>תקציב שנתי</i><b>$${rnd1(c.rndBudget,1)}B</b><small>${rnd1(c.rndBudget/rev12*100,1)}% מההכנסות</small></div>
+      <div class="tile"><i>מכפיל צוות</i><b>×${rnd1(rndMult(c),2)}</b><small>${c.staff.length} אנשי מפתח</small></div>
+      <div class="tile"><i>צמתים בהובלה</i><b>${TK.filter(k=>c.tech[k]>=frontier(S,k)-0.5).length}<span class="mut" style="font-size:13px">/${TK.length}</span></b><small>רק הובלה פותחת קטגוריה</small></div>
+    </div>
+    <label class="f"><span>תקציב מו״פ שנתי · <b class="num">$${rnd1(c.rndBudget,1)}B</b></span>
+      <input type="range" id="rndB" min="${rnd1(Math.max(0.2,rev12*0.01),2)}" max="${rnd1(Math.max(2,rev12*0.30),1)}" step="0.1" value="${c.rndBudget}"></label>
+    <p class="mut" style="font-size:12.5px">צומת בלי הקצאה נשחק מעצמו. צומת שמתחת לגבול העולמי מתקדם מהר — יש ממי ללמוד. צומת שבו אתם מובילים מתקדם לאט ויקר, אבל רק הובלה מזיזה את העולם.</p>
+  </div>
+  <div class="card"><header><h2>לאן ההקצאה דוחפת את העולם</h2></header>
+    ${CH.bars(PK.map(p=>{const st=paraOf(p),pr=PARA[p];
+      const push=sum(keys(pr.en).map(k=>(c.alloc[k]||0)/tot*pr.en[k]))*3.2;
+      const mine=sum(keys(pr.en).map(k=>c.tech[k]*pr.en[k]));
+      return {n:`${pr.n} <span class="mut" style="font-size:11.5px">· אצלנו <span class="num">${rnd1(mine,0)}</span> · בעולם <span class="num">${rnd1(st.ready,0)}</span> · סף <span class="num">${pr.viab}</span></span>`,
+        v:clamp(push,0,1), lbl:push>0.5?'מיקוד ראשי':push>0.22?'השקעה משמעותית':push>0.06?'טפטוף':'אפס',
+        c:mine>=st.ready-0.5?'':'c'};}))}
+  </div>
+  ${TGROUPS.map(g=>`<div class="card"><header><h2>${g}</h2></header>
+    <div class="scroll"><table><thead><tr><th>צומת ידע</th><th class="n">אצלנו</th><th class="n">מול העולם</th><th>הקצאה</th><th class="n">שנתי</th></tr></thead><tbody>${grp(g)}</tbody></table></div></div>`).join('')}`;
+}
+
+/* ── מוצרים ────────────────────────────────────────────────────────────── */
+function vProd(){
+  const c=me();
+  const dev=c.products.filter(p=>p.state==='dev');
+  const live=c.products.filter(p=>p.state==='live');
+  const spy=S.ops.esp>0;
+  const rdev=[];
+  if(spy)vals(S.cos).forEach(x=>{if(x.id!==S.me)x.products.filter(p=>p.state==='dev').forEach(p=>rdev.push({x,p}));});
+  return `
+  <div class="card"><header><h2>מוצרים והשקות</h2><p>מתי לעלות לבמה זו החלטה, לא לוח שנה</p>
+    <button class="btn pri right" data-act="newprod">תכנון מוצר חדש</button></header>
+    <p class="mut" style="font-size:12.5px;margin:0">הציון נגזר מרמות הידע שלכם ברגע ההשקה, מהמפרט ומאיכות הצוות. השקה לפני שהפיתוח הבשיל מורידה ציון ומגדילה סיכון לתקלה פומבית.</p>
+  </div>
+  ${dev.length?`<div class="card"><header><h2>בפיתוח</h2></header>
+    <div class="scroll"><table><thead><tr><th>מוצר</th><th class="n">השקה</th><th class="n">בשלות</th><th class="n">ציון צפוי</th><th class="n">מחיר</th><th>תצורה</th><th></th></tr></thead><tbody>
+    ${dev.map(p=>{const need=PARA[p.para].dev, rd=clamp((p.launch-p.start)/need,0,1.3);
+      return `<tr><td><b>${esc(p.name)}</b><br><small class="mut">${PARA[p.para].n}${p.sabotage?' · <span class="down">חשד לדליפה</span>':''}</small></td>
+      <td class="n">${dateHe(p.launch)}<br><small class="mut">בעוד ${Math.max(0,p.launch-S.t)} ח׳</small></td>
+      <td class="n"><span class="pill ${rd>=1?'p-good':rd>0.75?'p-warn':'p-bad'}">${rnd1(rd*100,0)}%</span></td>
+      <td class="n">${Math.round(scoreOf(S,c,p))}</td><td class="n">$${p.price}</td>
+      <td>${PTK.map(k=>`<span class="pill ${cfgOf(p)[k]>=4?'p-acc':'p-mut'}" title="${PARTS[k].n}">${PARTS[k].n.split(' ')[0]} ${cfgOf(p)[k]}</span>`).join(' ')}</td>
+      <td class="n"><button class="btn sm" data-act="shift" data-id="${p.id}" data-d="-1">הקדם</button>
+        <button class="btn sm" data-act="shift" data-id="${p.id}" data-d="1">דחה</button>
+        <button class="btn sm bad" data-act="kill" data-id="${p.id}">בטל</button></td></tr>`;}).join('')}
+    </tbody></table></div></div>`:''}
+  <div class="card"><header><h2>בשוק</h2><p>מחיר ותקציב שיווק ניתנים לשינוי בכל חודש</p></header>
+    <div class="scroll"><table><thead><tr><th>מוצר</th><th class="n">ביקורות</th><th class="n">מפרט</th><th class="n">מחיר</th><th class="n">עלות</th><th class="n">שוליים</th><th class="n">הכנסה/ח׳</th><th style="min-width:140px">שיווק</th></tr></thead><tbody>
+    ${live.map(p=>{const bom=bomOf(S,c,p),marg=1-bom/p.price;const age=S.t-p.launch;
+      return `<tr><td><b>${esc(p.name)}</b>${p.legacy?' <span class="pill p-mut">דור קודם</span>':''}${p.hype>0.1?' <span class="pill p-warn">הייפ</span>':''}
+        <br><small class="mut">${PARA[p.para].n} · גיל ${age} ח׳${p.keynote?' · '+KEYNOTE[p.keynote].n:''}</small></td>
+      <td class="n">${p.review?`<span class="pill ${p.review>=8?'p-good':p.review>=6?'p-cy':'p-bad'}">${p.review}/10</span>${age<4?'<br><small class="mut">משפיע על הרבעון</small>':''}`:'<span class="mut">—</span>'}</td>
+      <td class="n">${Math.round(p.score)}</td>
+      <td class="n"><input type="number" data-price="${p.id}" value="${p.price}" step="10" style="width:84px"></td>
+      <td class="n">$${Math.round(bom)}</td>
+      <td class="n ${marg>0.4?'up':marg>0.2?'':'down'}">${rnd1(marg*100,0)}%</td>
+      <td class="n">${B(p.lastRev||0)}</td>
+      <td><div class="row"><input type="range" data-mkt="${p.id}" min="0" max="${rnd1(Math.max(0.1,c.baseRev*0.09),2)}" step="0.005" value="${p.mkt}" style="flex:1">
+        <span class="num" style="font-size:11.5px;min-width:44px">$${Math.round(p.mkt*1000)}M</span></div></td></tr>`;}).join('')||'<tr><td colspan="7" class="mut">אין מוצרים בשוק.</td></tr>'}
+    </tbody></table></div>
+  </div>
+  ${spy?`<div class="card"><header><h2>מודיעין: מה המתחרים מפתחים</h2><p>נחשף בזכות תקציב הריגול הפעיל</p></header>
+    <div class="scroll"><table><thead><tr><th>חברה</th><th>מוצר</th><th>קטגוריה</th><th class="n">השקה צפויה</th></tr></thead><tbody>
+    ${rdev.length?rdev.map(o=>`<tr><td>${esc(o.x.n)}</td><td>${esc(o.p.name)}</td><td>${PARA[o.p.para].n}</td>
+      <td class="n">${dateHe(o.p.launch)}</td></tr>`).join(''):'<tr><td colspan="4" class="mut">אף מתחרה לא בפיתוח פעיל כרגע.</td></tr>'}
+    </tbody></table></div></div>`:`<div class="card"><header><h2>מודיעין מתחרים</h2></header>
+    <p class="mut" style="font-size:13px;margin:0">אין מידע על מה שמפותח אצל היריבים. תקציב ריגול פעיל יחשוף את לוחות ההשקה שלהם — ואת הסיכון שתיתפסו.</p>
+    <button class="btn sm" style="margin-top:10px" data-act="goto" data-v="ops">למסך התקציב השחור</button></div>`}`;
+}
+
+/* ── טאלנטים ───────────────────────────────────────────────────────────── */
+function vTalent(){
+  const c=me();
+  const cost=sum(c.staff.map(s=>s.ask));
+  return `
+  <div class="card"><header><h2>שוק הטאלנטים</h2><p>כל גיוס הוא צוות שלם בהובלת אותו אדם — ולכן גם תג המחיר</p></header>
+    <div class="cols c3">
+      <div class="tile"><i>אנשי מפתח</i><b>${c.staff.length}</b><small>עלות $${Math.round(cost)}M לשנה</small></div>
+      <div class="tile"><i>מכפיל מו״פ</i><b>×${rnd1(rndMult(c),2)}</b><small>יעילות מצטברת</small></div>
+      <div class="tile"><i>בונוס יצירתיות</i><b>+${rnd1(staffBonus(c),1)}</b><small>לציון כל מוצר</small></div>
+    </div>
+  </div>
+  <div class="card"><header><h2>הצוות שלנו</h2></header>
+    ${c.staff.length?`<div class="scroll"><table><thead><tr><th>שם</th><th>תפקיד</th><th class="n">יצירתיות</th><th class="n">יעילות</th><th class="n">מנהיגות</th><th>התמחות</th><th class="n">עלות/שנה</th><th></th></tr></thead><tbody>
+    ${c.staff.map(s=>`<tr><td><b>${esc(s.name)}</b>${s.equity?' <span class="pill p-acc">אקוויטי</span>':''}</td><td>${ROLES[s.role].n}</td>
+      <td class="n">${s.creativity}</td><td class="n">${s.efficiency}</td><td class="n">${s.leadership}</td>
+      <td><span class="pill p-vi">${TECH[s.spec].n}</span></td><td class="n">$${s.ask}M</td>
+      <td class="n"><button class="btn sm bad" data-act="fire" data-id="${s.id}">שחרור</button></td></tr>`).join('')}
+    </tbody></table></div>`:'<p class="mut" style="margin:0">אין אנשי מפתח. מו״פ בלי אנשים מתקדם בקצב ברירת המחדל בלבד.</p>'}
+  </div>
+  <div class="card"><header><h2>מועמדים בשוק</h2><p>${S.talent.length} זמינים · מי שלא תיקחו, יריב ייקח</p></header>
+    <div class="cols c2">
+    ${S.talent.slice(0,10).map(t=>{
+      const pw=Math.round((t.creativity+t.efficiency+t.leadership)/3);
+      return `<div class="tile">
+          <div class="row" style="justify-content:space-between"><b style="font-family:var(--display);font-size:15px">${esc(t.name)}</b>
+            <span class="pill ${pw>78?'p-good':pw>58?'p-cy':'p-mut'}">${pw}</span></div>
+          <div class="mut" style="font-size:12px">${ROLES[t.role].n} · ${TECH[t.spec].n}</div>
+          <div class="row" style="gap:12px;margin-top:6px;font-family:var(--mono);font-size:11.5px">
+            <span>יצ׳ ${t.creativity}</span><span>יע׳ ${t.efficiency}</span><span>מנ׳ ${t.leadership}</span></div>
+          <div class="row" style="justify-content:space-between;margin-top:8px">
+            <span class="num" style="font-size:12.5px">דרישה $${t.ask}M</span>
+            <button class="btn sm" data-act="negotiate" data-id="${t.id}">משא ומתן</button></div>
+          <div class="meter ${t.patience>60?'g':t.patience>30?'w':'b'}" style="margin-top:7px"><span style="width:${t.patience}%"></span></div>
+          <div class="mut" style="font-size:10.5px;margin-top:2px">סבלנות ${Math.round(t.patience)}%${t.rounds?' · '+t.rounds+' סבבים':''}</div>
+        </div>`;}).join('')}
+    </div>
+  </div>`;
+}
+
+/* ── מיזוגים ורכישות ───────────────────────────────────────────────────── */
+function vMA(){
+  const c=me();
+  const targets=vals(S.cos).filter(x=>x.id!==S.me&&(x.distress>2||x.baseRev<c.baseRev*0.55));
+  return `
+  <div class="card"><header><h2>מיזוגים ורכישות</h2><p>לקנות טכנולוגיה במקום לפתח אותה — כשהזמן שווה יותר מהכסף</p></header>
+    <div class="cols c2">
+      <div class="tile"><i>מזומן פנוי</i><b>${B(c.cash)}</b></div>
+      <div class="tile"><i>חוב</i><b>${B(c.debt)}</b><small>ריבית ${rnd1(S.macro.rate*100,1)}% לשנה</small></div>
+    </div>
+  </div>
+  <div class="card"><header><h2>סטארטאפים</h2><p>${S.startups.length} מטרות · מי שמתלבט מגלה שיריב קנה</p></header>
+    <div class="cols c2">
+    ${S.startups.map(s=>`<div class="tile">
+      <div class="row" style="justify-content:space-between"><b style="font-family:var(--display);font-size:15.5px">${esc(s.n)}</b>
+        <span class="pill" style="background:${PC[s.focus]}22;color:${PC[s.focus]}">${PARA[s.focus].n}</span></div>
+      <div style="margin:8px 0">${keys(s.tech).map(k=>`<div class="row" style="justify-content:space-between;font-size:12px">
+        <span>${TECH[k].n}</span><span class="num ${s.tech[k]>c.tech[k]?'up':'mut'}">${Math.round(s.tech[k])}<span class="mut"> מול ${Math.round(c.tech[k])}</span></span></div>`).join('')}</div>
+      <div class="row" style="justify-content:space-between;border-top:1px solid var(--line-soft);padding-top:8px">
+        <span class="num">מחיר ${B(s.price)}</span>
+        <button class="btn sm ${c.cash>s.price?'pri':''}" data-act="buy" data-id="${s.id}" ${c.cash>s.price?'':'disabled'}>רכישה</button></div>
+      </div>`).join('')||'<p class="mut">אין כרגע מטרות בשוק.</p>'}
+    </div>
+  </div>
+  <div class="card"><header><h2>רכישת חברה שלמה</h2><p>משנה את מאזן הכוחות בבת אחת</p></header>
+    <div class="scroll"><table><thead><tr><th>חברה</th><th class="n">הכנסה/ח׳</th><th class="n">רווח/ח׳</th><th class="n">מזומן</th><th class="n">שווי מוערך</th><th></th></tr></thead><tbody>
+    ${targets.map(t=>{const v=companyValue(S,t);
+      return `<tr><td><b>${esc(t.n)}</b>${t.distress>2?' <span class="pill p-bad">בקשיים</span>':''}<br><small class="mut">${esc(t.d||'')}</small></td>
+      <td class="n">${B(t.rev||0)}</td><td class="n ${(t.op||0)>0?'up':'down'}">${B(t.op||0)}</td><td class="n">${B(t.cash)}</td>
+      <td class="n">${B(v)}</td>
+      <td class="n"><button class="btn sm ${c.cash>v*1.05?'pri':''}" data-act="buyco" data-id="${t.id}" ${c.cash>v*1.05?'':'disabled'}>הצעת רכישה</button></td></tr>`;}).join('')
+      ||'<tr><td colspan="6" class="mut">אין כרגע חברה שניתן לרכוש. חברות נחשפות לרכישה כשהן נקלעות לקשיים.</td></tr>'}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* ── שרשרת אספקה ───────────────────────────────────────────────────────── */
+function vSupply(){
+  const c=me();
+  const need={}; CK.forEach(k=>need[k]=0);
+  c.products.filter(p=>p.state==='live').forEach(p=>{const r=PARA[p.para].recipe;
+    CK.forEach(k=>need[k]+=(r[k]||0)*(p.lastUnits||0)/1000);});
+  const sh=S.macro.shock;
+  return `
+  <div class="card"><header><h2>שרשרת אספקה</h2><p>מחירי הרכיבים זזים בזמן אמת. חוזה נועל מחיר — וגם מחייב אתכם</p></header>
+    ${sh?`<div class="tile" style="border-color:rgba(242,84,91,.4);margin-bottom:12px"><i>זעזוע פעיל</i>
+      <b style="font-size:15px;font-family:var(--display)">מתיחות ב${sh.n}</b><small>צפוי להימשך עוד ${S.macro.shockLeft} חודשים</small></div>`:''}
+    <div class="scroll"><table><thead><tr><th>רכיב</th><th class="n">מחיר שוק</th><th class="n">מגמה</th><th class="n">צריכה חודשית</th><th>חוזה</th><th></th></tr></thead><tbody>
+    ${CK.map(k=>{const ct=c.contracts.find(x=>x.comp===k);
+      const hs=(S.spotHist||[]).map(h=>h[k]).filter(x=>x!==undefined);
+      return `<tr><td><b>${COMP[k].n}</b></td>
+      <td class="n ${S.spot[k]>1.25?'down':S.spot[k]<0.9?'up':''}">×${rnd1(S.spot[k],2)}</td>
+      <td class="n">${CH.spark(hs.slice(-16),S.spot[k]>1.2?'var(--bad)':'var(--good)')}</td>
+      <td class="n">${B(need[k])}</td>
+      <td>${ct?`<span class="pill p-good">נעול ×${rnd1(ct.price,2)} · ${ct.left} ח׳</span>`:'<span class="mut">חשוף לשוק</span>'}</td>
+      <td class="n">${ct?'':`<button class="btn sm" data-act="contract" data-c="${k}">חתימת חוזה</button>`}</td></tr>`;}).join('')}
+    </tbody></table></div>
+    <p class="mut" style="font-size:12.5px;margin-top:10px">חוזה הוא take-or-pay: משלמים על 70% מהנפח גם אם לא ייצרתם. לנעול מחיר לפני זעזוע זו גאונות; לנעול אחריו זה בזבוז.</p>
+  </div>
+  <div class="card"><header><h2>ספקים</h2></header>
+    <div class="scroll"><table><thead><tr><th>ספק</th><th>אזור</th><th>רכיבים</th><th class="n">פרמיה</th><th class="n">אמינות</th></tr></thead><tbody>
+    ${S.suppliers.map(s=>`<tr><td><b>${esc(s.n)}</b></td><td class="mut">${s.geo}</td>
+      <td>${s.cov.map(k=>`<span class="pill p-mut">${COMP[k].n}</span>`).join(' ')}</td>
+      <td class="n ${s.prem<0?'up':''}">${s.prem>0?'+':''}${rnd1(s.prem*100,0)}%</td>
+      <td class="n">${rnd1(s.rel*100,0)}%</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+
+/* ── תקציב שחור ────────────────────────────────────────────────────────── */
+function vOps(){
+  const c=me(), O=S.ops;
+  const rivals=vals(S.cos).filter(x=>x.id!==S.me);
+  if(!O.target||!S.cos[O.target])O.target=rivals[0]?rivals[0].id:null;
+  const t=S.cos[O.target];
+  const total=(O.esp+O.sab+O.hype+O.cin);
+  const risk=clamp((O.esp+O.sab)/700*(0.5+(t?t.counter:0)),0,0.95);
+  return `
+  <div class="card"><header><h2>תקציב שחור</h2><p>מה שלא מופיע בדוח לבעלי המניות</p>
+    <span class="pill ${S.heat>1.2?'p-bad':S.heat>0.6?'p-warn':'p-mut'} right">חשיפה מצטברת ${rnd1(clamp(S.heat/3,0,1)*100,0)}%</span></header>
+    <div class="cols c3" style="margin-bottom:14px">
+      <div class="tile"><i>הוצאה חודשית</i><b>$${Math.round(total)}M</b><small>${B(total*12/1000)} בשנה</small></div>
+      <div class="tile"><i>סיכון חשיפה החודש</i><b class="${risk>0.35?'down':risk>0.15?'':'up'}">${rnd1(risk*100,0)}%</b><small>שערורייה = מוניטין, קנס ודירקטוריון</small></div>
+      <div class="tile"><i>הגנה נגדית</i><b>${rnd1(c.counter*100,0)}</b><small>מקשה על יריבים לפגוע בנו</small></div>
+    </div>
+    <label class="f"><span>יעד המבצעים</span>
+      <select id="opsTarget">${rivals.map(r=>`<option value="${r.id}" ${r.id===O.target?'selected':''}>${esc(r.n)} — נתח ${rnd1((r.share||0)*100,1)}%</option>`).join('')}</select></label>
+  </div>
+  <div class="cols c2">
+    <div class="card"><header><h2>ריגול תעשייתי</h2></header>
+      <label class="f"><span>תקציב · <b class="num">$${O.esp}M</b> לחודש</span><input type="range" id="opEsp" min="0" max="600" step="10" value="${O.esp}"></label>
+      <p class="mut" style="font-size:12.5px;margin:0">גונב שרטוטים מ${t?esc(t.n):'היעד'}: סיכוי חודשי לצמצם פער בצומת שבו הם מובילים. תקציב פעיל חושף גם את לוחות ההשקה שלהם.</p>
+    </div>
+    <div class="card"><header><h2>חבלה והדלפות</h2></header>
+      <label class="f"><span>תקציב · <b class="num">$${O.sab}M</b> לחודש</span><input type="range" id="opSab" min="0" max="600" step="10" value="${O.sab}"></label>
+      <p class="mut" style="font-size:12.5px;margin:0">מדליף מפרטים לפני השקה של יריב או משבש שרשרת. פוגע בציון המוצר שלהם או דוחה השקה בחודש.</p>
+    </div>
+    <div class="card"><header><h2>משפיענים והייפ</h2></header>
+      <label class="f"><span>תקציב · <b class="num">$${O.hype}M</b> לחודש</span><input type="range" id="opHype" min="0" max="600" step="10" value="${O.hype}"></label>
+      <p class="mut" style="font-size:12.5px;margin:0">מנפח ביקוש למוצר האחרון שלנו — גם אם הוא בינוני. פער גדול מדי בין הקמפיין למוצר מביא גל החזרות.</p>
+    </div>
+    <div class="card"><header><h2>ריגול נגדי</h2></header>
+      <label class="f"><span>תקציב · <b class="num">$${O.cin}M</b> לחודש</span><input type="range" id="opCin" min="0" max="600" step="10" value="${O.cin}"></label>
+      <p class="mut" style="font-size:12.5px;margin:0">מגן על המעבדות ועל לוחות ההשקה שלנו, ומוריד את סיכוי החשיפה של המבצעים שלנו.</p>
+    </div>
+  </div>
+  <div class="card"><header><h2>יומן מבצעים</h2></header>
+    <div class="feed">${S.opsLog.length?S.opsLog.map(l=>`<div class="it"><time>${dateEn(l.t)}</time><span class="dot ${l.k}"></span><span>${l.text}</span></div>`).join(''):'<p class="mut">עוד לא בוצע דבר. רשמית.</p>'}</div>
+  </div>`;
+}
+
+/* ── קריירה ────────────────────────────────────────────────────────────── */
+function vCareer(){
+  const c=me(), C=S.career, rep=C.rep;
+  const tier=rep>82?'אגדה בתעשייה':rep>66?'מנכ״ל מבוקש':rep>48?'מקצוען יציב':rep>30?'תחת ביקורת':'על סף שריפה';
+  return `
+  <div class="card"><header><h2>הקריירה</h2><p>המוניטין נשאר איתכם גם כשהכיסא מתחלף</p></header>
+    <div class="cols c4">
+      <div class="tile hi"><i>מוניטין</i><b>${Math.round(rep)}</b><small>${tier}</small></div>
+      <div class="tile"><i>בתפקיד הנוכחי</i><b>${C.tenure}</b><small>חודשים ב${esc(c.n)}</small></div>
+      <div class="tile"><i>פיטורים</i><b>${C.firedCount}</b><small>${C.firedCount?'הרחוב זוכר':'ללא רבב'}</small></div>
+      <div class="tile"><i>תפקידים</i><b>${C.titles.length}</b><small>לאורך הקריירה</small></div>
+    </div>
+  </div>
+  ${C.offers.length?`<div class="card" style="border-color:var(--accent)"><header><h2>הצעות על השולחן</h2><p>תוקף מוגבל</p></header>
+    ${C.offers.map((o,i)=>{const t=S.cos[o.co];if(!t)return'';
+      return `<div class="tile" style="margin-bottom:10px">
+      <div class="row" style="justify-content:space-between">
+        <div><b style="font-family:var(--display);font-size:16px">${esc(t.n)}</b>
+          <div class="mut" style="font-size:12.5px">${esc(t.d||'')}</div></div>
+        <span class="pill p-acc">פג בעוד ${o.exp-S.t} ח׳</span></div>
+      <div class="row" style="gap:16px;margin-top:10px;font-family:var(--mono);font-size:12px">
+        <span>הכנסה $${rnd1(t.rev||t.baseRev,1)}B/ח׳</span><span>מזומן ${B(t.cash)}</span><span>דירקטוריון ${Math.round(t.board)}</span><span>חבילה $${o.pkg}M</span></div>
+      <button class="btn pri" style="margin-top:10px" data-act="offer" data-i="${i}">קבלת התפקיד</button></div>`;}).join('')}
+  </div>`:''}
+  <div class="card"><header><h2>מסלול</h2></header>
+    <div class="feed">
+      ${C.titles.slice().reverse().map((t,i)=>{const co=S.cos[t.co];const h=C.history.find(x=>x.co===t.co&&x.from===t.from);
+        return `<div class="it"><time>${dateEn(t.from)}</time><span class="dot ${i===0?'a':h&&h.fired?'b':'i'}"></span>
+        <span><b>${co?esc(co.n):'—'}</b> ${i===0?'· תפקיד נוכחי':h?(h.fired?'· פוטרת':'· עזבת')+' ב'+dateEn(h.to):''}</span></div>`;}).join('')}
+    </div>
+  </div>
+  <div class="card"><header><h2>מוניטין לאורך זמן</h2></header>
+    ${CH.line([{n:'מוניטין',v:S.hist.slice(-60).map(h=>h.rep),c:'var(--accent)',fill:1},
+               {n:'אמון דירקטוריון',v:S.hist.slice(-60).map(h=>h.board),c:'var(--cyan)'}],{zero:1,alt:'מוניטין'})}
+  </div>`;
+}
+
+function vEco(){
+  const c=me();
+  const breadth=PK.filter(p=>c.products.some(x=>x.state==='live'&&x.para===p));
+  const h=c.hist.slice(-30);
+  const rivals=vals(S.cos).sort((a,b)=>(b.lockin||0)-(a.lockin||0));
+  const risk=(()=>{ // כמה מהבסיס המותקן תלוי בקטגוריות שמאבדות גובה
+    let w=0,t=0;
+    c.products.filter(p=>p.state==='live').forEach(p=>{const u=p.lastUnits||0;t+=u;
+      if(paraOf(p.para).declining)w+=u;});
+    return t>0?w/t:0;})();
+  return `
+  <div class="card"><header><h2>אקוסיסטם ושירותים</h2><p>ההכנסה שממשיכה להגיע גם בחודש שבו לא מכרתם כלום</p></header>
+    <div class="cols c4">
+      <div class="tile hi"><i>נעילת משתמשים</i><b>${Math.round(c.lockin||0)}</b>
+        <div class="meter ${(c.lockin||0)>60?'g':(c.lockin||0)>35?'':'w'}" style="margin-top:6px"><span style="width:${c.lockin||0}%"></span></div>
+        <small>כמה קשה ללקוח שלכם לעבור למתחרה</small></div>
+      <div class="tile"><i>בסיס מותקן</i><b>${Math.round(c.installed||0)}<span style="font-size:13px" class="mut">M</span></b><small>מכשירים פעילים בעולם</small></div>
+      <div class="tile"><i>הכנסה למכשיר</i><b>$${rnd1(c.arpu||0,2)}</b><small>לחודש · עמלות חנות, מנויים ושירותים</small></div>
+      <div class="tile"><i>הכנסת שירותים</i><b>${B(c.services||0)}</b><small>${rnd1((c.services||0)/Math.max(0.01,c.rev||1)*100,0)}% מסך ההכנסות · שוליים 68%</small></div>
+    </div>
+  </div>
+  <div class="cols c2">
+    <div class="card"><header><h2>ממה מורכבת הנעילה</h2></header>
+      ${CH.bars([
+        {n:'טכנולוגיית פלטפורמה, חנות ושירותים',v:(c.tech.platform||0)/100,lbl:rnd1(c.tech.platform||0,0)+' מתוך 100',c:'v'},
+        {n:'רוחב האקוסיסטם',v:breadth.length/PK.length,lbl:breadth.length+' קטגוריות פעילות',c:'c'},
+        {n:'נתח שוק',v:clamp((c.share||0)*3,0,1),lbl:rnd1((c.share||0)*100,1)+'%'},
+        {n:'תלות בקטגוריות דועכות',v:risk,lbl:rnd1(risk*100,0)+'% מהמכירות',c:risk>0.5?'b':risk>0.25?'w':'g'}])}
+      <p class="mut" style="font-size:12.5px;margin-top:10px">נעילה גבוהה מוסיפה עד 17% לאטרקטיביות של כל מוצר שלכם — אבל כשהעולם עובר קטגוריה, בסיס מותקן גדול בקטגוריה הישנה הופך מנכס לעוגן.</p>
+    </div>
+    <div class="card"><header><h2>הכנסות חוזרות מול הכנסות ממכשירים</h2><p>30 חודשים</p></header>
+      ${CH.line([{n:'מכשירים',v:h.map(x=>x.rev-(x.services||0)),c:'var(--accent)',fill:1},
+                 {n:'שירותים',v:h.map(x=>x.services||0),c:'var(--violet)',fill:1}],{zero:1,alt:'הכנסות'})}
+    </div>
+  </div>
+  <div class="card"><header><h2>נעילת משתמשים בתעשייה</h2></header>
+    <div class="scroll"><table><thead><tr><th>חברה</th><th class="n">נעילה</th><th class="n">בסיס מותקן</th><th class="n">הכנסה למכשיר</th><th class="n">שירותים/חודש</th><th>יתרון מבני</th></tr></thead><tbody>
+    ${rivals.map(x=>`<tr class="${x.id===S.me?'me':''}"><td><b>${esc(x.n)}</b></td>
+      <td class="n">${Math.round(x.lockin||0)}</td><td class="n">${Math.round(x.installed||0)}M</td>
+      <td class="n">$${rnd1(x.arpu||0,2)}</td><td class="n">${B(x.services||0)}</td>
+      <td>${traitPills(x)||'<span class="mut">—</span>'}</td></tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+
+function vLog(){
+  return `<div class="card"><header><h2>חדשות</h2></header>
+    <div class="feed" style="max-height:none">${S.news.map(n=>`<div class="it"><time>${dateEn(n.t)}</time><span class="dot ${n.k}"></span><span>${n.text}</span></div>`).join('')}</div></div>
+    <div class="card"><header><h2>ביצועים חודשיים</h2></header>
+    <div class="feed" style="max-height:none">${S.log.map(n=>`<div class="it"><time>${dateEn(n.t)}</time><span class="dot ${n.k}"></span><span>${n.text}</span></div>`).join('')}</div></div>`;
+}
+
+function vHelp(){
+  return `<div class="card"><header><h2>כללי המשחק</h2></header>
+    <p>כל לחיצה על <b>חודש הבא</b> מריצה חודש: המו״פ של כל החברות מתקדם, מחירי הרכיבים זזים, מועמדים עוברים חברה, מוצרים מושקים והשוק מתחלק מחדש.</p>
+    <h3 style="margin:16px 0 8px;font-size:16px">החוק שמניע הכל</h3>
+    <p>אין תאריך שבו טכנולוגיה מתחלפת. לכל קטגוריה יש <b>סף היתכנות</b>, ומולו מדד <b>מוכנות</b> שמחושב מהידע הטוב ביותר שקיים בעולם באותם צמתים — כלומר מסכום ההשקעות של כל החברות.</p>
+    <div class="cols c2" style="margin-top:12px">
+      <div class="tile"><i>אם אף אחד לא ישקיע</i><b style="font-size:15px;font-family:var(--display)">הקטגוריה לא תיפתח לעולם</b><small>אפשר לשחק 30 שנה ולסיים בעולם של טלפונים בלבד.</small></div>
+      <div class="tile"><i>אם תשקיעו ותובילו</i><b style="font-size:15px;font-family:var(--display)">אתם פותחים אותה — וגם את הדלת ליריבים</b><small>הידע שלכם מרים את הגבול העולמי, והמתחרים לומדים מהר יותר.</small></div>
+      <div class="tile"><i>אם יריב יפתח לפניכם</i><b style="font-size:15px;font-family:var(--display)">השוק יזוז בלעדיכם</b><small>ההוצאה עוברת לקטגוריה החדשה, והמוצר שלכם הופך למוצר של אתמול.</small></div>
+      <div class="tile"><i>קטגוריה חדשה</i><b style="font-size:15px;font-family:var(--display)">מגדילה את העוגה</b><small>העולם מוציא יותר כשיש יותר סוגי מכשירים, לא רק מחלק מחדש.</small></div>
+    </div>
+    <h3 style="margin:18px 0 8px;font-size:16px">מה בשליטתכם</h3>
+    <div class="scroll"><table><tbody>
+      <tr><td><b>מו״פ</b></td><td class="mut">תקציב שנתי והקצאה בין 22 צמתי ידע. הכלי היחיד שמשנה את העולם עצמו.</td></tr>
+      <tr><td><b>מוצרים</b></td><td class="mut">איזו קטגוריה, איזה מפרט, איזה מחיר, וכמה מוקדם לעלות לבמה.</td></tr>
+      <tr><td><b>טאלנטים</b></td><td class="mut">משא ומתן מול מד סבלנות. אנשים מזיזים גם את קצב המו״פ וגם את ציון המוצר.</td></tr>
+      <tr><td><b>מיזוגים</b></td><td class="mut">לקנות ידע מוכן: סטארטאפ, או חברה שלמה שנקלעה לקשיים.</td></tr>
+      <tr><td><b>אספקה</b></td><td class="mut">חוזים שנועלים מחיר מול חשיפה לשוק הספוט. take-or-pay עובד לשני הכיוונים.</td></tr>
+      <tr><td><b>תקציב שחור</b></td><td class="mut">ריגול, חבלה, הייפ והגנה נגדית. אפקטיבי — עד השערורייה הראשונה.</td></tr>
+      <tr><td><b>מגדיר המכשיר</b></td><td class="mut">שישה מודולים בשש דרגות. דרגה גבוהה מאפשרת לידע שלכם באותו תחום להתבטא במוצר — ומייקרת את הייצור. דרגה נמוכה בתחום שאתם מובילים בו היא ידע מבוזבז.</td></tr>
+      <tr><td><b>אירוע חשיפה</b></td><td class="mut">כנס ראווה מזניק הייפ לפני ההשקה. אם הביקורות לא יצדיקו אותו — הפער חוזר כגל החזרות.</td></tr>
+      <tr><td><b>ביקורות</b></td><td class="mut">בהשקה נקבע ציון מ-1 עד 10 מול הטוב ביותר שקיים אז בקטגוריה ומול התמורה למחיר. הציון מזיז את ארבעת החודשים הראשונים ואז מתפוגג.</td></tr>
+      <tr><td><b>אקוסיסטם</b></td><td class="mut">כל מכשיר שנמכר נכנס לבסיס המותקן ומייצר הכנסה חוזרת. נעילה גבוהה מוסיפה אטרקטיביות — אבל הופכת לעוגן כשהעולם עובר קטגוריה.</td></tr>
+    </tbody></table></div>
+    <h3 style="margin:18px 0 8px;font-size:16px">כישלון הוא לא סוף המשחק</h3>
+    <p>דירקטוריון שמאבד אמון יפטר אתכם. המוניטין ייפגע, ותתחילו מחדש מסטארטאפ קטן — באותו עולם, מול אותם יריבים. רק מוניטין שנשרף עד הסוף מסיים את הסיפור.</p>
+    <div class="row" style="margin-top:14px"><button class="btn bad" data-act="restart">משחק חדש</button></div>
+  </div>`;
+}
+
+/* ── מודאלים ───────────────────────────────────────────────────────────── */
+function modal(html,cls){
+  const m=$('modal'); m.hidden=false;
+  m.innerHTML=`<div class="modal ${cls||''}">${html}</div>`;
+  m.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{closeModal();next();});
+  return m;
+}
+function closeModal(){$('modal').hidden=true;$('modal').innerHTML='';}
+function next(){ if(Q.length){const f=Q.shift();f();} else {render();save();} }
+
+function newProdModal(){
+  const c=me();
+  let cfg={para:PK.find(p=>paraOf(p).open)||'phone',name:'',price:0,mkt:0.02*Math.max(0.3,c.baseRev),
+           lead:0,keynote:1,parts:defCfg(3)};
+  const draw=()=>{
+    const pr=PARA[cfg.para];
+    if(!cfg.price)cfg.price=pr.price;
+    if(!cfg.lead)cfg.lead=pr.dev;
+    const probe={para:cfg.para,name:cfg.name,price:cfg.price,cfg:cfg.parts,mkt:cfg.mkt,
+                 start:S.t,launch:S.t+cfg.lead,sabotage:0,defect:false,keynote:cfg.keynote};
+    const score=scoreOf(S,c,probe), bom=bomOf(S,c,probe), marg=1-bom/cfg.price;
+    const risk=Math.pow(clamp(1-cfg.lead/pr.dev,0,1),1.5)*0.8;
+    const st=paraOf(cfg.para);
+    const kcost=keynoteCost(c,cfg.keynote);
+    /* הציון הטוב ביותר שקיים כרגע בקטגוריה — בסיס ההשוואה של המבקרים */
+    let best=0; for(const id in S.cos)S.cos[id].products.forEach(x=>{if(x.state==='live'&&x.para===cfg.para&&x.score>best)best=x.score;});
+    const relLbl=best?(score>=best?'מוביל בקטגוריה':score>best*0.92?'תחרותי':'מאחור'):'ראשון בקטגוריה';
+    modal(`<div class="top"><h3>מגדיר המכשיר</h3>
+        <span class="pill p-mut right">${esc(PARA[cfg.para].n)}</span><button class="x" data-x>×</button></div>
+      <div class="bd">
+      <div class="cols c2" style="margin-bottom:4px">
+        <div>
+          <label class="f"><span>קטגוריה</span><select id="pPara">
+            ${PK.map(p=>`<option value="${p}" ${p===cfg.para?'selected':''}>${PARA[p].n}${paraOf(p).open?'':' — סגורה'}</option>`).join('')}</select></label>
+          <label class="f"><span>שם מסחרי</span><input type="text" id="pName" value="${esc(cfg.name)}" placeholder="${esc(c.tag+' '+pr.short)}"></label>
+          <label class="f"><span>מועד השקה · <b>${dateHe(S.t+cfg.lead)}</b> · <span class="num">${cfg.lead}</span> מתוך <span class="num">${pr.dev}</span> חודשי פיתוח</span>
+            <input type="range" id="pLead" min="1" max="${pr.dev+10}" value="${cfg.lead}"></label>
+        </div>
+        <div>
+          <label class="f"><span>מחיר לצרכן · <b class="num">$${cfg.price}</b></span>
+            <input type="range" id="pPrice" min="${Math.round(pr.price*0.35)}" max="${Math.round(pr.price*2.1)}" step="10" value="${cfg.price}"></label>
+          <label class="f"><span>שיווק · <b class="num">$${Math.round(cfg.mkt*1000)}M</b> לחודש</span>
+            <input type="range" id="pMkt" min="0" max="${rnd1(Math.max(0.1,c.baseRev*0.09),2)}" step="0.005" value="${cfg.mkt}"></label>
+          <label class="f"><span>אירוע חשיפה · <b>${KEYNOTE[cfg.keynote].n}</b> · עלות ${B(kcost)}</span>
+            <div class="seg" id="pKey">${KEYNOTE.map((k,i)=>`<button data-k="${i}" class="${i===cfg.keynote?'on':''}">${k.n}</button>`).join('')}</div></label>
+        </div>
+      </div>
+      ${st.open?'':`<p class="pill p-bad" style="display:block;padding:9px 12px;font-family:var(--body);font-weight:600;line-height:1.5">הקטגוריה עדיין לא בשלה מסחרית (מוכנות <span class="num">${rnd1(st.ready,0)}</span> מול סף <span class="num">${pr.viab}</span>). מוצר שיושק לתוכה כמעט לא יימכר — אלא אם תספיקו לפתוח אותה עד ההשקה.</p>`}
+
+      <div style="border-top:1px solid var(--line);margin:14px 0 12px;padding-top:12px">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <b style="font-family:var(--display);font-size:15px">הרכבת המכשיר</b>
+          <div class="row" style="gap:6px">
+            <button class="btn sm" data-preset="1">הכל בסיסי</button>
+            <button class="btn sm" data-preset="3">מאוזן</button>
+            <button class="btn sm" data-preset="5">ללא פשרות</button></div>
+        </div>
+        <div class="cols c3">
+        ${PTK.map(k=>{const P=PARTS[k],t=cfg.parts[k],lvl=c.tech[P.node]||0;
+          const wasted=lvl>72&&t<=2;
+          return `<div class="tile" style="padding:10px 12px">
+            <div class="row" style="justify-content:space-between">
+              <span style="font-size:13px;font-weight:700">${P.n}</span>
+              <span class="pill ${t>=4?'p-acc':t===3?'p-mut':'p-warn'}">${P.t[t-1]}</span></div>
+            <input type="range" data-part="${k}" min="1" max="5" value="${t}" style="margin:7px 0 3px">
+            <div class="row" style="justify-content:space-between;font-size:11px" class="mut">
+              <span class="mut">${TECH[P.node].n} <span class="num">${Math.round(lvl)}</span></span>
+              <span class="num mut">עלות ×${rnd1(TIER_COST[t-1],2)}</span></div>
+            ${wasted?'<div style="font-size:10.5px;color:var(--warn);margin-top:3px">הידע שלכם בתחום מבוזבז בדרגה הזאת</div>':''}
+          </div>`;}).join('')}
+        </div>
+      </div>
+
+      <div class="cols c4">
+        <div class="tile hi"><i>ציון מפרט</i><b class="${!best||score>=best?'up':score>best*0.9?'':'down'}">${Math.round(score)}</b>
+          <small>${relLbl}${best?' · הטוב בשוק '+Math.round(best):''}</small></div>
+        <div class="tile"><i>עלות ייצור</i><b style="font-size:17px">$${Math.round(bom)}</b><small>BOM ליחידה</small></div>
+        <div class="tile"><i>שוליים גולמיים</i><b style="font-size:17px" class="${marg>0.4?'up':marg>0.2?'':'down'}">${rnd1(marg*100,0)}%</b><small>$${Math.round(cfg.price-bom)} ליחידה</small></div>
+        <div class="tile"><i>סיכון תקלה</i><b style="font-size:17px" class="${risk<0.05?'up':risk<0.2?'':'down'}">${rnd1(risk*100,0)}%</b>
+          <small>${risk>0.25?'הפיתוח לא יבשיל':risk>0.05?'סיכון מנוהל':'יספיק להבשיל'}</small></div>
+      </div>
+      <p class="mut" style="font-size:12.5px;margin-top:10px">עלות פיתוח ${B(pr.nre)} (40% עכשיו) · אירוע חשיפה ${B(kcost)} בהשקה · מזומן זמין ${B(c.cash)}.
+      ציון הביקורות ייקבע בהשקה מול הטוב ביותר שיהיה אז בקטגוריה, ויקבע את הרבעון הראשון.</p>
+      </div>
+      <div class="ft"><button class="btn" data-x>ביטול</button><button class="btn pri" id="pGo">אישור והכנסה לפיתוח</button></div>`,'wide');
+    $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+    $('pPara').onchange=e=>{cfg.para=e.target.value;cfg.price=0;cfg.lead=0;draw();};
+    $('pName').oninput=e=>{cfg.name=e.target.value;};
+    $('pLead').oninput=e=>{cfg.lead=+e.target.value;draw();};
+    $('pPrice').oninput=e=>{cfg.price=+e.target.value;draw();};
+    $('pMkt').oninput=e=>{cfg.mkt=+e.target.value;draw();};
+    $('pKey').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{cfg.keynote=+b.dataset.k;draw();});
+    $('modal').querySelectorAll('[data-part]').forEach(i=>i.oninput=()=>{cfg.parts[i.dataset.part]=+i.value;draw();});
+    $('modal').querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{cfg.parts=defCfg(+b.dataset.preset);draw();});
+    $('pGo').onclick=()=>{
+      if(c.cash<pr.nre*0.5){alert('אין מספיק מזומן לפתיחת הפרויקט.');return;}
+      const p=mkProduct(S,c,cfg.para,{name:cfg.name||(c.tag+' '+pr.short),price:cfg.price,
+        cfg:Object.assign({},cfg.parts),mkt:cfg.mkt,keynote:cfg.keynote});
+      p.launch=S.t+cfg.lead; c.products.push(p); c.cash-=pr.nre*0.4;
+      log(S,`נפתח פרויקט: ${p.name} · השקה מתוכננת ${dateHe(p.launch)}.`,'a');
+      closeModal(); V='prod'; drawRail(); render(); save();
+    };
+  };
+  draw();
+}
+
+function negotiateModal(id){
+  const cand=S.talent.find(t=>t.id===id); if(!cand)return;
+  const c=me();
+  let offer={salary:Math.round(cand.ask*0.95),equity:false,title:false}, msg=null, ok=false;
+  const draw=()=>{
+    modal(`<div class="top"><h3>משא ומתן · ${esc(cand.name)}</h3><button class="x" data-x>×</button></div>
+      <div class="bd">
+        <div class="cols c2" style="margin-bottom:14px">
+          <div class="tile"><i>${ROLES[cand.role].n}</i><b style="font-size:15px;font-family:var(--display)">${TECH[cand.spec].n}</b>
+            <small>יצירתיות ${cand.creativity} · יעילות ${cand.efficiency} · מנהיגות ${cand.leadership}</small></div>
+          <div class="tile"><i>סבלנות</i><b class="${cand.patience>60?'up':cand.patience>30?'':'down'}">${Math.round(cand.patience)}%</b>
+            <div class="meter ${cand.patience>60?'g':cand.patience>30?'w':'b'}" style="margin-top:6px"><span style="width:${cand.patience}%"></span></div>
+            <small>${cand.rounds} סבבים · דרישה מוצהרת $${cand.ask}M</small></div>
+        </div>
+        ${msg?`<div class="tile" style="margin-bottom:12px;border-color:${ok?'var(--good)':'var(--warn)'}"><i>תגובה</i>
+          <div style="font-size:14px;margin-top:4px;color:var(--ink)">${msg}</div></div>`:''}
+        <label class="f"><span>שכר שנתי לחבילה · <b class="num">$${offer.salary}M</b></span>
+          <input type="range" id="nSal" min="${Math.round(cand.ask*0.4)}" max="${Math.round(cand.ask*2.1)}" step="5" value="${offer.salary}"></label>
+        <div class="row" style="gap:16px">
+          <label class="row" style="gap:6px;font-size:13.5px"><input type="checkbox" id="nEq" ${offer.equity?'checked':''}> אקוויטי חסום</label>
+          <label class="row" style="gap:6px;font-size:13.5px"><input type="checkbox" id="nTi" ${offer.title?'checked':''}> תואר בכיר</label>
+        </div>
+        <p class="mut" style="font-size:12.5px;margin-top:10px">אקוויטי מוריד את הדרישה וגם מקשה על יריבים לחטוף. כל הצעה נמוכה מדי שורפת סבלנות — וכשהיא נגמרת, המועמד הולך.</p>
+      </div>
+      <div class="ft"><button class="btn" data-x>יציאה</button><button class="btn pri" id="nGo">הגשת הצעה</button></div>`);
+    $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+    $('nSal').oninput=e=>{offer.salary=+e.target.value;
+      e.target.parentNode.querySelector('b').textContent='$'+offer.salary+'M';};
+    $('nEq').onchange=e=>{offer.equity=e.target.checked;};
+    $('nTi').onchange=e=>{offer.title=e.target.checked;};
+    $('nGo').onclick=()=>{
+      if(c.cash<offer.salary/1000*2){alert('אין מספיק מזומן לחבילה הזאת.');return;}
+      const r=evaluateOffer(S,cand,offer);
+      if(r.accept){
+        if(offer.equity)cand.equity=true;
+        cand.ask=offer.salary; hireTo(S,c,cand);
+        news(S,`<b>${cand.name}</b> מצטרף/ת אלינו כ${ROLES[cand.role].n} בתחום ${TECH[cand.spec].n}.`,'g');
+        closeModal(); render(); save();
+      } else if(r.walked){
+        S.talent=S.talent.filter(t=>t!==cand);
+        news(S,`${cand.name} סיים/ה את המשא ומתן איתנו. ההצעות לא היו רציניות מספיק.`,'w');
+        closeModal(); render(); save();
+      } else {
+        msg=`"זה לא מספיק. אני מחפש/ת משהו באזור <b class='num'>$${r.counter}M</b>."`;
+        offer.salary=r.counter; draw();
+      }
+    };
+  };
+  draw();
+}
+
+function contractModal(comp){
+  const c=me();
+  let months=12, share=50;
+  const draw=()=>{
+    const sup=S.suppliers.filter(s=>s.cov.indexOf(comp)>=0).reduce((a,b)=>a.prem<b.prem?a:b);
+    const price=S.spot[comp]*(1+sup.prem+months*0.004);
+    modal(`<div class="top"><h3>חוזה אספקה · ${COMP[comp].n}</h3><button class="x" data-x>×</button></div>
+      <div class="bd">
+        <div class="cols c2" style="margin-bottom:12px">
+          <div class="tile"><i>מחיר שוק כרגע</i><b>×${rnd1(S.spot[comp],2)}</b></div>
+          <div class="tile hi"><i>מחיר נעול בחוזה</i><b>×${rnd1(price,2)}</b><small>ספק: ${esc(sup.n)} · ${sup.geo}</small></div>
+        </div>
+        <label class="f"><span>אורך החוזה · <b>${months} חודשים</b></span><input type="range" id="cM" min="6" max="30" step="3" value="${months}"></label>
+        <label class="f"><span>נפח מחויב · <b>${share}%</b> מהצריכה הנוכחית</span><input type="range" id="cV" min="20" max="100" step="10" value="${share}"></label>
+        <p class="mut" style="font-size:12.5px">חוזה ארוך יקר יותר אבל מגן יותר. take-or-pay: תשלמו על 70% מהנפח גם בחודשים שבהם תייצרו פחות.</p>
+      </div>
+      <div class="ft"><button class="btn" data-x>ביטול</button><button class="btn pri" id="cGo">חתימה</button></div>`);
+    $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+    $('cM').oninput=e=>{months=+e.target.value;draw();};
+    $('cV').oninput=e=>{share=+e.target.value;draw();};
+    $('cGo').onclick=()=>{
+      const need=sum(c.products.filter(p=>p.state==='live').map(p=>(PARA[p.para].recipe[comp]||0)*(p.lastUnits||0)))/1000;
+      signContract(S,c,comp,months,Math.max(0.02,need*share/100));
+      news(S,`נחתם חוזה ל${COMP[comp].n} ל-${months} חודשים במחיר נעול ×${rnd1(price,2)}.`,'a');
+      closeModal(); render(); save();
+    };
+  };
+  draw();
+}
+
+function eventModal(e){
+  modal(`<div class="top"><span class="pill ${e.k==='b'?'p-bad':e.k==='w'?'p-warn':e.k==='g'?'p-good':'p-acc'}">${dateHe(S.t)}</span><h3>${e.t}</h3></div>
+    <div class="bd"><p style="color:var(--ink)">${e.d}</p>
+      ${e.o.map((o,i)=>`<button class="choice" data-opt="${i}"><b>${o.t}</b><span>${o.d||''}</span></button>`).join('')}</div>`);
+  $('modal').querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{
+    const o=e.o[+b.dataset.opt];
+    const res=o.fn(S)||'';
+    news(S,`<b>${e.t}</b> — ${res}`,e.k);
+    modal(`<div class="top"><h3>${e.t}</h3></div><div class="bd"><p style="color:var(--ink);font-size:15px">${res}</p></div>
+      <div class="ft"><button class="btn pri" data-close>הבנתי</button></div>`);
+  });
+}
+
+function firedModal(end){
+  const c=me();
+  modal(`<div class="top"><span class="pill p-bad">${dateHe(S.t)}</span><h3>הדירקטוריון מסיים את תפקידך</h3></div>
+    <div class="bd">
+      <p style="color:var(--ink);font-size:15px">${end.reason}</p>
+      <p>${S.career.rep>45?'המוניטין שצברת עדיין שווה משהו — משקיעים מוכנים לתת לך סבב ראשון.':'המוניטין שלך ספג מכה קשה. מה שתקבל עכשיו זה מה שיש.'}</p>
+      <div class="cols c3" style="margin:14px 0">
+        <div class="tile"><i>כהונה</i><b>${S.career.tenure}</b><small>חודשים</small></div>
+        <div class="tile"><i>מוניטין</i><b>${Math.round(S.career.rep)}</b><small>לפני הפגיעה</small></div>
+        <div class="tile"><i>נתח בסיום</i><b>${rnd1((c.share||0)*100,1)}%</b></div>
+      </div>
+      <p class="mut">הקריירה נמשכת. אותו עולם, אותם יריבים — הפעם מלמטה.</p>
+    </div>
+    <div class="ft"><button class="btn pri" id="rebirth">להתחיל מחדש מסטארטאפ</button></div>`);
+  $('rebirth').onclick=()=>{fireMe(S,end.reason);closeModal();V='dash';drawRail();render();save();};
+}
+function overModal(end){
+  modal(`<div class="top"><span class="pill p-bad">${dateHe(S.t)}</span><h3>${end.t}</h3></div>
+    <div class="bd"><p style="color:var(--ink);font-size:15px">${end.d}</p>
+      <div class="cols c2" style="margin:14px 0">
+        <div class="tile"><i>חודשים</i><b>${S.t}</b></div>
+        <div class="tile"><i>תפקידים</i><b>${S.career.titles.length}</b></div>
+        <div class="tile"><i>פיטורים</i><b>${S.career.firedCount}</b></div>
+        <div class="tile"><i>קטגוריות שנפתחו</i><b>${PK.filter(p=>paraOf(p).open).length}/${PK.length}</b></div>
+      </div>
+      <p class="mut">העולם ממשיך בלעדיך: ${PK.filter(p=>paraOf(p).open).map(p=>PARA[p].n).join(' · ')}</p></div>
+    <div class="ft"><button class="btn pri" id="again">משחק חדש</button></div>`);
+  $('again').onclick=()=>{localStorage.removeItem(SAVE);location.reload();};
+}
+
+/* ── חיווט ─────────────────────────────────────────────────────────────── */
+function wire(){
+  const v=$('view'), c=me();
+  const rb=$('rndB'); if(rb)rb.oninput=e=>{c.rndBudget=+e.target.value;render();};
+  v.querySelectorAll('[data-alloc]').forEach(i=>i.oninput=()=>{c.alloc[i.dataset.alloc]=+i.value;render();});
+  v.querySelectorAll('[data-price]').forEach(i=>i.onchange=()=>{const p=c.products.find(x=>x.id===+i.dataset.price);if(p)p.price=clamp(Math.round(+i.value||p.price),40,9000);render();});
+  v.querySelectorAll('[data-mkt]').forEach(i=>i.oninput=()=>{const p=c.products.find(x=>x.id===+i.dataset.mkt);if(p)p.mkt=+i.value;render();});
+  const ot=$('opsTarget'); if(ot)ot.onchange=e=>{S.ops.target=e.target.value;render();};
+  [['opEsp','esp'],['opSab','sab'],['opHype','hype'],['opCin','cin']].forEach(a=>{
+    const el=$(a[0]); if(el)el.oninput=()=>{S.ops[a[1]]=+el.value;render();};});
+  v.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act,b.dataset));
+}
+function act(a,d){
+  const c=me();
+  if(a==='newprod')newProdModal();
+  else if(a==='goto'){V=d.v;drawRail();render();}
+  else if(a==='shift'){const p=c.products.find(x=>x.id===+d.id);const n=+d.d;
+    if(p&&p.launch+n>S.t){p.launch+=n;render();}}
+  else if(a==='kill'){const p=c.products.find(x=>x.id===+d.id);
+    if(p&&confirm('לבטל את '+p.name+'? ההוצאה שכבר בוצעה לא תוחזר.')){c.products=c.products.filter(x=>x!==p);render();}}
+  else if(a==='negotiate')negotiateModal(+d.id);
+  else if(a==='fire'){const s=c.staff.find(x=>x.id===+d.id);
+    if(s&&confirm('לשחרר את '+s.name+'?')){c.staff=c.staff.filter(x=>x!==s);c.allocCache=null;render();}}
+  else if(a==='buy'){const s=S.startups.find(x=>x.id===+d.id);
+    if(s&&c.cash>s.price){acquire(S,c,s);news(S,`רכשנו את <b>${s.n}</b> תמורת $${s.price}B.`,'a');render();save();}}
+  else if(a==='buyco'){const t=S.cos[d.id];
+    if(t&&confirm('להגיש הצעת רכישה ל'+t.n+' תמורת $'+companyValue(S,t)+'B?')){acquireCompany(S,c,t);render();save();}}
+  else if(a==='contract')contractModal(d.c);
+  else if(a==='offer'){const o=S.career.offers[+d.i];
+    if(o&&S.cos[o.co]&&confirm('לעבור לנהל את '+S.cos[o.co].n+'?')){takeOffer(S,o);V='dash';drawRail();render();save();}}
+  else if(a==='restart'){if(confirm('להתחיל משחק חדש? המצב הנוכחי יימחק.')){localStorage.removeItem(SAVE);location.reload();}}
+}
+
+/* ── תור ───────────────────────────────────────────────────────────────── */
+$('nextBtn').onclick=()=>{
+  if(!S||S.over)return;
+  S.spotHist=S.spotHist||[]; S.spotHist.push(Object.assign({},S.spot)); if(S.spotHist.length>40)S.spotHist.shift();
+  const r=step(S);
+  Q=[];
+  if(r.event)Q.push(()=>eventModal(r.event));
+  if(r.end){
+    if(r.end.kind==='fired')Q.push(()=>firedModal(r.end));
+    else {S.over=true;Q.push(()=>overModal(r.end));}
+  }
+  render();
+  next();
+};
+$('saveBtn').onclick=()=>saveModal();
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!$('modal').hidden){closeModal();render();}
+  if(e.key==='Enter'&&$('modal').hidden&&S&&!S.over&&document.activeElement.tagName!=='INPUT')$('nextBtn').click();
+});
+drawIntro();
+/* UI_END */
+</script>
+</body>
+</html>
