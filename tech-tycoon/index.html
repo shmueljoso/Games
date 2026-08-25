@@ -1322,19 +1322,55 @@ function fireMe(G,reason){
 /* ── §19 יוצרי תוכן ומבקרים ─────────────────────────────────────────────
    הביקורות כבר לא נוסחה סגורה: קהילת היוצרים היא שקובעת איך מוצר מתקבל,
    וכל יוצר הוא דמות עם קהל, אמינות ונטייה משלו. השחקן יכול להיות אחד מהם. */
+/* זווית = מה היוצר בודק קודם. התאמה בין הזווית למודול חזק במכשיר שווה ציון. */
+const ANGLES={
+  perf:   {n:'ביצועים',      mods:['chip','autonomy']},
+  camera: {n:'צילום',        mods:['camera','waveguide']},
+  design: {n:'עיצוב וחומרים',mods:['build','chassis','flexdisp']},
+  battery:{n:'סוללה וסבולת', mods:['battery','charging']},
+  audio:  {n:'קול ואודיו',   mods:['mic']},
+  auto:   {n:'אוטונומיה',    mods:['autonomy','percept','actuators']},
+  novel:  {n:'חדשנות',       mods:[]},
+  value:  {n:'תמורה למחיר',  mods:[]}
+};
 const CREATORS0=[
- {n:'טל ברנע',      h:'@talbench',   f:8.4, cred:82, bias:-0.6, style:'מודד הכל, לא סולח על כלום', focus:'phone'},
- {n:'Mira Okafor',  h:'@miraunbox',  f:14.2,cred:64, bias:0.7,  style:'התלהבות מדבקת, פחות פרטים',  focus:null},
- {n:'דור אלקיים',   h:'@dortech',    f:3.1, cred:88, bias:-0.2, style:'תחקירים ארוכים על תעשייה',   focus:null},
- {n:'Kenji Sato',   h:'@satolab',    f:5.6, cred:79, bias:-0.3, style:'פירוק לרכיבים ומדידות',      focus:'phone'},
- {n:'Luz Herrera',  h:'@luzframes',  f:6.9, cred:71, bias:0.2,  style:'צילום ואודיו מעל הכל',       focus:'glasses'},
- {n:'נועה רז',      h:'@noaz',       f:2.3, cred:75, bias:0.1,  style:'שימושיות יומיומית',          focus:'ambient'},
- {n:'Otto Brandt',  h:'@ottobuilds', f:1.9, cred:84, bias:-0.5, style:'רובוטיקה והנדסה',            focus:'robot'},
- {n:'Priya Nair',   h:'@priyanext',  f:11.5,cred:58, bias:0.9,  style:'הראשונה עם כל דבר חדש',      focus:null}
+ {n:'טל ברנע',      h:'@talbench',   f:8.4, cred:82, bias:-0.6, ang:'perf',   style:'מודד הכל, לא סולח על כלום', focus:'phone'},
+ {n:'Mira Okafor',  h:'@miraunbox',  f:14.2,cred:64, bias:0.7,  ang:'design', style:'התלהבות מדבקת, פחות פרטים',  focus:null},
+ {n:'דור אלקיים',   h:'@dortech',    f:3.1, cred:88, bias:-0.2, ang:'value',  style:'תחקירים ארוכים על תעשייה',   focus:null},
+ {n:'Kenji Sato',   h:'@satolab',    f:5.6, cred:79, bias:-0.3, ang:'battery',style:'פירוק לרכיבים ומדידות',      focus:'phone'},
+ {n:'Luz Herrera',  h:'@luzframes',  f:6.9, cred:71, bias:0.2,  ang:'camera', style:'צילום ואודיו מעל הכל',       focus:'glasses'},
+ {n:'נועה רז',      h:'@noaz',       f:2.3, cred:75, bias:0.1,  ang:'audio',  style:'שימושיות יומיומית',          focus:'ambient'},
+ {n:'Otto Brandt',  h:'@ottobuilds', f:1.9, cred:84, bias:-0.5, ang:'auto',   style:'רובוטיקה והנדסה',            focus:'robot'},
+ {n:'Priya Nair',   h:'@priyanext',  f:11.5,cred:58, bias:0.9,  ang:'novel',  style:'הראשונה עם כל דבר חדש',      focus:null}
 ];
 function seedCreators(G){
-  G.creators=CREATORS0.map((c,i)=>({id:'cr'+i,n:c.n,h:c.h,f:c.f,cred:c.cred,bias:c.bias,
-    style:c.style,focus:c.focus,paidBy:null,paidLeft:0,heat:0}));
+  G.creators=CREATORS0.map((c,i)=>({id:'cr'+i,n:c.n,h:c.h,f:c.f,cred:c.cred,bias:c.bias,ang:c.ang,
+    style:c.style,focus:c.focus,paidBy:null,paidLeft:0,heat:0,rel:{},seed:{},covered:0}));
+}
+/* עד כמה המכשיר מדבר בדיוק אל מה שהיוצר בודק */
+function angleFit(cr,p){
+  const A=ANGLES[cr.ang]; if(!A)return 0;
+  if(cr.ang==='value'){
+    const v=PARA[p.para].price/Math.max(40,p.price);
+    return clamp((v-1)*2.2,-1.2,1.4);
+  }
+  if(cr.ang==='novel'){
+    const mat=1-clamp((PARA[p.para].viab>0?0:0),0,1);
+    const young=clamp(1.2-(p.para==='phone'?1:0.25),0,1.2);
+    return young*0.9-0.3;
+  }
+  const cf=cfgOf(p), ks=A.mods.filter(k=>cf[k]!==undefined);
+  if(!ks.length)return -0.35;                       // הקטגוריה לא מדברת אליו בכלל
+  const avg=sum(ks.map(k=>cf[k]))/ks.length;
+  return clamp((avg-3)*0.62,-1.3,1.3);
+}
+const relOf=(cr,coId)=>(cr.rel&&cr.rel[coId])||0;
+/* מי בכלל מסקר את המכשיר: הגדולים, אלה שהקטגוריה שלהם, ומי שקיבל יחידה */
+function coverageOf(G,co,p){
+  const cov=G.creators.filter(cr=>
+    cr.f>7.5 || cr.focus===p.para || (cr.seed&&cr.seed[co.id]>0) || cr.paidBy===co.id);
+  if(cov.length>=3)return cov;
+  return G.creators.slice().sort((a,b)=>b.f-a.f).slice(0,3);
 }
 /* איכות אמיתית של מוצר בסולם 1–10, מול הטוב ביותר שקיים בקטגוריה */
 function truthOf(G,p){
@@ -1352,18 +1388,29 @@ function truthOf(G,p){
 const voice=c=>c.f*(0.35+c.cred/100);
 function creatorVerdict(G,co,p){
   const truth=truthOf(G,p);
-  const takes=G.creators.map(cr=>{
+  const cov=coverageOf(G,co,p);
+  const takes=cov.map(cr=>{
     let sc=truth+cr.bias+(rand(G)-0.5)*0.9;
     if(cr.paidBy===co.id&&cr.paidLeft>0)sc+=1.3;
     if(cr.focus===p.para)sc+=0.35;
-    return {id:cr.id,n:cr.n,h:cr.h,sc:clamp(Math.round(sc*10)/10,1,10),w:voice(cr)};
+    sc+=angleFit(cr,p)*0.9;                       // הזווית שלו מול המכשיר שבנית
+    sc+=clamp(relOf(cr,co.id),-60,60)/100*0.6;    // יחסים ארוכי טווח
+    if(cr.seed&&cr.seed[co.id]>0)sc+=0.15;        // קיבל יחידה מוקדם, הספיק להתרשם
+    cr.covered=(cr.covered||0)+1;
+    return {id:cr.id,n:cr.n,h:cr.h,ang:cr.ang,sc:clamp(Math.round(sc*10)/10,1,10),w:voice(cr)};
   });
-  if(G.mode==='creator'&&G.creator&&G.creator.autoReview){
-    /* השחקן מסקר אוטומטית רק אם בחר בכך */
-  }
   const tw=sum(takes.map(t=>t.w))||1;
   const avg=sum(takes.map(t=>t.sc*t.w))/tw;
-  return {score:clamp(Math.round(avg*10)/10,1,10),takes,truth};
+  /* כיסוי דל = פחות קולות, ולכן תוצאה תנודתית יותר */
+  const thin=cov.length<4?(rand(G)-0.5)*0.8:0;
+  /* מי שקיבל יחידה ויצא מרוצה — היחסים מתחזקים, ולהפך */
+  cov.forEach(cr=>{
+    if(cr.seed&&cr.seed[co.id]>0){
+      const t=takes.find(x=>x.id===cr.id);
+      cr.rel[co.id]=clamp(relOf(cr,co.id)+(t&&t.sc>6.5?4:-3),-100,100);
+    }
+  });
+  return {score:clamp(Math.round((avg+thin)*10)/10,1,10),takes,truth,cov:cov.length};
 }
 /* פרסום ביקורת — של השחקן או של יוצר אחר — מזיז את השוק בפועל */
 function publishReview(G,cr,p,score){
@@ -1377,9 +1424,35 @@ function publishReview(G,cr,p,score){
   const miss=Math.abs(score-truth);
   return {truth,miss,delta};
 }
+const CR_COST={unit:0.004,invite:0.002};
+function creatorAsk(cr){return Math.round(clamp(cr.f*0.9+cr.cred*0.05,0.5,90));}
+function sendUnit(G,co,cr,months){
+  co.cash-=CR_COST.unit;
+  cr.seed=cr.seed||{}; cr.seed[co.id]=(cr.seed[co.id]||0)+(months||6);
+  cr.rel[co.id]=clamp(relOf(cr,co.id)+6,-100,100);
+  return `${cr.n} קיבל/ה יחידת ביקורת מוקדמת.`;
+}
+function inviteCreator(G,co,cr){
+  co.cash-=CR_COST.invite;
+  cr.rel[co.id]=clamp(relOf(cr,co.id)+9,-100,100);
+  cr.f=clamp(cr.f*1.004,0.05,200);
+  return `${cr.n} הוזמן/ה לאירוע החשיפה שלנו.`;
+}
+function sponsorCreator(G,co,cr){
+  const fee=creatorAsk(cr);
+  co.cash-=fee/1000;
+  cr.paidBy=co.id; cr.paidLeft=ri(G,3,6);
+  cr.cred=clamp(cr.cred-rr(G,2,4.5),5,99);
+  cr.rel[co.id]=clamp(relOf(cr,co.id)+12,-100,100);
+  G.heat=clamp(G.heat+0.25,0,3);
+  return `${cr.n} חתם/ה על חסות בשווי $${fee}M.`;
+}
 function creatorTick(G){
   G.creators.forEach(cr=>{
     if(cr.paidLeft>0){cr.paidLeft--;if(cr.paidLeft===0)cr.paidBy=null;}
+    cr.seed=cr.seed||{}; cr.rel=cr.rel||{};
+    keys(cr.seed).forEach(k=>{cr.seed[k]--;if(cr.seed[k]<=0)delete cr.seed[k];});
+    keys(cr.rel).forEach(k=>{cr.rel[k]*=0.985;});
     /* קהל גדל עם אמינות ועם רעש בתעשייה, ונשחק מעצמו */
     const buzz=sum(PK.map(x=>(G.para[x]&&G.para[x].mat)||0))/PK.length;
     cr.f=clamp(cr.f*(1+0.004+buzz*0.012+(cr.cred-60)*0.00035+(rand(G)-0.5)*0.02),0.05,140);
@@ -1397,6 +1470,23 @@ function creatorTick(G){
         cr.paidBy=id; cr.paidLeft=ri(G,2,5); cr.cred=clamp(cr.cred-rr(G,1,3),5,99);
         if(c.isMe)opLog(G,`<b>${cr.n}</b> (${cr.h}) חתם על שיתוף פעולה ממומן איתנו.`,'a');
       }
+    }
+    /* יחידת ביקורת אל השחקן, אם הוא יוצר תוכן וגדול מספיק */
+    if(G.mode==='creator'&&G.creator&&G.creator.f>0.25&&rand(G)<0.16){
+      const C=G.creator;
+      const live=c.products.filter(x=>x.state==='live'&&G.t-x.launch<7);
+      if(live.length&&!C.offers.some(o=>o.kind==='unit'&&o.co===id)){
+        const pd=live[Math.floor(rand(G)*live.length)];
+        C.offers.push({kind:'unit',co:id,pid:pd.id,pname:pd.name,exp:G.t+4});
+        news(G,`<b>${c.n}</b> שלחה לך יחידת ביקורת מוקדמת של ${pd.name}.`,'v');
+      }
+    }
+    /* יריבות מחלקות יחידות ביקורת ליוצרים שמכסים את הקטגוריה שלהן */
+    if(!c.isMe&&rand(G)<0.16){
+      const fit=G.creators.filter(cr=>cr.focus===c.style.focus||cr.f>7);
+      if(fit.length){const cr=fit[Math.floor(rand(G)*fit.length)];
+        cr.seed=cr.seed||{}; cr.seed[id]=Math.max(cr.seed[id]||0,5);
+        cr.rel[id]=clamp(relOf(cr,id)+4,-100,100);}
     }
   }
 }
@@ -1443,7 +1533,8 @@ function playerCreatorTick(G){
     if(prod){
       const r=publishReview(G,{f:C.f,cred:C.cred},prod,act.score);
       const pop=clamp((prod.lastRev||0.1)*0.5,0.05,2.5);
-      res.gain=(0.045+pop*0.05)*quality*buzz;
+      const early=act.seeded?1.3:1;                 // יחידה מוקדמת = סרטון ראשון בשוק
+      res.gain=(0.045+pop*0.05)*quality*buzz*early;
       /* דיוק מול האמת קובע אם הקהל יאמין לך בפעם הבאה */
       const acc=clamp(1.6-r.miss,-1.6,1.4);
       C.cred=clamp(C.cred+acc*1.5,5,99);
@@ -1507,7 +1598,7 @@ function playerCreatorTick(G){
   if(C.f>0.4&&rand(G)<0.25&&C.offers.length<3){
     const ids=keys(G.cos).filter(id=>G.cos[id].baseRev>1);
     const co=G.cos[ids[Math.floor(rand(G)*ids.length)]];
-    if(co)C.offers.push({co:co.id,fee:Math.round(clamp(C.f*1.2+rand(G)*8,1,90)),exp:G.t+3});
+    if(co)C.offers.push({kind:'sponsor',co:co.id,fee:Math.round(clamp(C.f*1.2+rand(G)*8,1,90)),exp:G.t+3});
   }
   C.offers=C.offers.filter(o=>o.exp>G.t);
   return res;
@@ -1881,7 +1972,7 @@ const TABS_CREATOR=[
 const TABS=[
  {g:'ניהול'},{id:'dash',t:'לוח מחוונים'},{id:'rnd',t:'מו״פ וטכנולוגיה'},{id:'prod',t:'מוצרים והשקות'},{id:'eco',t:'אקוסיסטם ושירותים'},
  {g:'משאבים'},{id:'talent',t:'שוק הטאלנטים'},{id:'ma',t:'מיזוגים ורכישות'},{id:'supply',t:'שרשרת אספקה'},
- {g:'זירה'},{id:'market',t:'שוק ומתחרים'},{id:'ops',t:'תקציב שחור'},{id:'career',t:'הקריירה'},
+ {g:'זירה'},{id:'market',t:'שוק ומתחרים'},{id:'creators',t:'יוצרי תוכן'},{id:'ops',t:'תקציב שחור'},{id:'career',t:'הקריירה'},
  {g:''},{id:'log',t:'יומן ותיעוד'},{id:'help',t:'כללי המשחק'}
 ];
 function drawRail(){
@@ -1948,7 +2039,7 @@ function render(){
   topbar();
   const VIEWS={dash:vDash,rnd:vRnd,prod:vProd,eco:vEco,talent:vTalent,ma:vMA,supply:vSupply,
     market:vMarket,ops:vOps,career:vCareer,log:vLog,help:vHelp,
-    creator:vCreator,arena:vArena,offers:vOffers,found:vFound};
+    creator:vCreator,arena:vArena,offers:vOffers,found:vFound,creators:vCreators};
   const allowed=(S.mode==='creator'?TABS_CREATOR:TABS).filter(t=>t.id).map(t=>t.id);
   if(allowed.indexOf(V)<0)V=S.mode==='creator'?'creator':'dash';
   $('view').innerHTML=(VIEWS[V]||vDash)();
@@ -2535,11 +2626,102 @@ function vArena(){
     </tbody></table></div>
   </div>`;
 }
+function relPill(v){
+  const t=v>45?['p-good','שותפים']:v>15?['p-cy','יחסים טובים']:v>-15?['p-mut','נייטרלי']:v>-45?['p-warn','מתוח']:['p-bad','עוין'];
+  return `<span class="pill ${t[0]}">${t[1]} <span dir="ltr">${v>0?'+':''}${Math.round(v)}</span></span>`;
+}
+function vCreators(){
+  const c=me();
+  const next=c.products.filter(p=>p.state==='dev').sort((a,b)=>a.launch-b.launch)[0];
+  const probe=next||c.products.filter(p=>p.state==='live').sort((a,b)=>b.launch-a.launch)[0];
+  const cov=probe?coverageOf(S,c,probe):[];
+  const covIds=cov.map(x=>x.id);
+  const rows=S.creators.slice().sort((a,b)=>b.f-a.f);
+  return `
+  <div class="card"><header><h2>יחסי יוצרים</h2><p>מי יסקר את ההשקה הבאה שלנו — ומה הוא יחפש בה</p></header>
+    <div class="cols c3">
+      <div class="tile hi"><i>כיסוי צפוי</i><b>${cov.length}<span class="mut" style="font-size:13px">/${S.creators.length}</span></b>
+        <small>${probe?'על '+esc(probe.name):'אין מוצר בצנרת'}</small></div>
+      <div class="tile"><i>משקל דעה מכוסה</i><b>${rnd1(sum(cov.map(voice)),1)}</b>
+        <small>מתוך ${rnd1(sum(S.creators.map(voice)),1)} בשוק</small></div>
+      <div class="tile"><i>חשיפה מצטברת</i><b class="${S.heat>1.2?'down':''}">${rnd1(clamp(S.heat/3,0,1)*100,0)}%</b>
+        <small>תשלומים ליוצרים מעלים סיכון לשערורייה</small></div>
+    </div>
+    <p class="mut" style="font-size:12.5px;margin-top:10px">כיסוי דל אומר פחות קולות בממוצע — ותוצאה תנודתית הרבה יותר.
+    שליחת יחידת ביקורת מכניסה יוצר לכיסוי גם אם הקטגוריה לא שלו.</p>
+  </div>
+  <div class="card"><header><h2>הקהילה</h2><p>${probe?'ההתאמה מחושבת מול '+esc(probe.name):'בחרו מוצר בפיתוח כדי לראות התאמה'}</p></header>
+    <div class="only-sm">
+      ${rows.map(cr=>{const r=relOf(cr,c.id),fit=probe?angleFit(cr,probe):0;
+        return `<div class="tile" style="margin-bottom:10px">
+          <div class="row" style="justify-content:space-between;align-items:flex-start">
+            <div style="min-width:0"><b style="font-family:var(--display);font-size:15px">${esc(cr.n)}</b>
+              <div class="mut num" dir="ltr" style="font-size:11.5px">${esc(cr.h)}</div></div>
+            ${relPill(r)}</div>
+          <div class="row" style="gap:8px;margin:8px 0;font-size:12px">
+            <span class="pill p-vi">${ANGLES[cr.ang].n}</span>
+            <span class="mut num">${rnd1(cr.f,1)}M · אמינות ${Math.round(cr.cred)}</span>
+          </div>
+          ${probe?`<div class="row" style="justify-content:space-between;font-size:12px">
+            <span class="mut">התאמה למכשיר</span>
+            <span class="num ${fit>0.3?'up':fit<-0.3?'down':''}" dir="ltr">${fit>0?'+':''}${rnd1(fit,2)}</span></div>`:''}
+          <div class="row" style="gap:6px;margin-top:9px">
+            ${cr.seed&&cr.seed[c.id]?`<span class="pill p-good">יחידה נשלחה · ${cr.seed[c.id]} ח׳</span>`
+              :`<button class="btn sm" data-act="seed" data-cr="${cr.id}">שליחת יחידה</button>`}
+            <button class="btn sm" data-act="invite" data-cr="${cr.id}">הזמנה לכנס</button>
+            ${cr.paidBy===c.id?`<span class="pill p-warn">ממומן · ${cr.paidLeft} ח׳</span>`
+              :cr.paidBy?`<span class="pill p-mut">ממומן אצל ${esc(S.cos[cr.paidBy]?S.cos[cr.paidBy].n:'—')}</span>`
+              :`<button class="btn sm" data-act="sponsorcr" data-cr="${cr.id}">חסות $${creatorAsk(cr)}M</button>`}
+          </div>
+        </div>`;}).join('')}
+    </div>
+    <div class="scroll only-lg"><table><thead><tr><th>יוצר</th><th>זווית</th><th class="n">קהל</th><th class="n">אמינות</th>
+      <th class="n">התאמה</th><th>יחסים</th><th>סטטוס</th><th>פעולות</th></tr></thead><tbody>
+      ${rows.map(cr=>{const r=relOf(cr,c.id),fit=probe?angleFit(cr,probe):0;
+        return `<tr class="${covIds.indexOf(cr.id)>=0?'me':''}">
+        <td><b>${esc(cr.n)}</b> <span class="mut num" dir="ltr" style="font-size:11px">${esc(cr.h)}</span>
+          <br><small class="mut">${esc(cr.style)}</small></td>
+        <td><span class="pill p-vi">${ANGLES[cr.ang].n}</span></td>
+        <td class="n">${rnd1(cr.f,1)}M</td>
+        <td class="n ${cr.cred>70?'up':cr.cred<45?'down':''}">${Math.round(cr.cred)}</td>
+        <td class="n ${fit>0.3?'up':fit<-0.3?'down':''}" dir="ltr">${probe?(fit>0?'+':'')+rnd1(fit,2):'—'}</td>
+        <td>${relPill(r)}</td>
+        <td>${cr.seed&&cr.seed[c.id]?`<span class="pill p-good">יחידה · ${cr.seed[c.id]} ח׳</span>`:''}
+            ${cr.paidBy===c.id?`<span class="pill p-warn">ממומן</span>`:cr.paidBy?`<span class="pill p-mut">ממומן אצל אחר</span>`:''}
+            ${covIds.indexOf(cr.id)>=0?'<span class="pill p-cy">מסקר אותנו</span>':''}</td>
+        <td class="n"><div class="row" style="gap:5px;justify-content:flex-end">
+          ${cr.seed&&cr.seed[c.id]?'':`<button class="btn sm" data-act="seed" data-cr="${cr.id}">יחידה</button>`}
+          <button class="btn sm" data-act="invite" data-cr="${cr.id}">כנס</button>
+          ${cr.paidBy?'':`<button class="btn sm" data-act="sponsorcr" data-cr="${cr.id}">חסות $${creatorAsk(cr)}M</button>`}
+        </div></td></tr>`;}).join('')}
+    </tbody></table></div>
+  </div>
+  <div class="card"><header><h2>איך זה עובד</h2></header>
+    <div class="cols c3">
+      <div class="tile"><i>שליחת יחידה · ${B(CR_COST.unit)}</i><b style="font-size:14.5px;font-family:var(--display)">קונה כיסוי, לא ציון</b>
+        <small>היוצר יסקר את מה שתשיקו בחצי השנה הקרובה. אם המכשיר טוב — היחסים מתחזקים. אם לא — הוא יגיד את זה לכולם.</small></div>
+      <div class="tile"><i>הזמנה לכנס · ${B(CR_COST.invite)}</i><b style="font-size:14.5px;font-family:var(--display)">בונה יחסים</b>
+        <small>יחסים חמים מרימים קלות את הציון שלו, ומצטברים לאורך שנים.</small></div>
+      <div class="tile"><i>חסות</i><b style="font-size:14.5px;font-family:var(--display)">קונה ציון, שורף אמינות</b>
+        <small>מוסיף 1.3 לציון שלו עלינו — אבל מוריד לו אמינות, וזה בדיוק מה שמוריד את משקל הדעה שקנינו.</small></div>
+    </div>
+  </div>`;
+}
 function vOffers(){
   const C=S.creator;
   return `
   <div class="card"><header><h2>הצעות שיתוף פעולה</h2><p>כסף עכשיו, אמינות אחר כך</p></header>
     ${C.offers.length?C.offers.map((o,i)=>{const co=S.cos[o.co];if(!co)return'';
+      if(o.kind==='unit')return `<div class="tile" style="margin-bottom:10px;border-color:rgba(139,123,255,.35)">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div><b style="font-family:var(--display);font-size:16px">${esc(o.pname)}</b>
+            <div class="mut" style="font-size:12.5px">${esc(co.n)} שלחה יחידת ביקורת מוקדמת</div></div>
+          <span class="pill p-vi">יחידה · ${o.exp-S.t} ח׳</span></div>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <span class="mut" style="font-size:12px">חשיפה מוקדמת = 30% יותר צפיות</span>
+          <button class="btn pri" data-act="takeunit" data-i="${i}">לסקר את המכשיר</button></div>
+        <div class="mut" style="font-size:11.5px;margin-top:6px">אין התחייבות לציון. אם תקטלו אותם — הם יזכרו, ויפסיקו לשלוח.</div>
+      </div>`;
       return `<div class="tile" style="margin-bottom:10px">
       <div class="row" style="justify-content:space-between;align-items:flex-start">
         <div><b style="font-family:var(--display);font-size:16px">${esc(co.n)}</b>
@@ -2549,7 +2731,7 @@ function vOffers(){
         <span class="num">תשלום $${o.fee}M</span>
         <button class="btn pri" data-act="takeoffer" data-i="${i}">לקחת את החסות</button></div>
       <div class="mut" style="font-size:11.5px;margin-top:6px">המחיר: ירידה של 2 עד 5 נקודות אמינות, וקהל שמזהה תגית ממומן.</div>
-    </div>`;}).join(''):'<p class="mut" style="margin:0">אין הצעות כרגע. חברות פונות ליוצרים עם קהל של מעל 400 אלף.</p>'}
+    </div>`;}).join(''):'<p class="mut" style="margin:0">אין הצעות כרגע. חברות פונות ליוצרים עם קהל של מעל 250 אלף.</p>'}
   </div>
   <div class="card"><header><h2>איך זה עובד</h2></header>
     <div class="cols c2">
@@ -2931,7 +3113,7 @@ function wire(){
   v.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act,b.dataset));
   v.querySelectorAll('[data-cact]').forEach(b=>b.onclick=()=>act('cact',{k:b.dataset.cact}));
 }
-function pickReviewModal(pid){
+function pickReviewModal(pid,seeded){
   let prod=null,co=null;
   for(const id in S.cos)S.cos[id].products.forEach(x=>{if(x.id===+pid){prod=x;co=S.cos[id];}});
   if(!prod){reviewPickerModal();return;}
@@ -2939,7 +3121,7 @@ function pickReviewModal(pid){
   let best=0; for(const id in S.cos)S.cos[id].products.forEach(x=>{
     if(x.state==='live'&&x.para===prod.para&&x.score>best)best=x.score;});
   const draw=()=>{
-    modal(`<div class="top"><h3>ביקורת · ${esc(prod.name)}</h3><button class="x" data-x>×</button></div>
+    modal(`<div class="top"><h3>ביקורת · ${esc(prod.name)}</h3>${seeded?'<span class="pill p-vi right">יחידה מוקדמת</span>':''}<button class="x" data-x>×</button></div>
       <div class="bd">
         <div class="cols c2" style="margin-bottom:12px">
           <div class="tile"><i>${esc(co.n)} · ${PARA[prod.para].n}</i>
@@ -2963,7 +3145,7 @@ function pickReviewModal(pid){
     $('modal').querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{score=+b.dataset.q;
       $('rvScore').value=score;$('rvLbl').textContent=score;});
     $('rvGo').onclick=()=>{
-      S.creator.action={type:'review',pid:prod.id,score:Math.round(score*10)/10,pname:prod.name};
+      S.creator.action={type:'review',pid:prod.id,score:Math.round(score*10)/10,pname:prod.name,seeded:!!seeded};
       closeModal();V='creator';drawRail();render();save();};
   };
   draw();
@@ -3045,12 +3227,25 @@ function act(a,d){
     else {S.creator.action={type:k};render();save();}
   }
   else if(a==='rev')pickReviewModal(d.id);
+  else if(a==='takeunit'){
+    const o=S.creator.offers[+d.i];
+    if(o){S.creator.offers.splice(+d.i,1);save();pickReviewModal(o.pid,true);}
+  }
   else if(a==='takeoffer'){
     const o=S.creator.offers[+d.i];
     if(o){S.creator.action={type:'sponsor',co:o.co,coname:S.cos[o.co]?S.cos[o.co].n:''};
       S.creator.offers.splice(+d.i,1);V='creator';drawRail();render();save();}
   }
   else if(a==='found')foundModal();
+  else if(a==='seed'||a==='invite'||a==='sponsorcr'){
+    const cr=S.creators.find(x=>x.id===d.cr); if(!cr)return;
+    const cost=a==='sponsorcr'?creatorAsk(cr)/1000:CR_COST[a==='seed'?'unit':'invite'];
+    if(c.cash<cost*1.2){alert('אין מספיק מזומן לפעולה הזאת.');return;}
+    if(a==='sponsorcr'&&!confirm(`לשלם ל${cr.n} $${creatorAsk(cr)}M על חסות? האמינות שלו/ה תיפגע, וזה נראה לקהל.`))return;
+    const txt=a==='seed'?sendUnit(S,c,cr,6):a==='invite'?inviteCreator(S,c,cr):sponsorCreator(S,c,cr);
+    news(S,txt,a==='sponsorcr'?'w':'a');
+    render(); save();
+  }
   else if(a==='newprod')newProdModal();
   else if(a==='install')doInstall();
   else if(a==='save')saveModal();
