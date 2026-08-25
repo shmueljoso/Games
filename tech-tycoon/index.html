@@ -37,7 +37,8 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
-body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1px);background-size:3px 3px;background-attachment:fixed}
 h1,h2,h3,h4{font-family:var(--display);font-weight:800;margin:0;letter-spacing:-.02em;text-wrap:balance}
 button,select,input,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
@@ -50,6 +51,8 @@ button{cursor:pointer;border:0;background:none}
 /* ═══════════ command bar ═══════════ */
 .bar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(10,12,18,.99),rgba(10,12,18,.94));
   backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:9px 20px}
+.bar::after{content:'';position:absolute;bottom:-1px;right:0;height:2px;width:var(--yr,0%);
+  background:linear-gradient(90deg,transparent,var(--accent));transition:width .5s ease;border-radius:2px}
 .bar-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:1560px;margin:0 auto}
 .who{display:flex;align-items:center;gap:10px;min-width:190px}
 .who .badge{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-family:var(--display);
@@ -108,10 +111,16 @@ nav.rail{position:sticky;top:76px;display:flex;flex-direction:column;gap:1px}
 .card>header h2{font-size:16.5px}
 .card>header p{margin:0;font-size:12.5px;color:var(--ink-3)}
 .card>header .right{margin-inline-start:auto}
-.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+  display:flex;align-items:center;gap:9px;width:100%}
+.eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
 .tile{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:10px;padding:11px 13px;min-width:0;overflow-wrap:anywhere}
 .tile i{display:block;font-style:normal;font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
-.tile b{display:block;font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.045em;margin-top:1px}
+.tile b{display:block;font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.05em;margin-top:1px;
+  font-variant-numeric:tabular-nums}
+.tile i{font-weight:600}
+.tile.hi::after{content:'';position:absolute;inset:auto auto 0 0;width:34px;height:2px;background:var(--accent);opacity:.5}
+.tile{position:relative;overflow:hidden}
 .tile small{color:var(--ink-3);font-size:11.5px;display:block;margin-top:1px}
 .tile.hi{border-color:rgba(255,122,69,.32);background:linear-gradient(160deg,var(--accent-glow),var(--panel-2) 62%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
@@ -436,22 +445,22 @@ const TGROUPS=['סיליקון','בינה','תצוגה','חישה','אנרגיה
 const PARA={
   phone:  {n:'סמארטפון',        short:'טלפון', price:640, el:1.25, dev:8,  nre:1.1,
            en:{chipDesign:.22,edgeAI:.20,microled:.13,battery:.15,net6g:.13,materials:.17}, viab:30,
-           recipe:{wafer:70,memory:58,display:62,battery:26,sensors:40,rare:12,assembly:18}},
+           mods:{chip:[.20,70],camera:[.17,50],display:[.15,58],battery:[.14,24],memory:[.12,38],build:[.12,18],radio:[.10,10]}, asm:18},
   fold:   {n:'מכשיר מתקפל',     short:'מתקפל',price:1390,el:1.05, dev:11, nre:1.7,
            en:{flexDisplay:.34,materials:.23,chipDesign:.14,battery:.16,microled:.13}, viab:60,
-           recipe:{wafer:82,memory:70,display:250,battery:34,sensors:46,rare:22,assembly:38}},
+           mods:{flexdisp:[.26,240],build:[.20,80],chip:[.16,76],battery:[.14,34],camera:[.12,46],memory:[.12,28]}, asm:38},
   glasses:{n:'משקפי בינה',      short:'משקפיים',price:720,el:1.15, dev:13, nre:2.1,
            en:{optics:.20,microled:.20,edgeAI:.18,battery:.16,spatial:.16,materials:.10}, viab:58,
-           recipe:{wafer:44,memory:26,display:120,battery:22,sensors:74,rare:18,assembly:26}},
+           mods:{waveguide:[.24,112],camera:[.16,56],chip:[.15,44],battery:[.17,22],build:[.14,44],mic:[.14,26]}, asm:26},
   ambient:{n:'בינה סביבתית',    short:'סביבתי',price:290, el:1.45, dev:9,  nre:1.3,
            en:{aiModel:.28,voiceNLU:.26,edgeAI:.16,net6g:.14,bioSense:.16}, viab:66,
-           recipe:{wafer:26,memory:22,display:0,battery:14,sensors:38,rare:7,assembly:12}},
+           mods:{mic:[.28,34],chip:[.20,28],radio:[.16,12],memory:[.12,16],build:[.12,10],charging:[.12,7]}, asm:12},
   robot:  {n:'רובוט אישי',      short:'רובוט', price:2900,el:0.95, dev:17, nre:3.4,
            en:{actuators:.28,autonomy:.28,aiModel:.17,battery:.15,materials:.12}, viab:62,
-           recipe:{wafer:120,memory:90,display:40,battery:260,sensors:210,rare:95,assembly:180}},
+           mods:{actuators:[.28,280],autonomy:[.24,150],percept:[.18,175],battery:[.16,160],chassis:[.14,50]}, asm:180},
   neural: {n:'ממשק עצבי',       short:'עצבי',  price:1950,el:1.00, dev:20, nre:4.2,
            en:{neural:.40,bioSense:.24,nanoFab:.22,edgeAI:.14}, viab:70,
-           recipe:{wafer:96,memory:40,display:0,battery:30,sensors:180,rare:44,assembly:70}}
+           mods:{electrode:[.34,160],biosense:[.24,100],chip:[.18,86],battery:[.12,24],build:[.12,20]}, asm:70}
 };
 const PK=keys(PARA);
 
@@ -459,20 +468,46 @@ const PK=keys(PARA);
    כל מודול קושר צומת ידע לרכיב בשרשרת האספקה: הדרגה קובעת גם כמה
    מהידע שלכם מתבטא במוצר וגם כמה הוא עולה לייצר.                      */
 const PARTS={
-  chip:    {n:'מעבד',            node:'chipDesign', comp:'wafer',   w:.22, t:['דור קודם','סטנדרטי','מוביל','דגל','מותאם אישית']},
-  camera:  {n:'מערך צילום',      node:'optics',     comp:'sensors', w:.17, t:['בסיסי','כפול','משולש','חיישן גדול','פריסקופ מקצועי']},
-  display: {n:'מסך',             node:'microled',   comp:'display', w:.16, t:['LCD','OLED','OLED 120Hz','LTPO','מיקרו-LED']},
-  battery: {n:'סוללה וטעינה',    node:'battery',    comp:'battery', w:.14, t:['קטנה','סטנדרטית','גדולה','טעינה מהירה','צפיפות גבוהה']},
-  memory:  {n:'זיכרון ואחסון',   node:'memory',     comp:'memory',  w:.13, t:['מינימלי','בסיסי','נדיב','גבוה','מקסימלי']},
-  build:   {n:'חומרים ומארז',    node:'materials',  comp:'rare',    w:.18, t:['פלסטיק','אלומיניום','זכוכית','טיטניום','חומר מרוכב']}
+  chip:     {n:'מעבד',              node:'chipDesign',  comp:'wafer',   t:['דור קודם','סטנדרטי','מוביל','דגל','מותאם אישית']},
+  camera:   {n:'מערך צילום',        node:'optics',      comp:'sensors', t:['בסיסי','כפול','משולש','חיישן גדול','פריסקופ מקצועי']},
+  display:  {n:'מסך',               node:'microled',    comp:'display', t:['LCD','OLED','OLED 120Hz','LTPO','מיקרו-LED']},
+  flexdisp: {n:'מסך מתקפל',         node:'flexDisplay', comp:'display', t:['פלסטיק בסיסי','זכוכית דקה','ללא קמט','ציר נוזלי','גליל נפרס']},
+  waveguide:{n:'אופטיקה ומדריכי גל',node:'holo',        comp:'display', t:['השתקפות פשוטה','מדריך גל','שדה ראייה רחב','צבע מלא','הקרנה לרשתית']},
+  mic:      {n:'מערך מיקרופונים',   node:'voiceNLU',    comp:'sensors', t:['מיקרופון יחיד','זוג','מערך 4','מערך רחוק','ביטול רעש אקטיבי']},
+  radio:    {n:'מודם ורדיו',        node:'net6g',       comp:'wafer',   t:['דור קודם','סטנדרטי','רב-פס','לוויין','דור הבא']},
+  battery:  {n:'סוללה וטעינה',      node:'battery',     comp:'battery', t:['קטנה','סטנדרטית','גדולה','טעינה מהירה','צפיפות גבוהה']},
+  charging: {n:'הזנה אלחוטית',      node:'wireless',    comp:'battery', t:['כבל בלבד','משטח','מרחק קצר','חדרי','רציף']},
+  memory:   {n:'זיכרון ואחסון',     node:'memory',      comp:'memory',  t:['מינימלי','בסיסי','נדיב','גבוה','מקסימלי']},
+  build:    {n:'חומרים ומארז',      node:'materials',   comp:'rare',    t:['פלסטיק','אלומיניום','זכוכית','טיטניום','חומר מרוכב']},
+  chassis:  {n:'שלדה והרכבה',       node:'mfgAuto',     comp:'assembly',t:['פלדה','אלומיניום','סיבי פחמן','מפרקים קלים','שלד אקטיבי']},
+  actuators:{n:'מפעילים ומנועים',   node:'actuators',   comp:'rare',    t:['סרוו בסיסי','מדויק','הרמוני','גמיש','שריר מלאכותי']},
+  autonomy: {n:'מחשב אוטונומיה',    node:'autonomy',    comp:'wafer',   t:['תסריטים','ניווט','למידה','החלטה עצמאית','הבנה מלאה']},
+  percept:  {n:'חישה מרחבית',       node:'spatial',     comp:'sensors', t:['מצלמה','עומק','LiDAR','מיזוג חיישנים','מודל עולם']},
+  electrode:{n:'ממשק אלקטרודות',    node:'neural',      comp:'sensors', t:['חיצוני יבש','ג׳ל','מערך צפוף','פולשני מינימלי','שתל מלא']},
+  biosense: {n:'חיישנים ביולוגיים', node:'bioSense',    comp:'sensors', t:['דופק','חמצן','אק״ג','מטבולי','רציף מלא']}
 };
 const PTK=keys(PARTS);
 const TIER_COST=[0.58,0.78,1,1.36,1.95];
 const TIER_Q   =[0.42,0.72,1,1.23,1.44];
-function defCfg(t){const o={};PTK.forEach(k=>o[k]=t||3);return o;}
-function cfgOf(p){ if(p.cfg)return p.cfg; return defCfg(p.spec||3); }
-function cfgQuality(p){const c=cfgOf(p);return sum(PTK.map(k=>PARTS[k].w*TIER_Q[(c[k]||3)-1]));}
-function avgTier(p){const c=cfgOf(p);return sum(PTK.map(k=>c[k]||3))/PTK.length;}
+const modsOf=para=>keys(PARA[para].mods);
+function defCfg(para,t){const o={};modsOf(para).forEach(k=>o[k]=t||3);return o;}
+function cfgOf(p){
+  const c=p.cfg||{}, o={};
+  modsOf(p.para).forEach(k=>o[k]=clamp(c[k]||p.spec||3,1,5));
+  return o;
+}
+function cfgQuality(p){const c=cfgOf(p),M=PARA[p.para].mods;
+  return sum(modsOf(p.para).map(k=>M[k][0]*TIER_Q[(c[k]||3)-1]));}
+function avgTier(p){const c=cfgOf(p),ks=modsOf(p.para);return sum(ks.map(k=>c[k]||3))/ks.length;}
+/* המתכון בשרשרת האספקה נגזר מהמודולים — אין רשימה כפולה לתחזק */
+const RECIPE_CACHE={};
+function recipeOf(para){
+  if(RECIPE_CACHE[para])return RECIPE_CACHE[para];
+  const M=PARA[para].mods,r={};
+  keys(M).forEach(k=>{const cp=PARTS[k].comp;r[cp]=(r[cp]||0)+M[k][1];});
+  r.assembly=(r.assembly||0)+PARA[para].asm;
+  RECIPE_CACHE[para]=r; return r;
+}
 
 /* ── §4 רכיבים וספקים ───────────────────────────────────────────────────── */
 const COMP={
@@ -564,11 +599,12 @@ const ROLES={
 const STARTUP_N=['Nimbus','Halcyon','Torus','Basalt','Vireo','Kestrel','Oblique','Sable','Petrichor','Zenith','Cobalt','Mirage','Anvil','Lumen','Quill'];
 
 /* ── §7 יצירת מצב ────────────────────────────────────────────────────────── */
-function newGame(coId,seedStr){
+function newGame(coId,seedStr,opts){
+  opts=opts||{};
   const G={
     rs:hash32(seedStr||String(Math.random())), seed:seedStr||'',
-    t:0, over:false, ending:null,
-    cos:{}, me:coId,
+    t:0, over:false, ending:null, mode:opts.mode||'ceo',
+    cos:{}, me:coId, creator:opts.creator||null,
     market:{total:70, growth:0.0026},          // $B לחודש בהוצאה צרכנית על מכשירים
     spot:{}, suppliers:baseSuppliers(),
     talent:[], startups:[], nextId:1,
@@ -602,11 +638,16 @@ function newGame(coId,seedStr){
     });
     G.cos[d.id]=c;
   });
-  refreshTalent(G,10); seedStartups(G,4);
+  refreshTalent(G,10); seedStartups(G,4); seedCreators(G);
   measureParadigms(G);
-  const me=G.cos[coId];
-  G.career.titles.push({co:coId,from:0});
-  news(G,`מונית למנכ״ל ${me.n}. השוק מחכה לראות מה תעשה עם הכיסא.`,'a');
+  if(G.mode==='creator'){
+    G.me=null;
+    news(G,`<b>${G.creator.name}</b> (${G.creator.handle}) מעלה סרטון ראשון. אף אחד עוד לא צופה.`,'v');
+  } else {
+    const me=G.cos[coId];
+    G.career.titles.push({co:coId,from:0});
+    news(G,`מונית למנכ״ל ${me.n}. השוק מחכה לראות מה תעשה עם הכיסא.`,'a');
+  }
   return G;
 }
 
@@ -614,7 +655,7 @@ function newGame(coId,seedStr){
 function mkProduct(G,c,para,o){
   o=o||{};
   return {id:G.nextId++, co:c.id, para, name:o.name||(c.tag+' '+PARA[para].short),
-    price:o.price||PARA[para].price, spec:o.spec||3, cfg:o.cfg||defCfg(o.spec||3),
+    price:o.price||PARA[para].price, spec:o.spec||3, cfg:o.cfg||defCfg(para,o.spec||3),
     keynote:o.keynote||0, review:0, mkt:o.mkt||0.05,
     state:'dev', start:G.t, launch:o.launch!==undefined?o.launch:G.t+PARA[para].dev,
     score:0, units:0, rev:0, hype:0, sabotage:0, defect:false, legacy:false, lastUnits:0};
@@ -622,24 +663,20 @@ function mkProduct(G,c,para,o){
 function scoreOf(G,c,p){
   const pr=PARA[p.para]; let base=0;
   for(const k in pr.en) base+=(c.tech[k]||0)*pr.en[k];
-  const cf=cfgOf(p), q=cfgQuality(p);
-  /* דרגת רכיב גבוהה מאפשרת לידע שלכם באותו תחום להתבטא במוצר בפועל */
+  const cf=cfgOf(p), q=cfgQuality(p), M=pr.mods;
+  /* דרגת מודול גבוהה מאפשרת לידע שלכם באותו תחום להתבטא במוצר בפועל */
   let edge=0;
-  PTK.forEach(k=>{edge+=PARTS[k].w*((c.tech[PARTS[k].node]||0)-58)*0.115*TIER_Q[(cf[k]||3)-1];});
+  modsOf(p.para).forEach(k=>{edge+=M[k][0]*((c.tech[PARTS[k].node]||0)-58)*0.115*TIER_Q[(cf[k]||3)-1];});
   const ready=clamp((p.launch-p.start)/pr.dev,0,1.4);
   const rush=Math.pow(clamp(1-ready,0,1),1.5)*30;
   const staffB=staffBonus(c)*4;
   return clamp(base*(0.62+0.38*q)+edge+staffB-rush-(p.sabotage||0)-(p.defect?15:0),5,140);
 }
 function bomOf(G,c,p){
-  const rec=PARA[p.para].recipe, cf=cfgOf(p);
-  const tierOf={}; PTK.forEach(k=>tierOf[PARTS[k].comp]=cf[k]||3);
-  const av=avgTier(p);
+  const pr=PARA[p.para], cf=cfgOf(p), M=pr.mods;
   let t=0;
-  for(const k in rec){
-    const tier=tierOf[k]!==undefined?tierOf[k]:Math.round(av);
-    t+=rec[k]*effPrice(G,c,k)*TIER_COST[clamp(tier,1,5)-1];
-  }
+  modsOf(p.para).forEach(k=>{t+=M[k][1]*TIER_COST[clamp(cf[k]||3,1,5)-1]*effPrice(G,c,PARTS[k].comp);});
+  t+=pr.asm*effPrice(G,c,'assembly')*(0.72+avgTier(p)*0.09);
   const eff=1-((c.traits&&c.traits.costEff)||0)*0.13;
   return t*eff*(1+G.macro.tariff*0.4);
 }
@@ -814,7 +851,7 @@ function supplyTick(G){
       if(ct.left>0){
         ct.left--;
         /* Take-or-pay: משלמים על המחויבות גם אם לא ייצרנו */
-        const need=sum(c.products.filter(p=>p.state==='live').map(p=>(PARA[p.para].recipe[ct.comp]||0)*p.lastUnits))/1000;
+        const need=sum(c.products.filter(p=>p.state==='live').map(p=>(recipeOf(p.para)[ct.comp]||0)*p.lastUnits))/1000;
         const commit=ct.vol*0.7;
         if(need<commit)c.cash-=(commit-need)*ct.price*0.001;
       }
@@ -1151,9 +1188,9 @@ function aiTick(G,c){
     const T=c.traits||{};
     const cheap=T.reach>0.7||T.costEff>0.5;
     const tierBase=cheap?ri(G,1,3):ri(G,2,5);
-    const cfg={}; PTK.forEach(k=>cfg[k]=clamp(tierBase+ri(G,-1,1),1,5));
-    if(T.b2b)cfg.camera=5;
-    if(T.carrier)cfg.build=clamp(cfg.build-1,1,5);
+    const cfg={}; modsOf(focus).forEach(k=>cfg[k]=clamp(tierBase+ri(G,-1,1),1,5));
+    if(T.b2b&&cfg.camera)cfg.camera=5;
+    if(T.carrier&&cfg.build)cfg.build=clamp(cfg.build-1,1,5);
     const p=mkProduct(G,c,focus,{name:c.tag+' '+pr.short+' '+(turnY(G.t)%100),
       price:Math.round(pr.price*rr(G,0.82,1.14)*(cheap?0.62:c.style.agg>0.65?0.9:1)),
       cfg, mkt:c.marketing*rr(G,0.4,0.9)});
@@ -1282,14 +1319,236 @@ function fireMe(G,reason){
   return st;
 }
 
+/* ── §19 יוצרי תוכן ומבקרים ─────────────────────────────────────────────
+   הביקורות כבר לא נוסחה סגורה: קהילת היוצרים היא שקובעת איך מוצר מתקבל,
+   וכל יוצר הוא דמות עם קהל, אמינות ונטייה משלו. השחקן יכול להיות אחד מהם. */
+const CREATORS0=[
+ {n:'טל ברנע',      h:'@talbench',   f:8.4, cred:82, bias:-0.6, style:'מודד הכל, לא סולח על כלום', focus:'phone'},
+ {n:'Mira Okafor',  h:'@miraunbox',  f:14.2,cred:64, bias:0.7,  style:'התלהבות מדבקת, פחות פרטים',  focus:null},
+ {n:'דור אלקיים',   h:'@dortech',    f:3.1, cred:88, bias:-0.2, style:'תחקירים ארוכים על תעשייה',   focus:null},
+ {n:'Kenji Sato',   h:'@satolab',    f:5.6, cred:79, bias:-0.3, style:'פירוק לרכיבים ומדידות',      focus:'phone'},
+ {n:'Luz Herrera',  h:'@luzframes',  f:6.9, cred:71, bias:0.2,  style:'צילום ואודיו מעל הכל',       focus:'glasses'},
+ {n:'נועה רז',      h:'@noaz',       f:2.3, cred:75, bias:0.1,  style:'שימושיות יומיומית',          focus:'ambient'},
+ {n:'Otto Brandt',  h:'@ottobuilds', f:1.9, cred:84, bias:-0.5, style:'רובוטיקה והנדסה',            focus:'robot'},
+ {n:'Priya Nair',   h:'@priyanext',  f:11.5,cred:58, bias:0.9,  style:'הראשונה עם כל דבר חדש',      focus:null}
+];
+function seedCreators(G){
+  G.creators=CREATORS0.map((c,i)=>({id:'cr'+i,n:c.n,h:c.h,f:c.f,cred:c.cred,bias:c.bias,
+    style:c.style,focus:c.focus,paidBy:null,paidLeft:0,heat:0}));
+}
+/* איכות אמיתית של מוצר בסולם 1–10, מול הטוב ביותר שקיים בקטגוריה */
+function truthOf(G,p){
+  let best=0;
+  for(const id in G.cos)G.cos[id].products.forEach(x=>{
+    if(x.state==='live'&&x.para===p.para&&x.score>best)best=x.score;});
+  best=Math.max(best,p.score,30);
+  const rel=p.score/best;
+  const value=Math.pow(PARA[p.para].price/Math.max(40,p.price),0.45);
+  let t=4.6+(rel-1)*26+(value-1)*7+(p.defect?-2.8:0);
+  if((p.hype||0)>0.35&&rel<0.92)t-=0.9;
+  return clamp(t,1,10);
+}
+/* משקל דעה = קהל × אמינות. מי שאיבד אמינות, איבד השפעה. */
+const voice=c=>c.f*(0.35+c.cred/100);
+function creatorVerdict(G,co,p){
+  const truth=truthOf(G,p);
+  const takes=G.creators.map(cr=>{
+    let sc=truth+cr.bias+(rand(G)-0.5)*0.9;
+    if(cr.paidBy===co.id&&cr.paidLeft>0)sc+=1.3;
+    if(cr.focus===p.para)sc+=0.35;
+    return {id:cr.id,n:cr.n,h:cr.h,sc:clamp(Math.round(sc*10)/10,1,10),w:voice(cr)};
+  });
+  if(G.mode==='creator'&&G.creator&&G.creator.autoReview){
+    /* השחקן מסקר אוטומטית רק אם בחר בכך */
+  }
+  const tw=sum(takes.map(t=>t.w))||1;
+  const avg=sum(takes.map(t=>t.sc*t.w))/tw;
+  return {score:clamp(Math.round(avg*10)/10,1,10),takes,truth};
+}
+/* פרסום ביקורת — של השחקן או של יוצר אחר — מזיז את השוק בפועל */
+function publishReview(G,cr,p,score){
+  const co=G.cos[p.co]; if(!co)return null;
+  const truth=truthOf(G,p);
+  const w=voice(cr)/(sum(G.creators.map(voice))+voice(cr));
+  const delta=(score-(p.review||truth))*w*0.9;
+  p.review=clamp(Math.round(((p.review||truth)+delta)*10)/10,1,10);
+  p.reviewAt=G.t;
+  /* האמת מתגלה: מי שסטה ממנה משלם באמינות, ולוקח זמן עד שהקהל מבין */
+  const miss=Math.abs(score-truth);
+  return {truth,miss,delta};
+}
+function creatorTick(G){
+  G.creators.forEach(cr=>{
+    if(cr.paidLeft>0){cr.paidLeft--;if(cr.paidLeft===0)cr.paidBy=null;}
+    /* קהל גדל עם אמינות ועם רעש בתעשייה, ונשחק מעצמו */
+    const buzz=sum(PK.map(x=>(G.para[x]&&G.para[x].mat)||0))/PK.length;
+    cr.f=clamp(cr.f*(1+0.004+buzz*0.012+(cr.cred-60)*0.00035+(rand(G)-0.5)*0.02),0.05,140);
+    cr.cred=clamp(cr.cred+(rand(G)-0.48)*0.6,5,99);
+    cr.heat*=0.9;
+  });
+  /* תקציב ההייפ של חברה = תשלום ליוצרים, על חשבון האמינות שלהם */
+  for(const id in G.cos){
+    const c=G.cos[id];
+    const spend=c.isMe?G.ops.hype:(c.baseRev*c.style.ops*3);
+    if(spend>60&&rand(G)<0.3){
+      const free=G.creators.filter(x=>!x.paidBy);
+      if(free.length){
+        const cr=free[Math.floor(rand(G)*free.length)];
+        cr.paidBy=id; cr.paidLeft=ri(G,2,5); cr.cred=clamp(cr.cred-rr(G,1,3),5,99);
+        if(c.isMe)opLog(G,`<b>${cr.n}</b> (${cr.h}) חתם על שיתוף פעולה ממומן איתנו.`,'a');
+      }
+    }
+  }
+}
+/* סטארטאפ שלא נרכש מספיק זמן — הופך לחברה מן המניין */
+function graduateStartup(G){
+  const old=G.startups.filter(s=>G.t-s.born>20);
+  if(!old.length||rand(G)>0.08)return;
+  const s=old[0];
+  G.startups=G.startups.filter(x=>x!==s);
+  const tag=s.n.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()||'NEW';
+  const c={id:'co'+G.nextId++,n:s.n,tag,d:'סטארטאפ שסירב להימכר וגדל לחברה עצמאית.',playable:0,
+    cash:clamp(1+sum(vals(s.tech))/60,1,9),debt:0.5,brand:32,board:60,
+    tech:{},alloc:null,rndBudget:0.6,marketing:0.05,staff:s.staff||[],products:[],contracts:[],
+    style:{agg:.7,ops:.2,rndShare:.18,focus:s.focus},homeFocus:s.focus,baseRev:0.35,
+    traits:{},installed:20,lockin:25,hist:[],scandal:0,counter:0.1,isMe:false};
+  TK.forEach(k=>c.tech[k]=clamp(s.tech[k]||frontier(G,k)*rr(G,0.35,0.6),3,99));
+  G.cos[c.id]=c;
+  news(G,`<b>${s.n}</b> סירבה להצעות רכישה, גייסה סבב עצמאי ונכנסת לשוק כחברה מן המניין.`,'v');
+}
+/* ── השחקן כיוצר תוכן ─────────────────────────────────────────────────── */
+const CREATOR_ACTS={
+  review:{n:'ביקורת מכשיר',   d:'לבחור מכשיר, לתת ציון ולעמוד מאחוריו'},
+  invest:{n:'תחקיר',          d:'לחפור בחברה — ולחשוף מה שהיא מסתירה'},
+  sponsor:{n:'סרטון ממומן',   d:'כסף עכשיו, אמינות אחר כך'},
+  deep:{n:'תוכן עומק',        d:'איטי, בונה אמינות וקהל נאמן'},
+  studio:{n:'שדרוג הסטודיו',  d:'להשקיע בהפקה ולהאיץ צמיחה'}
+};
+function newCreator(name,handle,av){
+  return {name:name||'יוצר/ת חדש/ה',handle:handle||'@newcreator',av:av||{e:'🎬',c:'#FF7A45'},
+    f:0.02,cred:50,cash:8,studio:1,videos:[],action:null,offers:[],lastResult:null,
+    truthScore:50,founded:false};
+}
+function creatorVoice(G){const C=G.creator;return C.f*(0.35+C.cred/100);}
+function playerCreatorTick(G){
+  const C=G.creator; if(!C)return null;
+  const act=C.action||{type:'deep'};
+  const quality=0.6+C.studio*0.22;
+  let res={type:act.type,gain:0,cash:0,txt:''};
+  const buzz=1+sum(PK.map(x=>(G.para[x]&&G.para[x].mat)||0))*0.5;
+
+  if(act.type==='review'&&act.pid){
+    let prod=null,co=null;
+    for(const id in G.cos)G.cos[id].products.forEach(x=>{if(x.id===act.pid){prod=x;co=G.cos[id];}});
+    if(prod){
+      const r=publishReview(G,{f:C.f,cred:C.cred},prod,act.score);
+      const pop=clamp((prod.lastRev||0.1)*0.5,0.05,2.5);
+      res.gain=(0.045+pop*0.05)*quality*buzz;
+      /* דיוק מול האמת קובע אם הקהל יאמין לך בפעם הבאה */
+      const acc=clamp(1.6-r.miss,-1.6,1.4);
+      C.cred=clamp(C.cred+acc*1.5,5,99);
+      C.truthScore=clamp(C.truthScore+acc*2,0,100);
+      res.txt=`הביקורת על ${prod.name} פורסמה. נתת ${act.score}/10, האמת הייתה קרובה ל-${rnd1(r.truth,1)}. `+
+        (r.miss<0.8?'הקהל סמך עליך.':r.miss<1.8?'היו ויכוחים בתגובות.':'הקהל חשב שפספסת לגמרי.');
+      news(G,`<b>${C.name}</b> פרסם/ה ביקורת על ${prod.name}: <b>${act.score}/10</b>.`,'v');
+      if(co&&act.score<4.5){co.brand=clamp(co.brand-0.6*clamp(C.f/6,0.1,2),15,100);}
+    }
+  } else if(act.type==='invest'&&act.co){
+    const t=G.cos[act.co];
+    if(t){
+      const found=rand(G)<clamp(0.25+C.studio*0.09+C.cred/260,0,0.75);
+      if(found){
+        const dev=t.products.filter(x=>x.state==='dev');
+        C.intel=C.intel||{}; C.intel[act.co]=G.t+10;
+        if(t.scandal>0||rand(G)<0.3){
+          t.brand=clamp(t.brand-rr(G,2,6),15,100); t.board=clamp(t.board-rr(G,3,8),0,100);
+          res.gain=(0.12+C.f*0.03)*quality*buzz;
+          C.cred=clamp(C.cred+2.5,5,99);
+          res.txt=`התחקיר על ${t.n} חשף מסמכים פנימיים. הסרטון התפוצץ.`;
+          news(G,`<b>תחקיר:</b> ${C.name} חושף/ת התנהלות בעייתית ב${t.n}.`,'b');
+        } else {
+          res.gain=(0.05+C.f*0.012)*quality;
+          res.txt=`התחקיר לא מצא עבירה, אבל חשף את לוח ההשקות של ${t.n}.`+(dev.length?` (${dev.length} מוצרים בפיתוח)`:'');
+        }
+      } else { res.gain=0.01*quality; res.txt='התחקיר לא הוביל לכלום החודש. קורה.'; }
+    }
+  } else if(act.type==='sponsor'&&act.co){
+    const t=G.cos[act.co];
+    if(t){
+      const fee=clamp(C.f*0.9+C.cred*0.05,0.4,60);
+      C.cash+=fee; res.cash=fee;
+      C.cred=clamp(C.cred-rr(G,2.5,5),5,99);
+      res.gain=0.02*quality;
+      const p=t.products.filter(x=>x.state==='live').sort((a,b)=>b.launch-a.launch)[0];
+      if(p){p.hype=clamp((p.hype||0)+clamp(C.f/22,0.02,0.35),0,1);}
+      res.txt=`${t.n} שילמה $${rnd1(fee,1)}M על הסרטון. הקהל שם לב לתגית "ממומן".`;
+    }
+  } else if(act.type==='studio'){
+    const cost=6*C.studio;
+    if(C.cash>=cost){C.cash-=cost;C.studio++;res.cash=-cost;
+      res.txt=`הסטודיו שודרג לרמה ${C.studio}. כל סרטון מכאן נראה אחרת.`;}
+    else res.txt='אין מספיק מזומן לשדרוג הסטודיו.';
+    res.gain=0.01;
+  } else {
+    res.gain=(0.03+C.cred*0.0006)*quality*buzz;
+    C.cred=clamp(C.cred+0.8,5,99);
+    res.txt='סרטון עומק על התעשייה. צמיחה איטית, קהל שנשאר.';
+  }
+  /* קהל והכנסות */
+  C.f=clamp(C.f*(1-0.012)+res.gain,0.005,200);
+  const rpm=0.9+C.studio*0.15;
+  const adRev=C.f*rpm;
+  C.cash+=adRev-C.studio*1.1;
+  res.adRev=adRev;
+  C.action=null; C.lastResult=res;
+  C.videos.unshift({t:G.t,type:act.type,txt:res.txt,f:C.f,cash:res.cash||0});
+  if(C.videos.length>60)C.videos.pop();
+  /* הצעות חסות מגיעות לפי גודל הקהל */
+  if(C.f>0.4&&rand(G)<0.25&&C.offers.length<3){
+    const ids=keys(G.cos).filter(id=>G.cos[id].baseRev>1);
+    const co=G.cos[ids[Math.floor(rand(G)*ids.length)]];
+    if(co)C.offers.push({co:co.id,fee:Math.round(clamp(C.f*1.2+rand(G)*8,1,90)),exp:G.t+3});
+  }
+  C.offers=C.offers.filter(o=>o.exp>G.t);
+  return res;
+}
+function foundCompany(G,cfg){
+  const C=G.creator;
+  const seed=clamp(C.f*0.32+C.cred*0.02,0.4,6);
+  const id='co'+G.nextId++;
+  const c={id,n:cfg.name,tag:cfg.tag,d:'חברה שנולדה מקהל: '+C.name+' הפך/ה את הערוץ למותג.',playable:1,
+    cash:seed,debt:0,brand:clamp(26+C.f*1.5+C.cred*0.12,20,72),board:64,
+    tech:{},alloc:null,rndBudget:seed*0.5,marketing:0.02,staff:[],products:[],contracts:[],
+    style:{agg:.62,ops:.15,rndShare:.16,focus:cfg.focus},homeFocus:cfg.focus,
+    baseRev:clamp(0.08+C.f*0.02,0.06,0.9),
+    traits:cfg.trait?{[cfg.trait]:1}:{},
+    installed:clamp(C.f*8,2,400),lockin:22,hist:[],scandal:0,counter:0.1,isMe:true};
+  TK.forEach(k=>c.tech[k]=clamp(frontier(G,k)*rr(G,0.30,0.5),3,80));
+  /* הידע בקטגוריה שבחרתם מתחיל גבוה יותר — שם התמחיתם */
+  keys(PARA[cfg.focus].en).forEach(k=>c.tech[k]=clamp(c.tech[k]*1.5,3,88));
+  c.expect=-0.04;
+  const pr0=PARA[cfg.focus];
+  const first=mkProduct(G,c,cfg.focus,{name:cfg.name+' '+pr0.short,price:Math.round(pr0.price*0.92),
+    cfg:defCfg(cfg.focus,3),mkt:0.02,keynote:1});
+  first.launch=G.t+Math.round(pr0.dev*0.85);
+  c.products.push(first);
+  G.cos[id]=c; G.me=id; G.mode='ceo';
+  C.founded=true; C.companyId=id;
+  G.career.rep=clamp(G.career.rep+C.cred*0.15,0,100);
+  G.career.titles.push({co:id,from:G.t});
+  G.career.tenure=0;
+  news(G,`<b>${cfg.name} יוצאת לדרך.</b> ${C.name} גייס/ה $${rnd1(seed,1)}B על גב קהל של ${rnd1(C.f,1)} מיליון עוקבים.`,'a');
+  return c;
+}
+
 /* ── §18 תור המשחק ──────────────────────────────────────────────────────── */
 function step(G){
-  const me=G.cos[G.me];
   macroTick(G);
   supplyTick(G);
   for(const id in G.cos){const c=G.cos[id];rndTick(G,c);aiTick(G,c);}
-  talentTick(G); startupTick(G);
-  opsTick(G);
+  talentTick(G); startupTick(G); graduateStartup(G); creatorTick(G);
+  if(G.mode==='ceo')opsTick(G);
+  const creatorRes=G.mode==='creator'?playerCreatorTick(G):null;
   /* השקות ופיתוח */
   for(const id in G.cos){
     const c=G.cos[id];
@@ -1307,11 +1566,13 @@ function step(G){
           else q.state='eol';});
         const risk=Math.pow(clamp(1-(p.launch-p.start)/PARA[p.para].dev,0,1),1.5)*0.8;
         if(rand(G)<risk){p.defect=true;p.score=scoreOf(G,c,p);c.brand=clamp(c.brand-3.2,15,100);}
-        p.review=computeReview(G,c,p); p.reviewAt=G.t;
+        const verdict=creatorVerdict(G,c,p);
+        p.review=verdict.score; p.reviewAt=G.t; p.takes=verdict.takes.slice(0,5);
         if(c.isMe){
-          const verdict=p.review>=8.5?'g':p.review>=6.5?'a':'b';
-          news(G,`<b>${p.name}</b> הושק${p.keynote?' ב'+KEYNOTE[p.keynote].n:''}. ציון ביקורות <b>${p.review}/10</b> · מחיר $${p.price}.`+
-            (p.defect?' המבקרים דיווחו על באגים.':''),verdict);
+          const kind=p.review>=8.5?'g':p.review>=6.5?'a':'b';
+          const top=verdict.takes.sort((a,b)=>b.w-a.w)[0];
+          news(G,`<b>${p.name}</b> הושק${p.keynote?' ב'+KEYNOTE[p.keynote].n:''}. ממוצע הביקורות <b>${p.review}/10</b>`+
+            (top?` · ${top.n} נתן/ה ${top.sc}`:'')+`. מחיר $${p.price}.`+(p.defect?' דווחו באגים.':''),kind);
         }
         else if(p.review>8.7)news(G,`${c.n} משיקה את ${p.name} — הביקורות נותנות ${p.review}/10 ומדברות על קפיצת דור.`,'w');
       } else if(p.state==='live'){
@@ -1323,15 +1584,25 @@ function step(G){
   const sales=marketTick(G);
   let f=null;
   for(const id in G.cos){const r=financeTick(G,G.cos[id],sales);if(id===G.me)f=r;}
-  careerTick(G,f);
-  G.hist.push({t:G.t,rev:f.rev,op:f.op,cash:me.cash,rep:G.career.rep,board:me.board,
-               share:shareOf(G,G.me),brand:me.brand});
+  const me=G.cos[G.me];
+  if(G.mode==='creator'){
+    const C=G.creator;
+    G.career.tenure++;
+    G.career.rep=clamp(G.career.rep*0.95+C.cred*0.0367+clamp(C.f,0,25)*0.047,0,100);
+    G.hist.push({t:G.t,rev:C.f*0.001,op:0,cash:C.cash*0.001,rep:G.career.rep,board:50,
+                 share:0,brand:C.cred,followers:C.f,cred:C.cred,creatorCash:C.cash});
+    log(G,`${rnd1(C.f,2)}M עוקבים · אמינות ${Math.round(C.cred)} · הכנסה $${rnd1(creatorRes&&creatorRes.adRev||0,1)}M`,'v');
+  } else {
+    careerTick(G,f);
+    G.hist.push({t:G.t,rev:f.rev,op:f.op,cash:me.cash,rep:G.career.rep,board:me.board,
+                 share:shareOf(G,G.me),brand:me.brand});
+    log(G,`הכנסות $${rnd1(f.rev,2)}B · רווח תפעולי $${rnd1(f.op,2)}B · ${rnd1(f.units,1)}M יחידות`,f.op>0?'g':'b');
+  }
   G.paraHist.push(PK.reduce((o,p)=>{o[p]=G.para[p].ready;return o;},{t:G.t}));
-  log(G,`הכנסות $${rnd1(f.rev,2)}B · רווח תפעולי $${rnd1(f.op,2)}B · ${rnd1(f.units,1)}M יחידות`,f.op>0?'g':'b');
   G.t++;
-  const ev=drawEvent(G);
+  const ev=G.mode==='ceo'?drawEvent(G):null;
   const end=checkEnd(G,f);
-  return {f,sales,event:ev,end};
+  return {f,sales,event:ev,end,creator:creatorRes};
 }
 function shareOf(G,id){
   let mine=0,tot=0;
@@ -1339,6 +1610,14 @@ function shareOf(G,id){
   return tot>0?mine/tot:0;
 }
 function checkEnd(G,f){
+  if(G.mode==='creator'){
+    const C=G.creator;
+    if(C.cred<8&&C.f<0.04)return{kind:'over',t:'הערוץ נסגר',
+      d:'איבדת גם את האמינות וגם את הקהל. הסרטונים ממשיכים לשבת שם, בלי שאף אחד לוחץ עליהם.'};
+    if(C.cash<-25)return{kind:'over',t:'הסטודיו נסגר',
+      d:'ההוצאות רדפו את ההכנסות והחוב סגר את הפינה. הציוד נמכר, והערוץ הפך לארכיון.'};
+    return null;
+  }
   const me=G.cos[G.me];
   if(me.board<=0)return{kind:'fired',reason:'הדירקטוריון איבד סבלנות אחרי רצף רבעונים חלשים.'};
   if(me.cash<0.4&&me.debt>me.baseRev*14)return{kind:'fired',reason:'הבנקים סירבו למחזר את החוב והשתלטו על ההנהלה.'};
@@ -1359,8 +1638,10 @@ const SAVE='tech_tycoon_v2';
 const slotKey=i=>SAVE+'_s'+i;
 function slotInfo(i){try{const r=localStorage.getItem(slotKey(i));if(!r)return null;const o=JSON.parse(r);
   return {co:o.co,t:o.t,at:o.at,rep:o.rep};}catch(e){return null;}}
-function saveTo(i){try{localStorage.setItem(slotKey(i),JSON.stringify({co:S.cos[S.me].n,t:S.t,
-  at:Date.now(),rep:Math.round(S.career.rep),s:S}));return true;}catch(e){return false;}}
+function saveTo(i){try{
+  const who=S.mode==='creator'?(S.creator.name+' · ערוץ'):(S.cos[S.me]?S.cos[S.me].n:'—');
+  localStorage.setItem(slotKey(i),JSON.stringify({co:who,t:S.t,
+    at:Date.now(),rep:Math.round(S.career.rep),s:S}));return true;}catch(e){return false;}}
 function loadFrom(i){const r=localStorage.getItem(slotKey(i));if(!r)return false;
   try{const o=JSON.parse(r);S=o.s;return true;}catch(e){return false;}}
 function saveModal(){
@@ -1480,34 +1761,110 @@ function traitPills(c){
 const PC={phone:'#FF7A45',fold:'#8B7BFF',glasses:'#3ED9E8',ambient:'#3FCF8E',robot:'#F0B429',neural:'#F2545B'};
 
 /* ── מסך פתיחה ובחירת חברה ──────────────────────────────────────────────── */
+const AVATARS=['🎬','🎙️','📱','🛰️','🧪','🎧','⚡','🔭','🧠','🕹️'];
+const AVCOLORS=['#FF7A45','#3ED9E8','#8B7BFF','#3FCF8E','#F0B429','#F2545B'];
+let CHAR={name:'',handle:'',e:'🎬',c:'#FF7A45'};
+let PATH=null;
 function drawIntro(){
   const playable=CO_DEFS.filter(c=>c.playable);
+  const ready=CHAR.name.trim().length>1;
   $('intro').innerHTML=`
     <div class="kick">Executive Simulation · 2025</div>
     <h1>מסלול הברזל</h1>
-    <p class="lead">אתם נכנסים לחדר ההנהלה בינואר 2025. אין תאריך שבו העולם מחליף טכנולוגיה — יש רק
-    מו״פ שמישהו מימן. אם אף חברה לא תשקיע במשקפי בינה, הקטגוריה הזאת פשוט לא תיפתח. אם תשקיעו אתם ותגיעו ראשונים,
-    השוק יזוז לכיוון שאתם בניתם. וגם ההפך: אפשר לפספס גל שמישהו אחר מימן, ולגלות שהמוצר שלכם הפך למוצר של אתמול.</p>
+    <p class="lead">ינואר 2025. אין תאריך שבו העולם מחליף טכנולוגיה — יש רק מו״פ שמישהו מימן.
+    אפשר לשבת בכיסא המנכ״ל ולהזיז את הכסף, או להתחיל מהצד השני של המצלמה: ערוץ, קהל,
+    ודעה שמזיזה מכירות. שתי הדרכים מובילות לאותו עולם.</p>
     <div class="rule"></div>
-    <h2 style="font-size:20px;margin-bottom:4px">בחרו את הכיסא</h2>
-    <p class="mut" style="font-size:13.5px;margin:0">כל חברה היא רמת קושי אחרת. אם תיכשלו — לא נגמר המשחק: תפוטרו, המוניטין ייפגע, ותתחילו מחדש מסטארטאפ קטן.</p>
-    <div class="pickgrid">${playable.map(c=>`
-      <button class="co ${PICK===c.id?'on':''}" data-co="${c.id}">
-        <b>${c.n}</b><div class="tag">${c.tag} · ${c.style.focus==='phone'?'טלפונים':c.style.focus==='fold'?'מתקפלים':c.style.focus==='ambient'?'בינה סביבתית':c.style.focus==='glasses'?'משקפיים':'עתידני'}</div>
-        <div class="d">${c.d}</div>
-        ${c.traits&&keys(c.traits).length?`<div style="margin-bottom:6px">${keys(c.traits).filter(k=>TRAIT_TXT[k])
-          .map(k=>`<span class="pill p-vi">${TRAIT_TXT[k][0]}</span>`).join(' ')}</div>`:''}
-        <div class="kv"><span>הכנסה $${c.rev}B/חודש</span><span>מזומן $${c.cash}B</span></div>
-      </button>`).join('')}</div>
-    <div class="row" style="margin-top:22px">
-      <label class="f" style="max-width:220px;margin:0"><span>זרע עולם (אופציונלי)</span><input type="text" id="seed" placeholder="לדוגמה: 2025"></label>
-      <button class="btn pri" id="go" style="padding:11px 26px;font-size:15.5px" ${PICK?'':'disabled'}>כניסה לתפקיד</button>
+
+    <div class="card" style="margin-bottom:18px">
+      <header><h2>מי אתם</h2><p>הדמות נשארת איתכם גם כשמחליפים תפקיד</p></header>
+      <div class="cols c2">
+        <div>
+          <label class="f"><span>שם</span><input type="text" id="chName" value="${esc(CHAR.name)}" placeholder="השם שלכם" maxlength="22"></label>
+          <label class="f"><span>כינוי ערוץ (רלוונטי ליוצרי תוכן)</span>
+            <input type="text" id="chHandle" value="${esc(CHAR.handle)}" placeholder="@handle" maxlength="18"></label>
+        </div>
+        <div>
+          <label class="f" style="margin-bottom:8px"><span>אווטאר</span>
+            <div class="seg" id="chAv">${AVATARS.map(a=>`<button data-av="${a}" class="${a===CHAR.e?'on':''}" style="font-size:19px;padding:5px 9px">${a}</button>`).join('')}</div></label>
+          <label class="f"><span>צבע</span>
+            <div class="row" id="chCol" style="gap:8px">${AVCOLORS.map(c=>`<button data-col="${c}" style="width:30px;height:30px;border-radius:9px;background:${c};border:2px solid ${c===CHAR.c?'var(--ink)':'transparent'}"></button>`).join('')}</div></label>
+        </div>
+      </div>
+      <div class="row" style="margin-top:6px;gap:12px;align-items:center">
+        <div style="width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:23px;
+          background:${CHAR.c}22;border:1px solid ${CHAR.c}66">${CHAR.e}</div>
+        <div><b style="font-family:var(--display);font-size:16px">${esc(CHAR.name||'ללא שם')}</b>
+          <div class="mut num" dir="ltr" style="font-size:12px">${esc(CHAR.handle||'@—')}</div></div>
+      </div>
+    </div>
+
+    <h2 style="font-size:20px;margin-bottom:4px">איך מתחילים</h2>
+    <p class="mut" style="font-size:13.5px;margin:0 0 14px">שני מסלולים, אותו עולם. אפשר לעבור מהאחד לשני תוך כדי משחק.</p>
+    <div class="cols c2" style="margin-bottom:16px">
+      <button class="co ${PATH==='ceo'?'on':''}" data-path="ceo" style="padding:18px">
+        <b style="font-size:19px">כיסא המנכ״ל</b>
+        <div class="tag">מתחילים בראש חברה קיימת</div>
+        <div class="d" style="min-height:auto;margin-top:8px">מיליארדים בתקציב, דירקטוריון שסופר רבעונים, ועשר חברות לבחירה — מענקית פרימיום ועד מותג פולחן בלי תזרים.</div>
+      </button>
+      <button class="co ${PATH==='creator'?'on':''}" data-path="creator" style="padding:18px">
+        <b style="font-size:19px">יוצר תוכן</b>
+        <div class="tag">מתחילים בלי כלום · מסלול ארוך</div>
+        <div class="d" style="min-height:auto;margin-top:8px">ערוץ ריק, 20 אלף עוקבים ומצלמה. הביקורות שלכם מזיזות מכירות באמת, האמינות נשחקת כשמשקרים, ובסוף אפשר להפוך את הקהל לחברה.</div>
+      </button>
+    </div>
+
+    <div id="pathBox">${PATH==='ceo'?`
+      <div class="card"><header><h2>בחרו חברה</h2><p>כל חברה היא רמת קושי אחרת</p></header>
+      <div class="pickgrid">${playable.map(c=>`
+        <button class="co ${PICK===c.id?'on':''}" data-co="${c.id}">
+          <b>${c.n}</b><div class="tag">${c.tag} · ${PARA[c.style.focus].n}</div>
+          <div class="d">${c.d}</div>
+          ${c.traits&&keys(c.traits).length?`<div style="margin-bottom:6px">${keys(c.traits).filter(k=>TRAIT_TXT[k])
+            .map(k=>`<span class="pill p-vi">${TRAIT_TXT[k][0]}</span>`).join(' ')}</div>`:''}
+          <div class="kv"><span>הכנסה $${c.rev}B/חודש</span><span>מזומן $${c.cash}B</span></div>
+        </button>`).join('')}</div></div>`
+      :PATH==='creator'?`
+      <div class="card"><header><h2>הערוץ שלכם</h2><p>כל חודש — סרטון אחד. מה תעשו בו</p></header>
+        <div class="cols c2">
+          ${keys(CREATOR_ACTS).map(k=>`<div class="tile"><i>${CREATOR_ACTS[k].n}</i>
+            <div style="font-size:13px;color:var(--ink-2);margin-top:3px">${CREATOR_ACTS[k].d}</div></div>`).join('')}
+        </div>
+        <p class="mut" style="font-size:12.5px;margin-top:12px">מתחילים עם 20 אלף עוקבים, $8M ואמינות 50. יש שמונה יוצרים גדולים מכם בשוק, והדעה של כולם יחד קובעת איך כל מכשיר מתקבל.</p>
+      </div>`:''}
+    </div>
+
+    <div class="row" style="margin-top:20px">
+      <button class="btn pri" id="go" style="padding:12px 28px;font-size:16px" ${PATH&&ready&&(PATH!=='ceo'||PICK)?'':'disabled'}>
+        ${PATH==='creator'?'להעלות סרטון ראשון':'כניסה לתפקיד'}</button>
       <button class="btn" id="load">טעינת משחק שמור</button>
       <button class="btn" id="installBtn" data-install style="display:none">התקנה כאפליקציה</button>
     </div>
+    ${ready?'':'<p class="mut" style="font-size:12.5px;margin-top:10px">צריך להזין שם כדי להתחיל.</p>'}
     <p class="mut" style="font-size:12.5px;margin-top:18px">המשחק רץ גם בטלפון, ואפשר להתקין אותו כאפליקציה שעובדת בלי אינטרנט.</p>`;
+
+  $('chName').oninput=e=>{CHAR.name=e.target.value;const g=$('go');
+    if(g)g.disabled=!(PATH&&CHAR.name.trim().length>1&&(PATH!=='ceo'||PICK));};
+  $('chHandle').oninput=e=>{CHAR.handle=e.target.value;};
+  $('chAv').querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{CHAR.e=b.dataset.av;drawIntro();});
+  $('chCol').querySelectorAll('[data-col]').forEach(b=>b.onclick=()=>{CHAR.c=b.dataset.col;drawIntro();});
+  $('intro').querySelectorAll('[data-path]').forEach(b=>b.onclick=()=>{PATH=b.dataset.path;drawIntro();});
   $('intro').querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>{PICK=b.dataset.co;drawIntro();});
-  $('go').onclick=()=>{if(!PICK)return;S=newGame(PICK,$('seed').value.trim());boot();};
+  $('go').onclick=()=>{
+    if(!PATH||CHAR.name.trim().length<2)return;
+    const seed=CHAR.name+CHAR.handle+Date.now();
+    if(PATH==='creator'){
+      const h=(CHAR.handle||'@'+CHAR.name.replace(/\s/g,'')).replace(/^@?/,'@');
+      S=newGame(null,seed,{mode:'creator',creator:newCreator(CHAR.name,h,{e:CHAR.e,c:CHAR.c})});
+    } else {
+      if(!PICK)return;
+      S=newGame(PICK,seed);
+      S.player={name:CHAR.name,e:CHAR.e,c:CHAR.c};
+    }
+    S.player=S.player||{name:CHAR.name,e:CHAR.e,c:CHAR.c};
+    V=S.mode==='creator'?'creator':'dash';
+    boot();
+  };
   $('load').style.display=[0,1,2,3].some(i=>slotInfo(i))?'':'none';
   $('load').onclick=()=>saveModal();
   $('installBtn').onclick=doInstall; paintInstall();
@@ -1516,6 +1873,11 @@ function boot(){$('intro').hidden=true;$('app').hidden=false;drawRail();render()
 function save(){saveTo(0);}
 
 /* ── ניווט ─────────────────────────────────────────────────────────────── */
+const TABS_CREATOR=[
+ {g:'הערוץ'},{id:'creator',t:'לוח הערוץ'},{id:'arena',t:'הזירה'},{id:'offers',t:'הצעות ושיתופים'},
+ {g:'העולם'},{id:'market',t:'שוק ומתחרים'},{id:'found',t:'להקים חברה'},
+ {g:''},{id:'log',t:'יומן ותיעוד'},{id:'help',t:'כללי המשחק'}
+];
 const TABS=[
  {g:'ניהול'},{id:'dash',t:'לוח מחוונים'},{id:'rnd',t:'מו״פ וטכנולוגיה'},{id:'prod',t:'מוצרים והשקות'},{id:'eco',t:'אקוסיסטם ושירותים'},
  {g:'משאבים'},{id:'talent',t:'שוק הטאלנטים'},{id:'ma',t:'מיזוגים ורכישות'},{id:'supply',t:'שרשרת אספקה'},
@@ -1523,7 +1885,8 @@ const TABS=[
  {g:''},{id:'log',t:'יומן ותיעוד'},{id:'help',t:'כללי המשחק'}
 ];
 function drawRail(){
-  $('rail').innerHTML=TABS.map(t=>t.g!==undefined?(t.g?`<div class="grp">${t.g}</div>`:'<div style="height:10px"></div>')
+  const T=S&&S.mode==='creator'?TABS_CREATOR:TABS;
+  $('rail').innerHTML=T.map(t=>t.g!==undefined?(t.g?`<div class="grp">${t.g}</div>`:'<div style="height:10px"></div>')
     :`<button data-tab="${t.id}" class="${t.id===V?'on':''}">${t.t}<em id="bdg-${t.id}" style="display:none"></em></button>`).join('');
   $('rail').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{V=b.dataset.tab;drawRail();render();$('view').focus();});
 }
@@ -1531,11 +1894,30 @@ function badge(id,n){const e=$('bdg-'+id);if(!e)return;if(n){e.textContent=n;e.s
 
 /* ── סרגל עליון ────────────────────────────────────────────────────────── */
 function topbar(){
+  if(S.mode==='creator'){
+    const C=S.creator;
+    $('coBadge').textContent=C.av.e;
+    $('coBadge').style.color=C.av.c;
+    $('coName').textContent=C.name;
+    $('coDate').textContent=C.handle+' · '+dateEn(S.t);
+    document.querySelector('.bar').style.setProperty('--yr',((turnM(S.t)+1)/12*100).toFixed(0)+'%');
+    const it=[
+      ['עוקבים',rnd1(C.f,2)+'M',C.f>1?'up':''],
+      ['אמינות',Math.round(C.cred),C.cred>65?'up':C.cred<40?'down':''],
+      ['מזומן',(C.cash<0?'−$':'$')+rnd1(Math.abs(C.cash),1)+'M',C.cash>0?'':'down'],
+      ['סטודיו',C.studio,''],
+      ['מוניטין',Math.round(S.career.rep),S.career.rep>60?'up':''],
+      ['הפעולה החודש',C.action?CREATOR_ACTS[C.action.type].n:'טרם נבחרה',C.action?'up':'down']
+    ];
+    $('statBar').innerHTML=it.map(i=>`<div class="stat"><i>${i[0]}</i><b class="${i[2]}">${i[1]}</b></div>`).join('');
+    return;
+  }
   const c=S.cos[S.me], h=c.hist, l=h[h.length-1]||{rev:0,op:0};
   const op12=sum(h.slice(-12).map(x=>x.op))*(12/Math.max(1,Math.min(12,h.length)));
   $('coBadge').textContent=c.tag?c.tag[0]:'?';
   $('coName').textContent=c.n;
   $('coDate').textContent=dateEn(S.t)+' · Q'+(Math.floor(turnM(S.t)/3)+1);
+  document.querySelector('.bar').style.setProperty('--yr',((turnM(S.t)+1)/12*100).toFixed(0)+'%');
   const items=[
     ['מזומן','$'+rnd1(c.cash,0)+'B',c.cash>c.baseRev*2?'':'down'],
     ['רווח תפעולי (שנה)',h.length?'$'+rnd1(op12,1)+'B':'—',h.length?(op12>0?'up':'down'):''],
@@ -1564,12 +1946,22 @@ function paintTicker(){
 }
 function render(){
   topbar();
-  $('view').innerHTML=({dash:vDash,rnd:vRnd,prod:vProd,eco:vEco,talent:vTalent,ma:vMA,supply:vSupply,
-    market:vMarket,ops:vOps,career:vCareer,log:vLog,help:vHelp}[V]||vDash)();
+  const VIEWS={dash:vDash,rnd:vRnd,prod:vProd,eco:vEco,talent:vTalent,ma:vMA,supply:vSupply,
+    market:vMarket,ops:vOps,career:vCareer,log:vLog,help:vHelp,
+    creator:vCreator,arena:vArena,offers:vOffers,found:vFound};
+  const allowed=(S.mode==='creator'?TABS_CREATOR:TABS).filter(t=>t.id).map(t=>t.id);
+  if(allowed.indexOf(V)<0)V=S.mode==='creator'?'creator':'dash';
+  $('view').innerHTML=(VIEWS[V]||vDash)();
   wire();
-  badge('talent',S.talent.filter(t=>t.creativity+t.efficiency>150).length);
-  badge('ma',S.startups.length);
-  badge('career',S.career.offers.length);
+  if(S.mode==='creator'){
+    badge('offers',S.creator.offers.length);
+    badge('creator',S.creator.action?0:'!');
+    badge('found',(S.creator.f>=1.2&&S.creator.cred>=40)?'✓':0);
+  } else {
+    badge('talent',S.talent.filter(t=>t.creativity+t.efficiency>150).length);
+    badge('ma',S.startups.length);
+    badge('career',S.career.offers.length);
+  }
   paintInstall();
   paintTicker();
 }
@@ -1769,7 +2161,7 @@ function vProd(){
       <td class="n">${dateHe(p.launch)}<br><small class="mut">בעוד ${Math.max(0,p.launch-S.t)} ח׳</small></td>
       <td class="n"><span class="pill ${rd>=1?'p-good':rd>0.75?'p-warn':'p-bad'}">${rnd1(rd*100,0)}%</span></td>
       <td class="n">${Math.round(scoreOf(S,c,p))}</td><td class="n">$${p.price}</td>
-      <td>${PTK.map(k=>`<span class="pill ${cfgOf(p)[k]>=4?'p-acc':'p-mut'}" title="${PARTS[k].n}">${PARTS[k].n.split(' ')[0]} ${cfgOf(p)[k]}</span>`).join(' ')}</td>
+      <td>${modsOf(p.para).map(k=>`<span class="pill ${cfgOf(p)[k]>=4?'p-acc':'p-mut'}" title="${PARTS[k].n}">${PARTS[k].n.split(' ')[0]} ${cfgOf(p)[k]}</span>`).join(' ')}</td>
       <td class="n"><button class="btn sm" data-act="shift" data-id="${p.id}" data-d="-1">הקדם</button>
         <button class="btn sm" data-act="shift" data-id="${p.id}" data-d="1">דחה</button>
         <button class="btn sm bad" data-act="kill" data-id="${p.id}">בטל</button></td></tr>`;}).join('')}
@@ -1903,7 +2295,7 @@ function vMA(){
 function vSupply(){
   const c=me();
   const need={}; CK.forEach(k=>need[k]=0);
-  c.products.filter(p=>p.state==='live').forEach(p=>{const r=PARA[p.para].recipe;
+  c.products.filter(p=>p.state==='live').forEach(p=>{const r=recipeOf(p.para);
     CK.forEach(k=>need[k]+=(r[k]||0)*(p.lastUnits||0)/1000);});
   const sh=S.macro.shock;
   return `
@@ -2056,6 +2448,135 @@ function vEco(){
   </div>`;
 }
 
+function actCard(k,sel){
+  const A=CREATOR_ACTS[k];
+  return `<button class="choice" data-cact="${k}" style="${sel?'border-color:var(--accent);background:var(--accent-glow)':''}">
+    <b>${A.n}</b><span>${A.d}</span></button>`;
+}
+function vCreator(){
+  const C=S.creator, h=S.hist.slice(-30);
+  const rank=S.creators.concat([{id:'me',n:C.name,h:C.handle,f:C.f,cred:C.cred}])
+    .sort((a,b)=>b.f-a.f);
+  const myRank=rank.findIndex(x=>x.id==='me')+1;
+  const act=C.action;
+  return `
+  <div class="cols c4">
+    <div class="tile hi"><i>עוקבים</i><b>${rnd1(C.f,2)}<span style="font-size:13px" class="mut">M</span></b>
+      <small>מקום ${myRank} מתוך ${rank.length}</small></div>
+    <div class="tile"><i>אמינות</i><b class="${C.cred>65?'up':C.cred<40?'down':''}">${Math.round(C.cred)}</b>
+      <div class="meter ${C.cred>65?'g':C.cred>40?'w':'b'}" style="margin-top:6px"><span style="width:${C.cred}%"></span></div>
+      <small>כמה הקהל מאמין לציון שלכם</small></div>
+    <div class="tile"><i>מזומן</i><b class="${C.cash<0?'down':''}">${C.cash<0?'−$':'$'}${rnd1(Math.abs(C.cash),1)}M</b>
+      <small>אחזקת סטודיו $${rnd1(C.studio*1.1,1)}M לחודש</small></div>
+    <div class="tile"><i>סטודיו</i><b>רמה ${C.studio}</b><small>איכות הפקה מכפילה צמיחה</small></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;${act?'':'border-color:var(--accent)'}">
+    <header><h2>הסרטון של ${dateHe(S.t)}</h2>
+      <p>${act?'הפעולה נבחרה. אפשר לשנות עד סוף החודש':'צריך לבחור מה מעלים החודש'}</p></header>
+    ${act?`<div class="tile" style="margin-bottom:12px;border-color:var(--accent)">
+      <i>נבחר</i><b style="font-size:16px;font-family:var(--display)">${CREATOR_ACTS[act.type].n}</b>
+      <small>${act.type==='review'?'ציון מתוכנן: '+act.score+'/10 · '+esc(act.pname||''):
+              act.type==='invest'||act.type==='sponsor'?esc(act.coname||''):CREATOR_ACTS[act.type].d}</small>
+      </div>`:''}
+    ${keys(CREATOR_ACTS).map(k=>actCard(k,act&&act.type===k)).join('')}
+  </div>
+
+  ${C.lastResult?`<div class="card"><header><h2>מה קרה בסרטון הקודם</h2></header>
+    <p style="color:var(--ink)">${esc(C.lastResult.txt||'')}</p>
+    <div class="cols c3">
+      <div class="tile"><i>עוקבים חדשים</i><b class="up">+${rnd1((C.lastResult.gain||0)*1000,0)}K</b></div>
+      <div class="tile"><i>הכנסות פרסום</i><b>$${rnd1(C.lastResult.adRev||0,2)}M</b></div>
+      <div class="tile"><i>חסות</i><b class="${(C.lastResult.cash||0)>0?'up':''}">$${rnd1(C.lastResult.cash||0,1)}M</b></div>
+    </div></div>`:''}
+
+  <div class="cols c2" style="margin-top:16px">
+    <div class="card"><header><h2>הערוץ לאורך זמן</h2></header>
+      ${CH.line([{n:'עוקבים (M)',v:h.map(x=>x.followers||0),c:'var(--accent)',fill:1},
+                 {n:'אמינות',v:h.map(x=>(x.cred||0)/10),c:'var(--cyan)'}],{zero:1,alt:'צמיחת הערוץ'})}
+      <p class="mut" style="font-size:12px;margin-top:6px">האמינות מוצגת בקנה מידה של עשירית, כדי שתשב על אותו ציר.</p>
+    </div>
+    <div class="card"><header><h2>הסרטונים האחרונים</h2></header>
+      <div class="feed">${C.videos.slice(0,10).map(v=>`<div class="it"><time>${dateEn(v.t)}</time>
+        <span class="dot ${v.type==='sponsor'?'w':v.type==='invest'?'b':'v'}"></span>
+        <span><b>${CREATOR_ACTS[v.type].n}</b> — ${esc(v.txt)}</span></div>`).join('')
+        ||'<p class="mut">עוד לא העליתם כלום.</p>'}</div>
+    </div>
+  </div>`;
+}
+function vArena(){
+  const C=S.creator;
+  const all=S.creators.concat([{id:'me',n:C.name,h:C.handle,f:C.f,cred:C.cred,style:'אתם',focus:null,paidBy:null}])
+    .sort((a,b)=>b.f-a.f);
+  const prods=[];
+  for(const id in S.cos)S.cos[id].products.forEach(p=>{if(p.state==='live')prods.push({p,co:S.cos[id]});});
+  prods.sort((a,b)=>(b.p.lastRev||0)-(a.p.lastRev||0));
+  return `
+  <div class="card"><header><h2>קהילת היוצרים</h2><p>הדעה המשוקללת של כולם היא הציון שכל מכשיר מקבל בהשקה</p></header>
+    <div class="scroll"><table><thead><tr><th>יוצר</th><th class="n">עוקבים</th><th class="n">אמינות</th><th class="n sm-hide">משקל דעה</th><th class="sm-hide">אופי</th><th>סטטוס</th></tr></thead><tbody>
+    ${all.map((cr,i)=>`<tr class="${cr.id==='me'?'me':''}">
+      <td><b>${esc(cr.n)}</b> <span class="mut num" dir="ltr" style="font-size:11px">${esc(cr.h)}</span></td>
+      <td class="n">${rnd1(cr.f,1)}M</td>
+      <td class="n ${cr.cred>70?'up':cr.cred<45?'down':''}">${Math.round(cr.cred)}</td>
+      <td class="n sm-hide">${rnd1(cr.f*(0.35+cr.cred/100),1)}</td>
+      <td class="sm-hide mut" style="font-size:12px">${esc(cr.style||'')}</td>
+      <td>${cr.paidBy&&S.cos[cr.paidBy]?`<span class="pill p-warn">ממומן · ${esc(S.cos[cr.paidBy].n)}</span>`:'<span class="pill p-mut">עצמאי</span>'}</td>
+    </tr>`).join('')}
+    </tbody></table></div>
+  </div>
+  <div class="card"><header><h2>מה בשוק עכשיו</h2><p>${prods.length} מכשירים פעילים · אפשר לסקר כל אחד מהם</p></header>
+    <div class="scroll"><table><thead><tr><th>מכשיר</th><th>חברה</th><th class="sm-hide">קטגוריה</th><th class="n">מפרט</th><th class="n">מחיר</th><th class="n">ביקורות</th><th></th></tr></thead><tbody>
+    ${prods.slice(0,14).map(o=>`<tr>
+      <td><b>${esc(o.p.name)}</b></td><td>${esc(o.co.n)}</td>
+      <td class="sm-hide"><span class="pill" style="background:${PC[o.p.para]}22;color:${PC[o.p.para]}">${PARA[o.p.para].n}</span></td>
+      <td class="n">${Math.round(o.p.score)}</td><td class="n">$${o.p.price}</td>
+      <td class="n">${o.p.review?`<span class="pill ${o.p.review>=8?'p-good':o.p.review>=6?'p-cy':'p-bad'}">${o.p.review}</span>`:'—'}</td>
+      <td class="n"><button class="btn sm" data-act="rev" data-id="${o.p.id}">לסקר</button></td></tr>`).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+function vOffers(){
+  const C=S.creator;
+  return `
+  <div class="card"><header><h2>הצעות שיתוף פעולה</h2><p>כסף עכשיו, אמינות אחר כך</p></header>
+    ${C.offers.length?C.offers.map((o,i)=>{const co=S.cos[o.co];if(!co)return'';
+      return `<div class="tile" style="margin-bottom:10px">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><b style="font-family:var(--display);font-size:16px">${esc(co.n)}</b>
+          <div class="mut" style="font-size:12.5px">סרטון ממומן על המכשיר האחרון שלהם</div></div>
+        <span class="pill p-acc">פג בעוד ${o.exp-S.t} ח׳</span></div>
+      <div class="row" style="justify-content:space-between;margin-top:10px">
+        <span class="num">תשלום $${o.fee}M</span>
+        <button class="btn pri" data-act="takeoffer" data-i="${i}">לקחת את החסות</button></div>
+      <div class="mut" style="font-size:11.5px;margin-top:6px">המחיר: ירידה של 2 עד 5 נקודות אמינות, וקהל שמזהה תגית ממומן.</div>
+    </div>`;}).join(''):'<p class="mut" style="margin:0">אין הצעות כרגע. חברות פונות ליוצרים עם קהל של מעל 400 אלף.</p>'}
+  </div>
+  <div class="card"><header><h2>איך זה עובד</h2></header>
+    <div class="cols c2">
+      <div class="tile"><i>אמינות גבוהה</i><b style="font-size:15px;font-family:var(--display)">משקל דעה גדול</b>
+        <small>הציון שלכם מזיז את המכירות של המכשיר בפועל, ואת המותג של החברה.</small></div>
+      <div class="tile"><i>אמינות נמוכה</i><b style="font-size:15px;font-family:var(--display)">רעש ברקע</b>
+        <small>אפשר להמשיך לקבל כסף מחסויות, אבל אף אחד כבר לא מקשיב לציון.</small></div>
+    </div>
+  </div>`;
+}
+function vFound(){
+  const C=S.creator;
+  const seed=clamp(C.f*0.32+C.cred*0.02,0.4,6);
+  const ok=C.f>=1.2&&C.cred>=40;
+  return `
+  <div class="card"><header><h2>להפוך קהל לחברה</h2><p>הדרך היחידה מהצד הזה של המצלמה לצד השני</p></header>
+    <p>קהל גדול ואמינות גבוהה שווים כסף אמיתי. משקיעים ילכו אחרי מי שכבר הוכיח שהוא מבין מוצר —
+    ותצאו לדרך עם מותג מוכר מהיום הראשון, מכשיר ראשון בפיתוח, וקהל שמחכה לראות אם תעמדו בסטנדרט שדרשתם מאחרים.</p>
+    <div class="cols c3" style="margin:14px 0">
+      <div class="tile ${C.f>=1.2?'':''}"><i>עוקבים</i><b class="${C.f>=1.2?'up':'down'}">${rnd1(C.f,2)}M</b><small>נדרש 1.2M</small></div>
+      <div class="tile"><i>אמינות</i><b class="${C.cred>=40?'up':'down'}">${Math.round(C.cred)}</b><small>נדרש 40</small></div>
+      <div class="tile hi"><i>גיוס צפוי</i><b>${B(seed)}</b><small>לפי הקהל והאמינות</small></div>
+    </div>
+    <button class="btn pri" data-act="found" ${ok?'':'disabled'} style="padding:12px 24px;font-size:15.5px">להקים את החברה</button>
+    ${ok?'':'<p class="mut" style="font-size:12.5px;margin-top:10px">עוד לא. תבנו קהל ואמינות, ואז נדבר עם משקיעים.</p>'}
+  </div>`;
+}
 function vLog(){
   return `<div class="card"><header><h2>חדשות</h2></header>
     <div class="feed" style="max-height:none">${S.news.map(n=>`<div class="it"><time>${dateEn(n.t)}</time><span class="dot ${n.k}"></span><span>${n.text}</span></div>`).join('')}</div></div>
@@ -2087,6 +2608,20 @@ function vHelp(){
       <tr><td><b>ביקורות</b></td><td class="mut">בהשקה נקבע ציון מ-1 עד 10 מול הטוב ביותר שקיים אז בקטגוריה ומול התמורה למחיר. הציון מזיז את ארבעת החודשים הראשונים ואז מתפוגג.</td></tr>
       <tr><td><b>אקוסיסטם</b></td><td class="mut">כל מכשיר שנמכר נכנס לבסיס המותקן ומייצר הכנסה חוזרת. נעילה גבוהה מוסיפה אטרקטיביות — אבל הופכת לעוגן כשהעולם עובר קטגוריה.</td></tr>
     </tbody></table></div>
+    <h3 style="margin:18px 0 8px;font-size:16px">מסלול יוצר התוכן</h3>
+    <p>אפשר להתחיל גם בלי חברה. ערוץ, קהל קטן ומצלמה — וכל חודש סרטון אחד:</p>
+    <div class="scroll"><table><tbody>
+      <tr><td><b>ביקורת</b></td><td class="mut">בוחרים מכשיר ונותנים ציון. הציון מזיז את ממוצע הביקורות ואת המכירות בפועל, לפי הקהל והאמינות שלכם. ככל שתהיו קרובים לאמת — האמינות עולה.</td></tr>
+      <tr><td><b>תחקיר</b></td><td class="mut">חופרים בחברה. לפעמים מוצאים שלד בארון, ואז הסרטון מתפוצץ והמותג שלהם סופג.</td></tr>
+      <tr><td><b>ממומן</b></td><td class="mut">כסף מיידי במחיר אמינות. כשהיא נשחקת, הציון שלכם מפסיק להשפיע.</td></tr>
+      <tr><td><b>עומק</b></td><td class="mut">איטי, בונה אמינות וקהל נאמן.</td></tr>
+      <tr><td><b>סטודיו</b></td><td class="mut">משקיעים בהפקה. כל סרטון מכאן צומח מהר יותר.</td></tr>
+    </tbody></table></div>
+    <p style="margin-top:10px">בשוק פועלים עוד שמונה יוצרים עם קהל ואופי משלהם, והדעה המשוקללת של כולם היא הציון שכל מכשיר מקבל בהשקה.
+    חברות יכולות לשלם ליוצרים — כולל לכם — וזה נראה לקהל.</p>
+    <p>עם 1.2 מיליון עוקבים ואמינות 40 אפשר להפוך את הקהל לחברה: משקיעים נותנים הון לפי גודל הקהל,
+    המותג מתחיל גבוה, ומכשיר ראשון נכנס לפיתוח. מכאן זה המשחק המלא — והיוצרים יסקרו אתכם.</p>
+
     <h3 style="margin:18px 0 8px;font-size:16px">כישלון הוא לא סוף המשחק</h3>
     <p>דירקטוריון שמאבד אמון יפטר אתכם. המוניטין ייפגע, ותתחילו מחדש מסטארטאפ קטן — באותו עולם, מול אותם יריבים. רק מוניטין שנשרף עד הסוף מסיים את הסיפור.</p>
     <h3 style="margin:18px 0 8px;font-size:16px">התקנה על הטלפון</h3>
@@ -2126,98 +2661,132 @@ function next(){ if(Q.length){const f=Q.shift();f();} else {render();save();} }
 
 function newProdModal(){
   const c=me();
-  let cfg={para:PK.find(p=>paraOf(p).open)||'phone',name:'',price:0,mkt:0.02*Math.max(0.3,c.baseRev),
-           lead:0,keynote:1,parts:defCfg(3)};
-  const draw=()=>{
-    const pr=PARA[cfg.para];
-    if(!cfg.price)cfg.price=pr.price;
-    if(!cfg.lead)cfg.lead=pr.dev;
-    const probe={para:cfg.para,name:cfg.name,price:cfg.price,cfg:cfg.parts,mkt:cfg.mkt,
-                 start:S.t,launch:S.t+cfg.lead,sabotage:0,defect:false,keynote:cfg.keynote};
-    const score=scoreOf(S,c,probe), bom=bomOf(S,c,probe), marg=1-bom/cfg.price;
+  const firstOpen=PK.find(p=>paraOf(p).open)||'phone';
+  let cfg={para:firstOpen,name:'',price:PARA[firstOpen].price,mkt:0.02*Math.max(0.3,c.baseRev),
+           lead:PARA[firstOpen].dev,keynote:1,parts:defCfg(firstOpen,3)};
+  const probe=()=>({para:cfg.para,name:cfg.name,price:cfg.price,cfg:cfg.parts,mkt:cfg.mkt,
+                    start:S.t,launch:S.t+cfg.lead,sabotage:0,defect:false,keynote:cfg.keynote});
+  const bestIn=para=>{let b=0;for(const id in S.cos)S.cos[id].products.forEach(x=>{
+    if(x.state==='live'&&x.para===para&&x.score>b)b=x.score;});return b;};
+  const set=(id,txt,cls)=>{const e=$(id);if(!e)return;if(txt!==undefined)e.innerHTML=txt;
+    if(cls!==undefined)e.className=cls;};
+
+  /* מעדכן רק את המספרים — בלי לבנות מחדש את החלון, כדי שכלום לא יקפוץ */
+  const sync=()=>{
+    const pr=PARA[cfg.para], pb=probe();
+    const score=scoreOf(S,c,pb), bom=bomOf(S,c,pb), marg=1-bom/cfg.price;
     const risk=Math.pow(clamp(1-cfg.lead/pr.dev,0,1),1.5)*0.8;
-    const st=paraOf(cfg.para);
-    const kcost=keynoteCost(c,cfg.keynote);
-    /* הציון הטוב ביותר שקיים כרגע בקטגוריה — בסיס ההשוואה של המבקרים */
-    let best=0; for(const id in S.cos)S.cos[id].products.forEach(x=>{if(x.state==='live'&&x.para===cfg.para&&x.score>best)best=x.score;});
-    const relLbl=best?(score>=best?'מוביל בקטגוריה':score>best*0.92?'תחרותי':'מאחור'):'ראשון בקטגוריה';
+    const best=bestIn(cfg.para);
+    set('lLead',`<b>${dateHe(S.t+cfg.lead)}</b> · <span class="num">${cfg.lead}</span> מתוך <span class="num">${pr.dev}</span> חודשי פיתוח`);
+    set('lPrice',`<b class="num">$${cfg.price}</b>`);
+    set('lMkt',`<b class="num">$${Math.round(cfg.mkt*1000)}M</b> לחודש`);
+    set('lKey',`<b>${KEYNOTE[cfg.keynote].n}</b> · עלות ${B(keynoteCost(c,cfg.keynote))}`);
+    modsOf(cfg.para).forEach(k=>{
+      const t=cfg.parts[k];
+      set('tb-'+k,PARTS[k].t[t-1],'pill '+(t>=4?'p-acc':t===3?'p-mut':'p-warn'));
+      set('tc-'+k,`עלות ×${rnd1(TIER_COST[t-1],2)}`);
+      const lvl=c.tech[PARTS[k].node]||0;
+      set('tw-'+k, lvl>72&&t<=2?'הידע שלכם בתחום מבוזבז בדרגה הזאת':'');
+    });
+    set('sScore',Math.round(score),!best||score>=best?'up':score>best*0.9?'':'down');
+    set('sScoreSub',(!best?'ראשון בקטגוריה':score>=best?'מוביל בקטגוריה':score>best*0.92?'תחרותי':'מאחור')
+      +(best?' · הטוב בשוק '+Math.round(best):''));
+    set('sBom','$'+Math.round(bom));
+    set('sMarg',rnd1(marg*100,0)+'%',marg>0.4?'up':marg>0.2?'':'down');
+    set('sMargSub','$'+Math.round(cfg.price-bom)+' ליחידה');
+    set('sRisk',rnd1(risk*100,0)+'%',risk<0.05?'up':risk<0.2?'':'down');
+    set('sRiskSub',risk>0.25?'הפיתוח לא יבשיל':risk>0.05?'סיכון מנוהל':'יספיק להבשיל');
+    const cl=$('pClosed'); if(cl)cl.style.display=paraOf(cfg.para).open?'none':'';
+    set('pNote',`עלות פיתוח ${B(pr.nre)} (40% עכשיו) · אירוע חשיפה ${B(keynoteCost(c,cfg.keynote))} בהשקה · מזומן זמין ${B(c.cash)}.`);
+  };
+
+  const build=()=>{
+    const pr=PARA[cfg.para], st=paraOf(cfg.para);
     modal(`<div class="top"><h3>מגדיר המכשיר</h3>
-        <span class="pill p-mut right">${esc(PARA[cfg.para].n)}</span><button class="x" data-x>×</button></div>
+        <span class="pill p-mut right" style="background:${PC[cfg.para]}22;color:${PC[cfg.para]}">${esc(pr.n)}</span>
+        <button class="x" data-x>×</button></div>
       <div class="bd">
-      <div class="cols c2" style="margin-bottom:4px">
+      <div class="cols c2">
         <div>
           <label class="f"><span>קטגוריה</span><select id="pPara">
-            ${PK.map(p=>`<option value="${p}" ${p===cfg.para?'selected':''}>${PARA[p].n}${paraOf(p).open?'':' — סגורה'}</option>`).join('')}</select></label>
+            ${PK.map(x=>`<option value="${x}" ${x===cfg.para?'selected':''}>${PARA[x].n}${paraOf(x).open?'':' — סגורה'}</option>`).join('')}</select></label>
           <label class="f"><span>שם מסחרי</span><input type="text" id="pName" value="${esc(cfg.name)}" placeholder="${esc(c.tag+' '+pr.short)}"></label>
-          <label class="f"><span>מועד השקה · <b>${dateHe(S.t+cfg.lead)}</b> · <span class="num">${cfg.lead}</span> מתוך <span class="num">${pr.dev}</span> חודשי פיתוח</span>
+          <label class="f"><span>מועד השקה · <span id="lLead"></span></span>
             <input type="range" id="pLead" min="1" max="${pr.dev+10}" value="${cfg.lead}"></label>
         </div>
         <div>
-          <label class="f"><span>מחיר לצרכן · <b class="num">$${cfg.price}</b></span>
+          <label class="f"><span>מחיר לצרכן · <span id="lPrice"></span></span>
             <input type="range" id="pPrice" min="${Math.round(pr.price*0.35)}" max="${Math.round(pr.price*2.1)}" step="10" value="${cfg.price}"></label>
-          <label class="f"><span>שיווק · <b class="num">$${Math.round(cfg.mkt*1000)}M</b> לחודש</span>
+          <label class="f"><span>שיווק · <span id="lMkt"></span></span>
             <input type="range" id="pMkt" min="0" max="${rnd1(Math.max(0.1,c.baseRev*0.09),2)}" step="0.005" value="${cfg.mkt}"></label>
-          <label class="f"><span>אירוע חשיפה · <b>${KEYNOTE[cfg.keynote].n}</b> · עלות ${B(kcost)}</span>
+          <label class="f"><span>אירוע חשיפה · <span id="lKey"></span></span>
             <div class="seg" id="pKey">${KEYNOTE.map((k,i)=>`<button data-k="${i}" class="${i===cfg.keynote?'on':''}">${k.n}</button>`).join('')}</div></label>
         </div>
       </div>
-      ${st.open?'':`<p class="pill p-bad" style="display:block;padding:9px 12px;font-family:var(--body);font-weight:600;line-height:1.5">הקטגוריה עדיין לא בשלה מסחרית (מוכנות <span class="num">${rnd1(st.ready,0)}</span> מול סף <span class="num">${pr.viab}</span>). מוצר שיושק לתוכה כמעט לא יימכר — אלא אם תספיקו לפתוח אותה עד ההשקה.</p>`}
+      <p class="pill p-bad" id="pClosed" style="display:${st.open?'none':''};padding:9px 12px;font-family:var(--body);font-weight:600;line-height:1.5">
+        הקטגוריה עדיין לא בשלה מסחרית (מוכנות <span class="num">${rnd1(st.ready,0)}</span> מול סף <span class="num">${pr.viab}</span>). מוצר שיושק לתוכה כמעט לא יימכר — אלא אם תספיקו לפתוח אותה עד ההשקה.</p>
 
       <div style="border-top:1px solid var(--line);margin:14px 0 12px;padding-top:12px">
-        <div class="row" style="justify-content:space-between;margin-bottom:10px">
-          <b style="font-family:var(--display);font-size:15px">הרכבת המכשיר</b>
+        <div class="row" style="justify-content:space-between;margin-bottom:4px">
+          <b style="font-family:var(--display);font-size:15px">הרכבת ${esc(pr.n)}</b>
           <div class="row" style="gap:6px">
-            <button class="btn sm" data-preset="1">הכל בסיסי</button>
+            <button class="btn sm" data-preset="1">חסכוני</button>
             <button class="btn sm" data-preset="3">מאוזן</button>
             <button class="btn sm" data-preset="5">ללא פשרות</button></div>
         </div>
+        <p class="mut" style="font-size:12px;margin:0 0 10px">${esc(pr.n)} מורכב מ-${modsOf(cfg.para).length} מודולים. לקטגוריה אחרת יש מודולים אחרים לגמרי.</p>
         <div class="cols c3">
-        ${PTK.map(k=>{const P=PARTS[k],t=cfg.parts[k],lvl=c.tech[P.node]||0;
-          const wasted=lvl>72&&t<=2;
+        ${modsOf(cfg.para).map(k=>{const P=PARTS[k];const lvl=c.tech[P.node]||0;
           return `<div class="tile" style="padding:10px 12px">
-            <div class="row" style="justify-content:space-between">
+            <div class="row" style="justify-content:space-between;gap:6px">
               <span style="font-size:13px;font-weight:700">${P.n}</span>
-              <span class="pill ${t>=4?'p-acc':t===3?'p-mut':'p-warn'}">${P.t[t-1]}</span></div>
-            <input type="range" data-part="${k}" min="1" max="5" value="${t}" style="margin:7px 0 3px">
-            <div class="row" style="justify-content:space-between;font-size:11px" class="mut">
+              <span id="tb-${k}" class="pill p-mut"></span></div>
+            <input type="range" data-part="${k}" min="1" max="5" value="${cfg.parts[k]}" style="margin:7px 0 3px">
+            <div class="row" style="justify-content:space-between;font-size:11px">
               <span class="mut">${TECH[P.node].n} <span class="num">${Math.round(lvl)}</span></span>
-              <span class="num mut">עלות ×${rnd1(TIER_COST[t-1],2)}</span></div>
-            ${wasted?'<div style="font-size:10.5px;color:var(--warn);margin-top:3px">הידע שלכם בתחום מבוזבז בדרגה הזאת</div>':''}
+              <span id="tc-${k}" class="num mut"></span></div>
+            <div id="tw-${k}" style="font-size:10.5px;color:var(--warn);margin-top:3px"></div>
           </div>`;}).join('')}
         </div>
       </div>
 
       <div class="cols c4">
-        <div class="tile hi"><i>ציון מפרט</i><b class="${!best||score>=best?'up':score>best*0.9?'':'down'}">${Math.round(score)}</b>
-          <small>${relLbl}${best?' · הטוב בשוק '+Math.round(best):''}</small></div>
-        <div class="tile"><i>עלות ייצור</i><b style="font-size:17px">$${Math.round(bom)}</b><small>BOM ליחידה</small></div>
-        <div class="tile"><i>שוליים גולמיים</i><b style="font-size:17px" class="${marg>0.4?'up':marg>0.2?'':'down'}">${rnd1(marg*100,0)}%</b><small>$${Math.round(cfg.price-bom)} ליחידה</small></div>
-        <div class="tile"><i>סיכון תקלה</i><b style="font-size:17px" class="${risk<0.05?'up':risk<0.2?'':'down'}">${rnd1(risk*100,0)}%</b>
-          <small>${risk>0.25?'הפיתוח לא יבשיל':risk>0.05?'סיכון מנוהל':'יספיק להבשיל'}</small></div>
+        <div class="tile hi"><i>ציון מפרט</i><b id="sScore"></b><small id="sScoreSub"></small></div>
+        <div class="tile"><i>עלות ייצור</i><b id="sBom" style="font-size:17px"></b><small>BOM ליחידה</small></div>
+        <div class="tile"><i>שוליים גולמיים</i><b id="sMarg" style="font-size:17px"></b><small id="sMargSub"></small></div>
+        <div class="tile"><i>סיכון תקלה</i><b id="sRisk" style="font-size:17px"></b><small id="sRiskSub"></small></div>
       </div>
-      <p class="mut" style="font-size:12.5px;margin-top:10px">עלות פיתוח ${B(pr.nre)} (40% עכשיו) · אירוע חשיפה ${B(kcost)} בהשקה · מזומן זמין ${B(c.cash)}.
-      ציון הביקורות ייקבע בהשקה מול הטוב ביותר שיהיה אז בקטגוריה, ויקבע את הרבעון הראשון.</p>
+      <p class="mut" style="font-size:12.5px;margin-top:10px" id="pNote"></p>
       </div>
       <div class="ft"><button class="btn" data-x>ביטול</button><button class="btn pri" id="pGo">אישור והכנסה לפיתוח</button></div>`,'wide');
     $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
-    $('pPara').onchange=e=>{cfg.para=e.target.value;cfg.price=0;cfg.lead=0;draw();};
+    $('pPara').onchange=e=>{cfg.para=e.target.value;const q=PARA[cfg.para];
+      cfg.price=q.price;cfg.lead=q.dev;cfg.parts=defCfg(cfg.para,3);build();};
     $('pName').oninput=e=>{cfg.name=e.target.value;};
-    $('pLead').oninput=e=>{cfg.lead=+e.target.value;draw();};
-    $('pPrice').oninput=e=>{cfg.price=+e.target.value;draw();};
-    $('pMkt').oninput=e=>{cfg.mkt=+e.target.value;draw();};
-    $('pKey').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{cfg.keynote=+b.dataset.k;draw();});
-    $('modal').querySelectorAll('[data-part]').forEach(i=>i.oninput=()=>{cfg.parts[i.dataset.part]=+i.value;draw();});
-    $('modal').querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{cfg.parts=defCfg(+b.dataset.preset);draw();});
+    $('pLead').oninput=e=>{cfg.lead=+$('pLead').value;sync();};
+    $('pPrice').oninput=e=>{cfg.price=+$('pPrice').value;sync();};
+    $('pMkt').oninput=e=>{cfg.mkt=+$('pMkt').value;sync();};
+    $('pKey').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+      cfg.keynote=+b.dataset.k;
+      $('pKey').querySelectorAll('[data-k]').forEach(x=>x.className=(+x.dataset.k===cfg.keynote?'on':''));
+      sync();});
+    $('modal').querySelectorAll('[data-part]').forEach(i=>i.oninput=()=>{cfg.parts[i.dataset.part]=+i.value;sync();});
+    $('modal').querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
+      cfg.parts=defCfg(cfg.para,+b.dataset.preset);
+      $('modal').querySelectorAll('[data-part]').forEach(i=>i.value=cfg.parts[i.dataset.part]);
+      sync();});
     $('pGo').onclick=()=>{
-      if(c.cash<pr.nre*0.5){alert('אין מספיק מזומן לפתיחת הפרויקט.');return;}
-      const p=mkProduct(S,c,cfg.para,{name:cfg.name||(c.tag+' '+pr.short),price:cfg.price,
+      const q=PARA[cfg.para];
+      if(c.cash<q.nre*0.5){alert('אין מספיק מזומן לפתיחת הפרויקט.');return;}
+      const np=mkProduct(S,c,cfg.para,{name:cfg.name||(c.tag+' '+q.short),price:cfg.price,
         cfg:Object.assign({},cfg.parts),mkt:cfg.mkt,keynote:cfg.keynote});
-      p.launch=S.t+cfg.lead; c.products.push(p); c.cash-=pr.nre*0.4;
-      log(S,`נפתח פרויקט: ${p.name} · השקה מתוכננת ${dateHe(p.launch)}.`,'a');
+      np.launch=S.t+cfg.lead; c.products.push(np); c.cash-=q.nre*0.4;
+      log(S,`נפתח פרויקט: ${np.name} · השקה מתוכננת ${dateHe(np.launch)}.`,'a');
       closeModal(); V='prod'; drawRail(); render(); save();
     };
+    sync();
   };
-  draw();
+  build();
 }
 
 function negotiateModal(id){
@@ -2292,7 +2861,7 @@ function contractModal(comp){
     $('cM').oninput=e=>{months=+e.target.value;draw();};
     $('cV').oninput=e=>{share=+e.target.value;draw();};
     $('cGo').onclick=()=>{
-      const need=sum(c.products.filter(p=>p.state==='live').map(p=>(PARA[p.para].recipe[comp]||0)*(p.lastUnits||0)))/1000;
+      const need=sum(c.products.filter(p=>p.state==='live').map(p=>(recipeOf(p.para)[comp]||0)*(p.lastUnits||0)))/1000;
       signContract(S,c,comp,months,Math.max(0.02,need*share/100));
       news(S,`נחתם חוזה ל${COMP[comp].n} ל-${months} חודשים במחיר נעול ×${rnd1(price,2)}.`,'a');
       closeModal(); render(); save();
@@ -2351,7 +2920,7 @@ function overModal(end){
 
 /* ── חיווט ─────────────────────────────────────────────────────────────── */
 function wire(){
-  const v=$('view'), c=me();
+  const v=$('view'), c=me()||{products:[],alloc:{}};
   const rb=$('rndB'); if(rb)rb.oninput=e=>{c.rndBudget=+e.target.value;render();};
   v.querySelectorAll('[data-alloc]').forEach(i=>i.oninput=()=>{c.alloc[i.dataset.alloc]=+i.value;render();});
   v.querySelectorAll('[data-price]').forEach(i=>i.onchange=()=>{const p=c.products.find(x=>x.id===+i.dataset.price);if(p)p.price=clamp(Math.round(+i.value||p.price),40,9000);render();});
@@ -2360,10 +2929,129 @@ function wire(){
   [['opEsp','esp'],['opSab','sab'],['opHype','hype'],['opCin','cin']].forEach(a=>{
     const el=$(a[0]); if(el)el.oninput=()=>{S.ops[a[1]]=+el.value;render();};});
   v.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>act(b.dataset.act,b.dataset));
+  v.querySelectorAll('[data-cact]').forEach(b=>b.onclick=()=>act('cact',{k:b.dataset.cact}));
+}
+function pickReviewModal(pid){
+  let prod=null,co=null;
+  for(const id in S.cos)S.cos[id].products.forEach(x=>{if(x.id===+pid){prod=x;co=S.cos[id];}});
+  if(!prod){reviewPickerModal();return;}
+  let score=6.5;
+  let best=0; for(const id in S.cos)S.cos[id].products.forEach(x=>{
+    if(x.state==='live'&&x.para===prod.para&&x.score>best)best=x.score;});
+  const draw=()=>{
+    modal(`<div class="top"><h3>ביקורת · ${esc(prod.name)}</h3><button class="x" data-x>×</button></div>
+      <div class="bd">
+        <div class="cols c2" style="margin-bottom:12px">
+          <div class="tile"><i>${esc(co.n)} · ${PARA[prod.para].n}</i>
+            <b style="font-size:16px;font-family:var(--display)">מפרט ${Math.round(prod.score)}</b>
+            <small>הטוב בקטגוריה כרגע: ${Math.round(best)}</small></div>
+          <div class="tile"><i>מחיר</i><b style="font-size:16px">$${prod.price}</b>
+            <small>מחיר ייחוס בקטגוריה $${PARA[prod.para].price}</small></div>
+        </div>
+        <p class="mut" style="font-size:12.5px">אף אחד לא יגיד לכם מה הציון ה"נכון". תשקללו מפרט מול המוביל בקטגוריה,
+        ומול מה שהמכשיר מבקש בכסף. ככל שתתקרבו לאמת — האמינות תעלה, וההשפעה שלכם תגדל.</p>
+        <label class="f" style="margin-top:14px"><span>הציון שלכם · <b class="num" id="rvLbl">${score}</b> מתוך 10</span>
+          <input type="range" id="rvScore" min="1" max="10" step="0.1" value="${score}"></label>
+        <div class="row" style="gap:6px;flex-wrap:wrap">
+          ${[3,5,6.5,8,9.5].map(v=>`<button class="btn sm" data-q="${v}">${v}</button>`).join('')}
+        </div>
+        ${prod.review?`<p class="mut" style="font-size:12.5px;margin-top:12px">ממוצע הביקורות הנוכחי: <b class="num">${prod.review}/10</b>. לצאת נגד הקונצנזוס זה מסוכן — ומשתלם כשצודקים.</p>`:''}
+      </div>
+      <div class="ft"><button class="btn" data-x>ביטול</button><button class="btn pri" id="rvGo">לפרסם את הביקורת</button></div>`);
+    $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+    $('rvScore').oninput=e=>{score=+e.target.value;$('rvLbl').textContent=score;};
+    $('modal').querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{score=+b.dataset.q;
+      $('rvScore').value=score;$('rvLbl').textContent=score;});
+    $('rvGo').onclick=()=>{
+      S.creator.action={type:'review',pid:prod.id,score:Math.round(score*10)/10,pname:prod.name};
+      closeModal();V='creator';drawRail();render();save();};
+  };
+  draw();
+}
+function reviewPickerModal(){
+  const prods=[];
+  for(const id in S.cos)S.cos[id].products.forEach(p=>{if(p.state==='live')prods.push({p,co:S.cos[id]});});
+  prods.sort((a,b)=>(b.p.lastRev||0)-(a.p.lastRev||0));
+  modal(`<div class="top"><h3>איזה מכשיר לסקר</h3><button class="x" data-x>×</button></div>
+    <div class="bd">${prods.slice(0,16).map(o=>`<button class="choice" data-pick="${o.p.id}">
+      <b>${esc(o.p.name)} <span class="mut" style="font-weight:400">· ${esc(o.co.n)}</span></b>
+      <span>${PARA[o.p.para].n} · מפרט ${Math.round(o.p.score)} · $${o.p.price}${o.p.review?' · ביקורות '+o.p.review:''}</span></button>`).join('')
+      ||'<p class="mut">אין כרגע מכשירים בשוק.</p>'}</div>`);
+  $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+  $('modal').querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>pickReviewModal(b.dataset.pick));
+}
+function pickCoModal(kind){
+  const ids=keys(S.cos).filter(id=>S.cos[id].baseRev>0.2);
+  modal(`<div class="top"><h3>${kind==='invest'?'על מי לעשות תחקיר':'עם מי לעשות סרטון ממומן'}</h3>
+      <button class="x" data-x>×</button></div>
+    <div class="bd">${ids.map(id=>{const t=S.cos[id];
+      return `<button class="choice" data-pickco="${id}"><b>${esc(t.n)}</b>
+        <span>הכנסה ${B(t.rev||t.baseRev)}/ח׳ · מותג ${Math.round(t.brand)}${t.scandal?' · עבר בעייתי':''}</span></button>`;}).join('')}</div>`);
+  $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+  $('modal').querySelectorAll('[data-pickco]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.pickco;
+    S.creator.action={type:kind,co:id,coname:S.cos[id].n};
+    closeModal();V='creator';drawRail();render();save();});
+}
+function foundModal(){
+  const C=S.creator;
+  let cfg={name:C.name.split(' ')[0]+' Devices',tag:'',focus:PK.find(p=>paraOf(p).open)||'phone',trait:'reach'};
+  const traits=[['reach','הפצה ישירה לקהל'],['multibrand','ריבוי מותגים'],['costEff','הנדסה לעלות'],['carrier','קשרי ערוצי מכירה']];
+  const draw=()=>{
+    const seed=clamp(C.f*0.32+C.cred*0.02,0.4,6);
+    modal(`<div class="top"><h3>הקמת חברה</h3><button class="x" data-x>×</button></div>
+      <div class="bd">
+        <label class="f"><span>שם החברה</span><input type="text" id="fName" value="${esc(cfg.name)}" maxlength="24"></label>
+        <label class="f"><span>סימול (3 אותיות)</span><input type="text" id="fTag" value="${esc(cfg.tag)}" placeholder="${esc(cfg.name.slice(0,3).toUpperCase())}" maxlength="4"></label>
+        <label class="f"><span>קטגוריית ליבה — שם הידע שלכם יתחיל גבוה</span>
+          <select id="fFocus">${PK.map(p=>`<option value="${p}" ${p===cfg.focus?'selected':''}>${PARA[p].n}${paraOf(p).open?'':' — סגורה'}</option>`).join('')}</select></label>
+        <label class="f"><span>יתרון מבני</span>
+          <div class="seg" id="fTrait">${traits.map(t=>`<button data-t="${t[0]}" class="${cfg.trait===t[0]?'on':''}">${t[1]}</button>`).join('')}</div></label>
+        <div class="cols c3">
+          <div class="tile hi"><i>גיוס</i><b>${B(seed)}</b></div>
+          <div class="tile"><i>מותג התחלתי</i><b>${Math.round(clamp(26+C.f*1.5+C.cred*0.12,20,72))}</b></div>
+          <div class="tile"><i>בסיס מותקן</i><b>${Math.round(clamp(C.f*8,2,400))}M</b></div>
+        </div>
+        <p class="mut" style="font-size:12.5px;margin-top:10px">הקהל עובר איתכם: מותג גבוה מהרגיל לחברה חדשה, ומכשיר ראשון נכנס לפיתוח מיד.
+        מהרגע הזה אתם בצד השני — והיוצרים יסקרו אתכם.</p>
+      </div>
+      <div class="ft"><button class="btn" data-x>עוד לא</button><button class="btn pri" id="fGo">להקים</button></div>`);
+    $('modal').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{closeModal();render();});
+    $('fName').oninput=e=>{cfg.name=e.target.value;};
+    $('fTag').oninput=e=>{cfg.tag=e.target.value.toUpperCase();};
+    $('fFocus').onchange=e=>{cfg.focus=e.target.value;};
+    $('fTrait').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{cfg.trait=b.dataset.t;
+      $('fTrait').querySelectorAll('[data-t]').forEach(x=>x.className=(x.dataset.t===cfg.trait?'on':''));});
+    $('fGo').onclick=()=>{
+      if(!cfg.name.trim())return alert('צריך שם לחברה.');
+      cfg.tag=(cfg.tag||cfg.name.slice(0,3)).toUpperCase().slice(0,4);
+      foundCompany(S,cfg);
+      closeModal();V='dash';drawRail();render();save();
+      modal(`<div class="top"><h3>${esc(cfg.name)} יוצאת לדרך</h3></div>
+        <div class="bd"><p style="color:var(--ink);font-size:15px">הקהל שבניתם הפך להון. מהיום אתם מנהלים חברה —
+        עם דירקטוריון, מתחרים, ויוצרי תוכן שיסקרו כל מכשיר שתוציאו.</p>
+        <p class="mut">המכשיר הראשון כבר בפיתוח. אפשר לשנות אותו במסך המוצרים.</p></div>
+        <div class="ft"><button class="btn pri" data-close>קדימה</button></div>`);
+    };
+  };
+  draw();
 }
 function act(a,d){
   const c=me();
-  if(a==='newprod')newProdModal();
+  if(a==='cact'){
+    const k=d.k;
+    if(k==='review')reviewPickerModal();
+    else if(k==='invest'||k==='sponsor')pickCoModal(k);
+    else {S.creator.action={type:k};render();save();}
+  }
+  else if(a==='rev')pickReviewModal(d.id);
+  else if(a==='takeoffer'){
+    const o=S.creator.offers[+d.i];
+    if(o){S.creator.action={type:'sponsor',co:o.co,coname:S.cos[o.co]?S.cos[o.co].n:''};
+      S.creator.offers.splice(+d.i,1);V='creator';drawRail();render();save();}
+  }
+  else if(a==='found')foundModal();
+  else if(a==='newprod')newProdModal();
   else if(a==='install')doInstall();
   else if(a==='save')saveModal();
   else if(a==='goto'){V=d.v;drawRail();render();}
