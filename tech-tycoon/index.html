@@ -179,6 +179,32 @@ input[type=checkbox]{accent-color:var(--accent)}
 .dot.g{background:var(--good)}.dot.w{background:var(--warn)}.dot.b{background:var(--bad)}
 .dot.i{background:var(--cyan)}.dot.a{background:var(--accent)}.dot.v{background:var(--violet)}
 
+/* ticker */
+.ticker{position:fixed;bottom:0;right:0;left:0;z-index:55;height:36px;display:flex;align-items:center;
+  background:linear-gradient(180deg,rgba(10,12,18,.86),var(--sunk));border-top:1px solid var(--line);
+  cursor:pointer;overflow:hidden;user-select:none}
+.ticker:hover{background:linear-gradient(180deg,rgba(10,12,18,.92),var(--panel))}
+.ticker .tag{flex:none;display:flex;align-items:center;gap:6px;margin:0 12px;padding:3px 10px;border-radius:6px;
+  font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  background:var(--accent-glow);color:var(--accent);border:1px solid rgba(255,122,69,.28)}
+.ticker .live{width:6px;height:6px;border-radius:99px;background:var(--accent);animation:blip 2.2s ease-in-out infinite}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+.ticker .rail-wrap{flex:1;overflow:hidden;min-width:0;
+  -webkit-mask-image:linear-gradient(to left,transparent,#000 26px,#000 calc(100% - 26px),transparent);
+  mask-image:linear-gradient(to left,transparent,#000 26px,#000 calc(100% - 26px),transparent)}
+.ticker .feed{display:flex;gap:30px;white-space:nowrap;font-size:13px;color:var(--ink-2);width:max-content;
+  animation:tick 60s linear infinite}
+.ticker:hover .feed{animation-play-state:paused}
+.ticker .feed b{color:var(--ink);font-weight:700}
+.ticker .it-b{color:var(--bad)} .ticker .it-g{color:var(--good)}
+.ticker .it-w{color:var(--warn)} .ticker .it-a{color:var(--accent)} .ticker .it-v{color:var(--violet)}
+.ticker .sep{color:var(--ink-3);opacity:.5}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(50%)}}
+@media (prefers-reduced-motion:reduce){
+  .ticker .feed{animation:none;width:100%;overflow:hidden;text-overflow:ellipsis}
+  .ticker .live{animation:none}
+}
+
 /* charts */
 svg.ch{width:100%;height:auto;display:block;overflow:visible;max-width:100%}
 .legend{display:flex;gap:13px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-top:9px;min-width:0}
@@ -231,9 +257,10 @@ svg.ch{width:100%;height:auto;display:block;overflow:visible;max-width:100%}
 .dock{display:none}
 .only-sm{display:none}
 .only-lg{display:block}
+.wrap{padding-bottom:78px}
 @media (max-width:900px){
   body{font-size:15.5px}
-  .wrap{padding:12px 12px 96px}
+  .wrap{padding:12px 12px 152px}
   .bar{padding:8px 12px calc(8px + env(safe-area-inset-top))}
   .bar-in{gap:10px}
   .who{min-width:0;flex:1}
@@ -241,6 +268,9 @@ svg.ch{width:100%;height:auto;display:block;overflow:visible;max-width:100%}
   .bar-in>.row{margin-inline-start:0}
   /* כפתור התור עובר לתחתית, בטווח האגודל */
   #nextBtn{display:none}
+  .ticker{bottom:calc(70px + env(safe-area-inset-bottom));height:34px}
+  .ticker .feed{font-size:12.5px}
+  .ticker .tag{margin:0 9px}
   .dock{display:block;position:fixed;bottom:0;right:0;left:0;z-index:60;
     background:linear-gradient(180deg,rgba(10,12,18,.72),var(--ground) 42%);
     padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
@@ -327,6 +357,10 @@ svg.ch{width:100%;height:auto;display:block;overflow:visible;max-width:100%}
     <main id="view" tabindex="-1"></main>
   </div></div>
   <div class="dock"><button class="turn" id="nextBtn2">חודש הבא ←</button></div>
+  <div class="ticker" id="ticker" role="button" tabindex="0" title="לחדר החדשות">
+    <span class="tag"><i class="live"></i>עדכונים</span>
+    <div class="rail-wrap"><div class="feed" id="tickerFeed"></div></div>
+  </div>
 </div>
 
 <div class="scrim" id="modal" hidden role="dialog" aria-modal="true"></div>
@@ -1514,6 +1548,20 @@ function topbar(){
 }
 
 /* ── תצוגה ראשית ───────────────────────────────────────────────────────── */
+function paintTicker(){
+  const f=$('tickerFeed'); if(!f)return;
+  const items=S.news.slice(0,14);
+  if(!items.length){f.innerHTML='<span class="mut">השווקים נפתחים. אין עדיין דיווחים.</span>';f.style.animation='none';return;}
+  /* חוזרים על הרשימה עד שהיא ארוכה מספיק, ואז מכפילים — כך הלולאה רציפה
+     ואין רגע שבו הרצועה ריקה. */
+  let seq=[], chars=0, guard=0;
+  while(chars<170&&guard<8){items.forEach(n=>{seq.push(n);chars+=n.text.length;});guard++;}
+  const one=seq.map(n=>`<span class="it-${n.k}"><span class="sep">${dateEn(n.t)}</span> ${n.text}</span>`)
+    .join('<span class="sep">•</span>');
+  f.innerHTML=one+'<span class="sep">•</span>'+one;
+  f.style.animation='';
+  f.style.animationDuration=clamp(20+chars*0.14,30,170)+'s';
+}
 function render(){
   topbar();
   $('view').innerHTML=({dash:vDash,rnd:vRnd,prod:vProd,eco:vEco,talent:vTalent,ma:vMA,supply:vSupply,
@@ -1523,6 +1571,7 @@ function render(){
   badge('ma',S.startups.length);
   badge('career',S.career.offers.length);
   paintInstall();
+  paintTicker();
 }
 const me=()=>S.cos[S.me];
 function paraOf(p){return S.para[p]||{ready:0,mat:0,share:0,open:false};}
@@ -2349,6 +2398,8 @@ function endTurn(){
   render();
   next();
 }
+$('ticker').onclick=()=>{V='log';drawRail();render();};
+$('ticker').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();V='log';drawRail();render();}};
 $('nextBtn').onclick=endTurn;
 $('nextBtn2').onclick=endTurn;
 $('saveBtn').onclick=()=>saveModal();
