@@ -628,13 +628,14 @@ function newGame(coId,seedStr,opts){
     };
     TK.forEach(k=>{const str=d.tech[k]!==undefined?d.tech[k]:(30+hash32(d.id+k)%22);
       c.tech[k]=clamp(FRONT0[k]*(0.52+0.48*(str/95)),3,99);});
+    c.presence={}; PK.forEach(x=>{c.presence[x]=(d.str[x]||0)>0?d.str[x]/8:0.30;});
     /* תיק פתיחה: לכל חברה מוצר חי בכל פרדיגמה שבה יש לה נוכחות */
     PK.forEach(p=>{
       const s=d.str[p]||0; if(s<1)return;
       const pr=PARA[p];
       const prod=mkProduct(G,c,p,{name:d.tag+' '+pr.short,price:Math.round(pr.price*rr(G,.9,1.1)),spec:3,mkt:c.marketing*0.18});
       prod.state='live'; prod.launch=-ri(G,1,9); prod.score=scoreOf(G,c,prod);
-      prod.seed=s; c.products.push(prod);
+      c.products.push(prod);
     });
     G.cos[d.id]=c;
   });
@@ -704,7 +705,10 @@ function appealOf(G,c,p){
   const carrier=1+(T.carrier||0)*0.24*(0.6+(c.tech.distribution||40)/150);
   const lock=1+clamp((c.lockin||0)/100,0,1)*0.17;
   const rev=reviewFactor(G,p);
-  return q*val*fr*br*mk*hy*reach*carrier*lock*rev*(p.seed?p.seed/8:1);
+  /* נוכחות = המדף, ההפצה והמוניטין של החברה *בקטגוריה הזו*. נבנית ונשחקת לאט,
+     ועוברת לכל דגם חדש — בלי זה כל השקה הייתה מוחקת את המעמד שנבנה. */
+  const pres=(c.presence&&c.presence[p.para]!==undefined)?c.presence[p.para]:0.35;
+  return q*val*fr*br*mk*hy*reach*carrier*lock*rev*pres;
 }
 /* ביקורות ההשקה מזיזות את הרבעון הראשון ואז מתפוגגות */
 function reviewFactor(G,p){
@@ -792,8 +796,13 @@ function marketTick(G){
   if(M.breadth0===undefined)M.breadth0=breadth;
   M.total=M.base*clamp(1+0.62*(breadth-M.breadth0),0.72,2.8);
   const tA=sum(PK.map(p=>A[p]))||1;
+  /* נוכחות מתעדכנת לאט מול הנתח שהושג בקטגוריה: חפיר אמיתי, אבל נרכש ונשחק */
+  const paraRev={};
+  PK.forEach(p=>{paraRev[p]={};live[p].forEach(x=>{paraRev[p][x.c.id]=(paraRev[p][x.c.id]||0)+(x.p.lastRev||0);});});
   const res={byPara:{},byCo:{}};
   for(const id in G.cos)res.byCo[id]={rev:0,cogs:0,units:0,mkt:0};
+  const prevRev={};
+  PK.forEach(p=>{prevRev[p]={};live[p].forEach(x=>{prevRev[p][x.c.id]=(prevRev[p][x.c.id]||0)+(x.p.lastRev||0);});});
   PK.forEach(p=>{
     const spend=M.total*(A[p]/tA);
     const st0=G.para[p];
@@ -801,7 +810,13 @@ function marketTick(G){
     st0.sh=(st0.sh||[]).concat([st0.share]); if(st0.sh.length>14)st0.sh.shift();
     st0.declining=st0.sh.length>6&&st0.sh[st0.sh.length-1]<st0.sh[st0.sh.length-7]*0.96;
     const lst=live[p];
-    const ap=lst.map(x=>({...x,a:appealOf(G,x.c,x.p)}));
+    /* אינרציה: הביקוש נע לאט לעבר האטרקטיביות. השקה נבנית על פני כמה חודשים
+       ודעיכה מתפרסת — במקום קפיצות של פי חמישה בחודש אחד. */
+    const ap=lst.map(x=>{
+      const a=appealOf(G,x.c,x.p);
+      x.p.aSm=x.p.aSm===undefined?a*0.55:lerp(x.p.aSm,a,0.30);
+      return {...x,a:x.p.aSm};
+    });
     const tot=sum(ap.map(x=>x.a));
     res.byPara[p]={spend,players:ap.length};
     ap.forEach(x=>{
@@ -812,6 +827,8 @@ function marketTick(G){
       const R=res.byCo[x.c.id];
       R.rev+=rev; R.cogs+=units*bom/1000; R.units+=units; R.mkt+=x.p.mkt;
       x.p.marg=rev>0?1-(units*bom/1000)/rev:0;
+      res.byPara[p].rev=(res.byPara[p].rev||0)+rev;
+      res.byPara[p][x.c.id]=(res.byPara[p][x.c.id]||0)+rev;
       /* הייפ מתפוגג, ואם המוצר לא עומד בו — יש מחיר */
       if(x.p.hype>0){
         x.p.hype=Math.max(0,x.p.hype-0.22);
@@ -821,6 +838,19 @@ function marketTick(G){
         }
       }
     });
+  });
+  /* אחרי חלוקת ההכנסות: כל חברה מעדכנת נוכחות בכל קטגוריה */
+  PK.forEach(p=>{
+    const bucket=res.byPara[p]||{}, tot=bucket.rev||0;
+    for(const id in G.cos){
+      const c=G.cos[id];
+      c.presence=c.presence||{};
+      const sh=tot>0?((bucket[id]||0)/tot):0;
+      const target=0.90+sh*4.6;
+      const cur=c.presence[p]===undefined?0.30:c.presence[p];
+      /* משתנה של עשור: מדף, הפצה ומוניטין בקטגוריה נבנים ונאבדים לאט מאוד */
+      c.presence[p]=clamp(lerp(cur,target,0.006),0.35,9);
+    }
   });
   return res;
 }
@@ -962,6 +992,8 @@ function acquireCompany(G,buyer,t){
     p.co=buyer.id; p.name=buyer.tag+' '+p.name.split(' ').slice(1).join(' '); buyer.products.push(p);
   });
   buyer.baseRev+=t.baseRev*0.62;
+  buyer.presence=buyer.presence||{};
+  PK.forEach(x=>{buyer.presence[x]=Math.max(buyer.presence[x]||0.3,(t.presence&&t.presence[x]||0)*0.8);});
   buyer.brand=clamp(buyer.brand*0.93+t.brand*0.12,15,100);
   buyer.allocCache=null;
   delete G.cos[t.id];
@@ -1299,7 +1331,8 @@ function fireMe(G,reason){
     d:'סטארטאפ קטן שגייס סבב ראשון על סמך השם שלך.', playable:1,
     cash:clamp(2.2+G.career.rep/24,1.2,6), debt:0.4, brand:clamp(22+G.career.rep/4,18,45), board:62,
     tech:{}, staff:[], products:[], contracts:[], rndBudget:0.55, marketing:0.05,
-    baseRev:0.32, style:{agg:.6,ops:.2,rndShare:.2,focus:'glasses'}, hist:[], scandal:0, counter:0.1, isMe:true};
+    baseRev:0.32, style:{agg:.6,ops:.2,rndShare:.2,focus:'glasses'}, hist:[], scandal:0, counter:0.1, isMe:true,
+    installed:15, lockin:20, traits:{}, presence:PK.reduce((o,x)=>{o[x]=x==='glasses'?0.5:0.2;return o;},{})};
   TK.forEach(k=>st.tech[k]=clamp(frontier(G,k)*rr(G,0.28,0.52),5,80));
   G.cos[st.id]=st; G.me=st.id;
   G.career.titles.push({co:st.id,from:G.t});
@@ -1490,7 +1523,8 @@ function graduateStartup(G){
     cash:clamp(1+sum(vals(s.tech))/60,1,9),debt:0.5,brand:32,board:60,
     tech:{},alloc:null,rndBudget:0.6,marketing:0.05,staff:s.staff||[],products:[],contracts:[],
     style:{agg:.7,ops:.2,rndShare:.18,focus:s.focus},homeFocus:s.focus,baseRev:0.35,
-    traits:{},installed:20,lockin:25,hist:[],scandal:0,counter:0.1,isMe:false};
+    traits:{},installed:20,lockin:25,hist:[],scandal:0,counter:0.1,isMe:false,
+    presence:PK.reduce((o,x)=>{o[x]=x===s.focus?0.5:0.2;return o;},{})};
   TK.forEach(k=>c.tech[k]=clamp(s.tech[k]||frontier(G,k)*rr(G,0.35,0.6),3,99));
   G.cos[c.id]=c;
   news(G,`<b>${s.n}</b> סירבה להצעות רכישה, גייסה סבב עצמאי ונכנסת לשוק כחברה מן המניין.`,'v');
@@ -1602,7 +1636,8 @@ function foundCompany(G,cfg){
     style:{agg:.62,ops:.15,rndShare:.16,focus:cfg.focus},homeFocus:cfg.focus,
     baseRev:clamp(0.08+C.f*0.02,0.06,0.9),
     traits:cfg.trait?{[cfg.trait]:1}:{},
-    installed:clamp(C.f*8,2,400),lockin:22,hist:[],scandal:0,counter:0.1,isMe:true};
+    installed:clamp(C.f*8,2,400),lockin:22,hist:[],scandal:0,counter:0.1,isMe:true,
+    presence:PK.reduce((o,x)=>{o[x]=x===cfg.focus?0.9+clamp(C.f*0.085,0,1.1):0.3;return o;},{})};
   TK.forEach(k=>c.tech[k]=clamp(frontier(G,k)*rr(G,0.30,0.5),3,80));
   /* הידע בקטגוריה שבחרתם מתחיל גבוה יותר — שם התמחיתם */
   keys(PARA[cfg.focus].en).forEach(k=>c.tech[k]=clamp(c.tech[k]*1.5,3,88));
@@ -1640,9 +1675,10 @@ function step(G){
         /* ריבוי מותגים מאפשר להחזיק שני דורות חיים במקביל */
         const multi=(c.traits&&c.traits.multibrand)?1:0;
         const sibs=c.products.filter(q=>q!==p&&q.state==='live'&&q.para===p.para).sort((a,b)=>b.launch-a.launch);
+        /* דור קודם יורד למחיר מבצע — ומפסיקים לפרסם אותו */
         sibs.forEach((q,i)=>{
-          if(i===0){q.legacy=true;q.price=Math.round(q.price*0.82);}
-          else if(multi&&i===1){q.legacy=true;q.price=Math.round(q.price*0.72);}
+          if(i===0){q.legacy=true;q.price=Math.round(q.price*0.82);q.mkt*=0.35;}
+          else if(multi&&i===1){q.legacy=true;q.price=Math.round(q.price*0.72);q.mkt*=0.2;}
           else q.state='eol';});
         const risk=Math.pow(clamp(1-(p.launch-p.start)/PARA[p.para].dev,0,1),1.5)*0.8;
         if(rand(G)<risk){p.defect=true;p.score=scoreOf(G,c,p);c.brand=clamp(c.brand-3.2,15,100);}
