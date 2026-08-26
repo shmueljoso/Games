@@ -688,17 +688,6 @@ function effPrice(G,c,comp){
 }
 const KEYNOTE=[{n:'ללא אירוע',hype:0,cost:0},{n:'חשיפה סטנדרטית',hype:.20,cost:.018},{n:'כנס ראווה גלובלי',hype:.46,cost:.055}];
 function keynoteCost(c,k){return (KEYNOTE[k]||KEYNOTE[0]).cost*Math.max(0.6,c.baseRev);}
-/* ציון ביקורות: יחסי לטוב ביותר שקיים בשוק באותו רגע, ומושפע מתמורה למחיר */
-function computeReview(G,c,p){
-  let best=0;
-  for(const id in G.cos)G.cos[id].products.forEach(x=>{if(x.state==='live'&&x.para===p.para&&x.score>best)best=x.score;});
-  best=Math.max(best,p.score,30);
-  const rel=p.score/best;
-  const value=Math.pow(PARA[p.para].price/Math.max(40,p.price),0.45);
-  let r=4.6+(rel-1)*26+(value-1)*7+(p.defect?-2.8:0)+(rand(G)-0.5)*0.7;
-  if((p.hype||0)>0.35&&rel<0.92)r-=1.1;            // ציפיות מנופחות נענשות
-  return clamp(Math.round(r*10)/10,1,10);
-}
 function freshness(age){return clamp(0.32+0.95*Math.exp(-Math.max(0,age)/12),0.30,1.27);}
 function appealOf(G,c,p){
   const pr=PARA[p.para];
