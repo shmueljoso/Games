@@ -19,7 +19,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 var SAVE_KEY = 'techEmpire.save.v1';
-var VERSION  = 3;               /* bump whenever G's shape changes */
+var VERSION  = 4;               /* bump whenever G's shape changes */
 var Y0       = 2026;            /* the sim opens in January 2026 */
 var HORIZON  = 120;             /* 10 in-game years */
 
@@ -71,6 +71,43 @@ var PARTS = {
 var TIER_COST = [0.46, 0.70, 1.00, 1.44, 2.10];   /* cost multiplier per tier 1..5 */
 var TIER_Q    = [22,   44,   64,   82,   96  ];   /* quality points per tier 1..5 */
 var TIER_NAME = ['בסיסי', 'חסכוני', 'סטנדרטי', 'מתקדם', 'פורץ דרך'];
+
+/* ── Tech packages ───────────────────────────────────────────────────────
+   Players do not pick a screw at a time. Components are grouped into four
+   packages, each bought as a generation. The engine still reasons per part —
+   a package just writes the same tier across the parts it covers.          */
+var PKGS = {
+  compute: { n: 'פלטפורמת חישוב', parts: ['soc', 'memory'],           tech: 'silicon',   d: 'מעבד, מאיץ בינה וזיכרון. קובע ביצועים ותחושת מהירות.' },
+  frame:   { n: 'תצוגה וגימור',   parts: ['display', 'build', 'audio'], tech: 'display',   d: 'מסך, שלדה, חומרים ואודיו. מה שמרגישים ביד.' },
+  imaging: { n: 'מערכת הדמיה',    parts: ['camera', 'optics', 'sensors'], tech: 'imaging', d: 'חיישנים, עדשות וחישה. הסעיף שהמבקרים בודקים ראשון.' },
+  power:   { n: 'מערך אנרגיה',    parts: ['battery'],                  tech: 'power',     d: 'צפיפות סוללה וטעינה. הסעיף שהמשתמשים מתלוננים עליו.' }
+};
+var PKG_K = keys(PKGS);
+var GEN_NAME = ['דור בסיס', 'דור 2', 'דור 3', 'דור 4', 'דור 5 · פורץ דרך'];
+
+/* Which packages a category actually uses, in display order. */
+function pkgsFor(cat) {
+  var w = CATS[cat].w;
+  return PKG_K.filter(function (k) {
+    return PKGS[k].parts.some(function (part) { return w[part] != null; });
+  });
+}
+/* A package's weight in the category = the sum of the parts it covers. */
+function pkgWeight(cat, k) {
+  var w = CATS[cat].w;
+  return sum(PKGS[k].parts.map(function (part) { return w[part] || 0; }));
+}
+function pkgTier(p, k) {
+  var used = PKGS[k].parts.filter(function (part) { return p.spec[part] != null; });
+  if (!used.length) return 3;
+  return Math.round(sum(used.map(function (part) { return p.spec[part]; })) / used.length);
+}
+function setPkgTier(p, k, tier) {
+  PKGS[k].parts.forEach(function (part) {
+    if (p.spec[part] != null) p.spec[part] = clamp(tier, 1, 5);
+  });
+}
+function pkgLabel(cat, k, tier) { return PKGS[k].n + ' · ' + GEN_NAME[clamp(tier, 1, 5) - 1]; }
 
 /* ── §2 product categories ──────────────────────────────────────────────── */
 /* base   — installed base worldwide, in millions of live devices
@@ -273,6 +310,37 @@ var CO_DEFS = [
 var CO_BY_ID = {};
 CO_DEFS.forEach(function (c) { CO_BY_ID[c.id] = c; });
 
+/* ── A company of your own ───────────────────────────────────────────────
+   Built rather than inherited: almost no cash, no brand anybody recognises,
+   one small line, and a board of investors who want to see a hockey stick.
+   `raise` lets a creator who crossed over start with the capital their
+   channel could actually attract.                                          */
+var CUSTOM_ID = 'ownco';
+function makeCustomDef(name, o) {
+  o = o || {};
+  return {
+    id: CUSTOM_ID, n: name, he: name, tag: '—', arch: 'startup', playable: 1,
+    cash: o.cash != null ? o.cash : 0.55,
+    brand: o.brand != null ? o.brand : 14,
+    otherRev: o.otherRev || 0,
+    capacity: o.capacity != null ? o.capacity : 0.42,
+    reach: o.reach != null ? o.reach : 0.12,
+    costEff: 0.92, mktEff: o.mktEff != null ? o.mktEff : 1.30,
+    marginTarget: -0.20,
+    tech: o.tech || { silicon: 24, display: 27, imaging: 25, power: 26, ai: 28, materials: 30 },
+    catBrand: o.catBrand || { phone: 14, laptop: 8, wearable: 12, audio: 17, xr: 9 },
+    focus: o.focus || ['phone', 'audio'],
+    style: { agg: .80, price: .84, rnd: .13, mkt: .15 },
+    d: o.d || 'חברה שאתם מקימים מאפס. אין מותג, אין ערוץ הפצה, ויש מסלול מזומן קצר — אבל גם אף אחד לא מחכה מכם לדיבידנד.'
+  };
+}
+/* The custom company lives in the save, so a reload has to put it back on
+   the roster before anything looks it up. */
+function registerCustom(G) {
+  if (G && G.customDef) CO_BY_ID[G.customDef.id] = G.customDef;
+  return G;
+}
+
 /* ── §7 board archetypes ────────────────────────────────────────────────── */
 /* This is the fix for "board wants 10x": a mega-cap board is *unhappy* with a
    wild swing in either direction. Only a startup board rewards a hockey stick. */
@@ -340,7 +408,7 @@ function newProduct(G, co, cat, opt) {
 /* A company's total monthly marketing wallet, in $B. Scales with the business
    it actually has, so a startup cannot outspend a mega-cap by wishing. */
 function mktBudget(co) {
-  return co.style.mkt * Math.max(0.06, co.otherRev * 0.5 + (co.revDev || 0) * 0.7 + 0.2);
+  return co.style.mkt * Math.max(0.015, co.otherRev * 0.5 + (co.revDev || 0) * 0.7 + 0.06);
 }
 
 /* Band identity is real: a budget device is built from budget parts even when
@@ -379,7 +447,7 @@ function seedPortfolio(G, co) {
     var C = CATS[cat];
     /* A big brand fields a full ladder in its home category; a startup fields one. */
     var lineups;
-    if (def.arch === 'startup') lineups = ['mid'];
+    if (def.arch === 'startup') lineups = def.id === CUSTOM_ID ? ['budget'] : ['mid'];
     else if (idx === 0) lineups = def.reach > .55 ? ['prem', 'mid', 'budget'] : ['prem', 'mid'];
     else lineups = def.reach > .55 ? ['mid', 'budget'] : ['mid'];
     if (co.id === 'apple') lineups = idx === 0 ? ['prem', 'prem', 'mid'] : ['prem'];
@@ -401,13 +469,14 @@ function seedPortfolio(G, co) {
   });
 }
 
-function newGame(coId, seedStr, mode) {
+function newGame(coId, seedStr, mode, opts) {
   var seed = seedStr || ('e' + Math.floor(Math.random() * 1e9));
   var G = {
     version: VERSION,
     rs: hash32(seed), seed: seed,
     mode: mode || 'ceo',
     t: 0, over: false, ending: null,
+    horizon: HORIZON,   /* crossing over from a channel buys a second act */
     pid: 1,
     me: coId,
     cos: {},
@@ -422,12 +491,23 @@ function newGame(coId, seedStr, mode) {
     fin: { revDev: 0, revOther: 0, cogs: 0, opex: 0, rnd: 0, mkt: 0, capex: 0, net: 0, netTTM: [] },
     plan: { rnd: {}, capexQueue: [], payout: 0 },
     contracts: {},
+    talent: null,      /* { market: [...], seq } — the current shortlist */
+    cheats: {},
+    customDef: null,
+    creatorPast: null,   /* the channel you came from, once you cross over */
     creator: null,
     seenTips: {}
   };
 
+  /* a company of the player's own joins the roster before anything is built */
+  if (opts && opts.custom) {
+    G.customDef = makeCustomDef(opts.custom.name, opts.custom);
+    registerCustom(G);
+  }
+  var roster = CO_DEFS.concat(G.customDef ? [G.customDef] : []);
+
   /* companies — the player is simulated by the exact same code as the rivals */
-  CO_DEFS.forEach(function (d) {
+  roster.forEach(function (d) {
     var c = {
       id: d.id, n: d.n, he: d.he, tag: d.tag, arch: d.arch,
       cash: d.cash, brand: d.brand, otherRev: d.otherRev,
@@ -437,6 +517,8 @@ function newGame(coId, seedStr, mode) {
       catBrand: JSON.parse(JSON.stringify(d.catBrand)),
       style: d.style,
       brand0: d.brand,
+      installed: {},      /* live devices of ours still in people's hands, per category */
+      staff: [],          /* poached key talent */
       revDev: 0, revLast: 0, rev12: [], profit: 0, share: {}, units: 0,
       rndSpend: 0, debt: 0, ai: d.id !== coId ? 1 : 0
     };
@@ -450,7 +532,7 @@ function newGame(coId, seedStr, mode) {
   });
 
   /* portfolios */
-  CO_DEFS.forEach(function (d) { seedPortfolio(G, G.cos[d.id]); });
+  roster.forEach(function (d) { seedPortfolio(G, G.cos[d.id]); });
   G.prods.forEach(function (p) {
     /* opening production lines roughly match opening demand */
     p.prodPlan = 0; p.inv = 0;
@@ -472,10 +554,18 @@ function newGame(coId, seedStr, mode) {
   distributeAll(G, true);
   G.prods.forEach(function (p) { p.prodPlan = round(p.demand * 1.02, 3); p.inv = round(p.demand * .35, 3); });
 
+  /* everyone arrives with an installed base already in people's hands */
+  keys(G.cos).forEach(function (id) {
+    var co = G.cos[id];
+    CK.forEach(function (k) {
+      co.installed[k] = (G.market[k].shares[id] || 0) * G.market[k].base * rr(G, .85, 1.0);
+    });
+  });
+
   /* now that demand is known, size the opening R&D plan to the real business */
   var estRev = sum(G.prods.filter(function (p) { return p.co === G.me; })
     .map(function (p) { return p.demand * p.price / 1000; }));
-  var rndBudget = me.style.rnd * Math.max(0.05, me.otherRev * 0.6 + estRev * 0.9 + 0.15);
+  var rndBudget = me.style.rnd * Math.max(0.015, me.otherRev * 0.6 + estRev * 0.9 + 0.03);
   TK.forEach(function (k) { G.plan.rnd[k] = round(rndBudget / TK.length, 4); });
   if (G.mode === 'creator') primeCreator(G); else primeFinancials(G);
   pushLog(G, 'ℹ️', 'התעשייה נכנסת ל־' + Y0 + '. ' + (G.mode === 'creator' ? 'הערוץ עולה לאוויר.' : 'הדירקטוריון מחכה לרבעון הראשון שלכם.'));
@@ -502,6 +592,7 @@ function primeFinancials(G) {
   var opex = (revDev + me.otherRev) * 0.170 + me.capacity * 0.012;
   var net = revDev + me.otherRev - cogs - mkt - rnd - opex;
   me.revDev = revDev;
+  me.rev0 = revDev;          /* the line a later stage is measured against */
   me.rev12 = [revDev];
   G.fin = {
     revDev: revDev, revOther: me.otherRev, prodCost: cogs, hold: 0, writeoff: 0,
@@ -674,7 +765,8 @@ function distributeAll(G, priming) {
       var poolB = m.pool * CATS[cat].bands[band];
       var w = ps.map(function (p, i) {
         var co = G.cos[p.co];
-        return Math.pow(scores[i], SHARE_K) * bandFit(p, cat, band) * (0.45 + 0.55 * co.reach);
+        var eco = 1 + ECO_MAX * ecoPull(G, co, cat);
+        return Math.pow(scores[i], SHARE_K) * bandFit(p, cat, band) * (0.45 + 0.55 * co.reach) * eco;
       });
       var tot = sum(w);
       if (tot <= 0) return;
@@ -701,6 +793,41 @@ function distributeAll(G, priming) {
     });
     m.sold = totD;
     keys(m.shares).forEach(function (id) { m.shares[id] = totD > 0 ? m.shares[id] / totD : 0; });
+  });
+}
+
+/* ── Ecosystem lock-in ───────────────────────────────────────────────────
+   Somebody already carrying your phone is markedly more likely to buy your
+   watch next. `installed` tracks the devices of ours still in people's hands
+   per category; the pull a company gets in one category is drawn from the
+   base it holds in all the *others*, so a coherent product family compounds
+   and a lone flagship does not.                                            */
+function ecoPull(G, co, cat) {
+  var num = 0, den = 0;
+  CK.forEach(function (k) {
+    if (k === cat) return;
+    var base = G.market[k].base;
+    if (base <= 0) return;
+    var w = CATS[k].base;
+    num += w * clamp((co.installed[k] || 0) / base, 0, 1);
+    den += w;
+  });
+  if (den <= 0) return 0;
+  /* diminishing: the first slice of an ecosystem is worth the most */
+  return Math.pow(clamp(num / den, 0, 1), 0.6);
+}
+var ECO_MAX = 0.40;   /* a total ecosystem lock is worth +40% weight */
+
+/* Devices age out of people's hands at the category's replacement rate. */
+function ecosystemTick(G) {
+  keys(G.cos).forEach(function (id) {
+    var co = G.cos[id];
+    co.installed = co.installed || {};
+    CK.forEach(function (k) {
+      var sold = sum(G.prods.filter(function (p) { return p.co === id && p.cat === k; })
+        .map(function (p) { return p.sold || 0; }));
+      co.installed[k] = Math.max(0, (co.installed[k] || 0) * (1 - 1 / CATS[k].life) + sold);
+    });
   });
 }
 
@@ -739,8 +866,18 @@ function capacityCap(G) {
 
 /* One unit of "line time" is a phone. A headset eats far more of the factory. */
 var LINE_USE = { phone: 1.0, laptop: 2.15, wearable: 0.55, audio: 0.30, xr: 2.60 };
-var CAPEX_PER_LINE = 1.25;   /* $B to add 1M phone-equivalents/month */
+var CAPEX_PER_LINE = 1.25;   /* $B to add 1M phone-equivalents/month, at scale */
 var CAPEX_MONTHS = 6;
+
+/* A small top-up is contract capacity at somebody else's plant: cheap, and it
+   comes online in a quarter. A large block is a line of your own, which costs
+   the full rate and takes half a year. That on-ramp is what makes a company
+   with no balance sheet able to grow at all. */
+function capexQuote(add) {
+  var rate = CAPEX_PER_LINE * clamp(0.34 + add / 6, 0.34, 1.55);
+  var months = add < 1 ? 3 : CAPEX_MONTHS;
+  return { total: round(add * rate, 4), months: months, contract: add < 1 };
+}
 var HOLD_RATE = 0.014;       /* monthly carrying cost, share of unit cost */
 var WRITEOFF = 0.55;         /* how much of a dead unit's cost is lost forever */
 
@@ -772,7 +909,9 @@ function autoManage(G, p) {
   p.mkt = p.mkt * (age > 9 ? 0.84 : 0.94);
   if (p.mkt < 0.0006) p.mkt = 0;
   p.prodPlan = Math.max(0, p.demand * 1.02 - p.inv * 0.5);
-  if (p.lastShare < 0.006 && age > CATS[p.cat].life * 0.7) p.dead = 1;
+  /* relative to its own best month, so a niche product is not culled merely
+     for being niche */
+  if (age > CATS[p.cat].life * 0.7 && (p.sold || 0) < (p.peakSold || 0) * 0.10) p.dead = 1;
 }
 
 /* AI rivals plan production against their own forecast, with archetype bias:
@@ -815,6 +954,7 @@ function produceAndSell(G) {
       p.stockout = Math.max(0, p.demand - avail);
       p.inv = Math.max(0, avail - sold);
       p.sold = sold;
+      p.peakSold = Math.max(p.peakSold || 0, sold);
       p.made = made;
       p.rev = sold * p.price / 1000;            /* units are millions → $B */
       co.units += sold;
@@ -840,7 +980,7 @@ function retireProducts(G) {
     var life = CATS[p.cat].life;
     /* nothing stays on the shelf forever: a generation ends on age alone,
        and a product nobody is buying ends sooner */
-    if (age > life * 1.5 || (age > life * 0.9 && p.lastShare < 0.004)) {
+    if (age > life * 1.5 || (age > life * 0.9 && (p.sold || 0) < (p.peakSold || 0) * 0.08)) {
       p.dead = 1;
       var loss = p.inv * (p.unitCost || 0) * WRITEOFF / 1000;
       if (p.co === G.me && p.inv > 0.001) {
@@ -903,7 +1043,7 @@ function runReviews(G, co, p) {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function aiRndPlan(G, co) {
-  var budget = co.style.rnd * Math.max(0.05, co.otherRev * 0.6 + (co.revDev || 0) * 0.9 + 0.15);
+  var budget = co.style.rnd * Math.max(0.015, co.otherRev * 0.6 + (co.revDev || 0) * 0.9 + 0.03);
   var out = {}, tot = 0;
   TK.forEach(function (k) { var w = 0.5 + (co.tech[k] || 40) / 120; out[k] = w; tot += w; });
   TK.forEach(function (k) { out[k] = budget * out[k] / tot; });
@@ -919,7 +1059,10 @@ function rndTick(G) {
       var b = Math.max(0, plan[k] || 0);
       spent += b;
       var lvl = co.tech[k] || 0;
-      var gain = b * 2.4 / (1 + Math.pow(lvl / 22, 1.6));
+      /* a domain with a star in it converts budget into progress faster */
+      var star = 1;
+      (co.staff || []).forEach(function (t) { if (t.role === k) star += 0.22; });
+      var gain = b * 2.4 * star / (1 + Math.pow(lvl / 22, 1.6));
       var before = lvl;
       co.tech[k] = clamp(lvl + gain, 0, 98);
       /* every 10 levels above 50 is a public breakthrough that heats a market */
@@ -951,6 +1094,114 @@ function breakthrough(G, co, k, lvl) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ENGINE §13b — key talent
+   Money alone does not buy a decade of silicon experience. Poaching a named
+   person moves a tech domain immediately, speeds its research while they
+   stay, and takes the same capability away from whoever lost them.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var ROLES = {
+  ai:        { n: 'ראש/ת חזון בינה מלאכותית', d: 'בנתה מודלים שרצים על המכשיר עצמו.' },
+  silicon:   { n: 'ארכיטקט/ית שבבים ראשי/ת',  d: 'הובילה שלושה דורות של מעבדים.' },
+  display:   { n: 'מוביל/ת טכנולוגיית תצוגה', d: 'הביאה פאנלים מתקפלים לייצור המוני.' },
+  imaging:   { n: 'ראש/ת הדמיה חישובית',      d: 'חתומה על הפטנטים שמאחורי מצב הלילה.' },
+  power:     { n: 'מהנדס/ת אנרגיה ראשי/ת',    d: 'העלתה צפיפות אנרגיה בשליש בלי לשנות נפח.' },
+  materials: { n: 'מעצב/ת חומרה ראשי/ת',      d: 'הפכה תשואות ייצור לבעיה פתורה.' }
+};
+var TALENT_FN = ['נועה', 'איתי', 'מאיה', 'יונתן', 'שירה', 'עומר', 'דניאל', 'ליאור', 'רותם', 'הילה',
+  'Wei', 'Ji-woo', 'Hana', 'Arjun', 'Priya', 'Sofia', 'Marcus', 'Lena', 'Kenji', 'Ines'];
+var TALENT_LN = ['ברקוביץ׳', 'חן', 'נאקאמורה', 'אוקונקוו', 'פארק', 'זילברמן', 'טאן', 'מוראלס',
+  'אבו־חסן', 'לינדגרן', 'קומאר', 'דה־סילבה', 'וונג', 'אשכנזי', 'פטרוב', 'אוקאדה'];
+
+function talentName(G) { return pick(G, TALENT_FN) + ' ' + pick(G, TALENT_LN); }
+
+/* The shortlist refreshes every few months; people you did not hire move on. */
+function genTalent(G) {
+  G.talent = G.talent || { market: [], seq: 1 };
+  var pool = [];
+  var n = 3;
+  for (var i = 0; i < n; i++) {
+    /* a star comes from whoever is actually strong in that domain */
+    var dom = pick(G, TK);
+    var ids = keys(G.cos).filter(function (id) { return id !== G.me; });
+    /* one slot is always a mid-tier name, so a small company has somebody it
+       can actually afford to sign */
+    var ranked = ids.slice().sort(function (a, b) { return (G.cos[b].tech[dom] || 0) - (G.cos[a].tech[dom] || 0); });
+    var from = i === 1 ? ranked[Math.min(ranked.length - 1, Math.floor(ranked.length * 0.8))]
+      : ranked[ri(G, 0, Math.min(2, ranked.length - 1))];
+    var fromCo = G.cos[from];
+    var lvl = fromCo.tech[dom] || 40;
+    var boost = round(clamp(lvl * rr(G, .09, 0.17), 2.5, 15), 1);
+    /* a name worth having is priced off what they carry, not off your wallet */
+    var fee = round(boost * rr(G, 0.18, 0.30) * (1 + lvl / 90), 3);
+    pool.push({
+      id: 't' + (G.talent.seq++),
+      name: talentName(G), role: dom, from: from,
+      lvl: Math.round(lvl), boost: boost,
+      fee: fee, salary: round(fee * 0.006, 4),
+      loyalty: Math.round(rr(G, 45, 92))
+    });
+  }
+  G.talent.market = pool;
+  G.talent.refreshed = G.t;
+}
+
+function talentUpkeep(G) {
+  var me = G.cos[G.me];
+  if (!me) return 0;
+  me.staff = me.staff || [];
+  var out = [];
+  me.staff.forEach(function (t) {
+    /* a star walks when the company stops looking like a place to build */
+    var risk = 0.006 + (G.board ? Math.max(0, 42 - G.board.mood) * 0.0012 : 0) +
+      Math.max(0, 60 - t.loyalty) * 0.0004;
+    if (rand(G) < risk) {
+      me.tech[t.role] = clamp((me.tech[t.role] || 0) - t.boost * 0.5, 0, 98);
+      pushLog(G, '🚪', t.name + ' עזבה אותנו. ' + TECH[t.role].n + ' נחלש.', 'bad');
+    } else out.push(t);
+  });
+  me.staff = out;
+  return sum(me.staff.map(function (t) { return t.salary; }));
+}
+
+function hireTalent(G, id) {
+  var me = G.cos[G.me];
+  var t = (G.talent.market || []).filter(function (x) { return x.id === id; })[0];
+  if (!t) return { ok: false, why: 'המועמד/ת כבר לא זמין/ה.' };
+  if (me.cash < t.fee) return { ok: false, why: 'חבילת החתימה עולה ' + fmtM(t.fee) + ' ואין מספיק מזומן.' };
+  me.cash -= t.fee;
+  me.staff = me.staff || [];
+  me.staff.push({ id: t.id, name: t.name, role: t.role, boost: t.boost, salary: t.salary, loyalty: t.loyalty, since: G.t });
+  me.tech[t.role] = clamp((me.tech[t.role] || 0) + t.boost, 0, 98);
+  me.brand = clamp(me.brand + 0.8, 5, 100);
+  var from = G.cos[t.from];
+  if (from) {
+    from.tech[t.role] = clamp((from.tech[t.role] || 0) - t.boost * 0.6, 0, 98);
+    from.brand = clamp(from.brand - 0.5, 5, 100);
+  }
+  G.talent.market = G.talent.market.filter(function (x) { return x.id !== id; });
+  pushLog(G, '🧠', 'חתמנו עם ' + t.name + ' מ־' + (from ? from.n : '—') + '. ' +
+    TECH[t.role].n + ' קפץ ב־' + t.boost.toFixed(1) + ' נקודות.', 'good');
+  return { ok: true, t: t };
+}
+
+/* Rivals raid the same shortlist, so hesitating has a cost. */
+function aiPoach(G) {
+  if (!G.talent || !G.talent.market.length) return;
+  if (rand(G) > 0.28) return;
+  var t = pick(G, G.talent.market);
+  var ids = keys(G.cos).filter(function (id) { return id !== G.me && id !== t.from && G.cos[id].cash > t.fee * 3; });
+  if (!ids.length) return;
+  var co = G.cos[pick(G, ids)];
+  co.cash -= t.fee;
+  co.tech[t.role] = clamp((co.tech[t.role] || 0) + t.boost, 0, 98);
+  var from = G.cos[t.from];
+  if (from) from.tech[t.role] = clamp((from.tech[t.role] || 0) - t.boost * 0.6, 0, 98);
+  G.talent.market = G.talent.market.filter(function (x) { return x.id !== t.id; });
+  pushLog(G, '🧠', co.n + ' חטפה את ' + t.name + ' מ־' + (from ? from.n : '—') + '.');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ENGINE §14 — world events
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -959,57 +1210,110 @@ function breakthrough(G, co, k, lvl) {
 var EVENTS = [
   { id: 'shortage', w: 8, t: 'מחסור בקיבולת ליתוגרפיה מתקדמת',
     x: 'הזמנות לצמתים המתקדמים נדחות ברבעון. מחירי השבבים קופצים לכולם.',
+    eff: 'עלות ייצור +9% לכולם, חום סמארטפונים וניידים יורד 5',
     f: function (G) { G.world.costMult *= 1.09; bumpHeat(G, ['phone', 'laptop'], -5); } },
   { id: 'aiwave', w: 9, t: 'גל מכשירי בינה מלאכותית',
     x: 'הדגמות של עוזרים על־מכשיריים מציפות את הרשת. הציבור פתאום רוצה לשדרג.',
+    eff: 'חום +15 בשלוש קטגוריות, והבסיס המותקן של הסמארטפונים גדל מהר יותר',
     f: function (G) { bumpHeat(G, ['phone', 'laptop', 'wearable'], 15); G.market.phone.trend += 0.0022; } },
   { id: 'recession', w: 6, t: 'האטה כלכלית עולמית',
     x: 'מחזורי ההחלפה מתארכים. הקונים דוחים שדרוג בכמה חודשים.',
+    eff: 'ביקוש עולמי −10% והקונים נודדים למדף התקציבי',
     f: function (G) { G.world.demandMult *= 0.90; G.world.mood = 'מתכווץ'; bumpBands(G, 'budget', 0.06); } },
   { id: 'boom', w: 5, t: 'התאוששות בהוצאה הפרטית',
     x: 'ההכנסה הפנויה עולה והשוק חוזר לרוץ קדימה.',
+    eff: 'ביקוש עולמי +9% והקונים נודדים למדף הפרימיום',
     f: function (G) { G.world.demandMult *= 1.09; G.world.mood = 'מתרחב'; bumpBands(G, 'prem', 0.05); } },
   { id: 'tariff', w: 6, t: 'מכסי סחר חדשים',
     x: 'ייבוא מכשירים מוגמרים מתייקר. חלק מהעלות עובר לצרכן.',
+    eff: 'עלות ייצור +6%, ביקוש −3%',
     f: function (G) { G.world.costMult *= 1.06; G.world.demandMult *= 0.97; } },
   { id: 'usbc', w: 4, t: 'רגולציה: תקן טעינה וסוללה מתחלפת',
     x: 'רגולטורים מחייבים תקינה. עלות התאמה חד־פעמית, אבל אמון הצרכן עולה.',
+    eff: 'עלות ייצור +3%, חום סמארטפונים ואודיו +6',
     f: function (G) { G.world.costMult *= 1.03; bumpHeat(G, ['phone', 'audio'], 6); } },
   { id: 'quake', w: 4, t: 'רעידת אדמה במזרח אסיה',
     x: 'קווי ייצור מושבתים. מי שקנה מספק אחד בלבד — עומד בבעיה.',
+    eff: 'ספק אקראי מאבד 38% מהקיבולת ל־3 חודשים',
     f: function (G) { disruptRandomSupplier(G, 3, 0.62); } },
   { id: 'fire', w: 4, t: 'שריפה במפעל הרכבה',
     x: 'קיבולת ההרכבה של אחד הספקים יורדת לחודשיים.',
+    eff: 'קבלן הרכבה מאבד 30% מהקיבולת לחודשיים',
     f: function (G) { disruptRandomSupplier(G, 2, 0.7, 'build'); } },
   { id: 'memcrash', w: 6, t: 'קריסת מחירי זיכרון',
     x: 'עודף היצע בשוק ה־DRAM. עלות רכיב הזיכרון צונחת לכולם.',
+    eff: 'עלות ייצור −7% לכולם',
     f: function (G) { G.world.costMult *= 0.93; } },
   { id: 'memspike', w: 6, t: 'זינוק במחירי זיכרון',
     x: 'מרכזי נתונים בולעים את כל ההיצע. הזיכרון מתייקר בחדות.',
+    eff: 'עלות ייצור +8% לכולם',
     f: function (G) { G.world.costMult *= 1.08; } },
   { id: 'viral', w: 7, t: 'טרנד ויראלי בקטגוריה',
     x: 'קליפ אחד מסובב את כל השיחה בתעשייה.',
+    eff: 'חום +20 בקטגוריה אחת, והבסיס שלה גדל',
     f: function (G) { var c = pick(G, CK); bumpHeat(G, [c], 20); G.market[c].trend += 0.0028;
       pushLog(G, '🔥', 'הרשת מדברת רק על ' + CATS[c].n + ' החודש.'); } },
   { id: 'flop', w: 5, t: 'כישלון מתוקשר של מוצר מתחרה',
-    x: 'סקירה הרסנית מורידה מותג שלם כמה נקודות.',
+    x: 'סקירה הרסנית של מכשיר דגל מפרקת אמון בציבור.',
+    eff: 'מותג היריבה יורד 2–5 נקודות וההיפ של הדגמים שלה נחתך ב־18%',
     f: function (G) { var ids = keys(G.cos).filter(function (i) { return i !== G.me; });
-      var c = G.cos[pick(G, ids)]; c.brand = clamp(c.brand - rr(G, 2, 5), 5, 100);
-      pushLog(G, '💥', c.n + ' ספגה גל ביקורות שליליות. המותג נפגע.'); } },
+      var c = G.cos[pick(G, ids)];
+      c.brand = clamp(c.brand - rr(G, 2, 5), 5, 100);
+      G.prods.forEach(function (p) { if (p.co === c.id && p.live && !p.dead) p.mktStock *= 0.82; });
+      pushLog(G, '💥', c.n + ' ספגה גל ביקורות שליליות. המותג וההיפ שלה נפגעו.'); } },
+  { id: 'patent', w: 5, t: 'תביעת פטנטים',
+    x: 'בעלת פטנטים תובעת חצי מהתעשייה על טכנולוגיית טעינה.',
+    eff: 'קנס חד־פעמי לחברה הגדולה ביותר, ועלות ייצור +4% לכולם',
+    f: function (G) {
+      G.world.costMult *= 1.04;
+      var top = null;
+      keys(G.cos).forEach(function (id) { if (!top || G.cos[id].revDev > top.revDev) top = G.cos[id]; });
+      if (top) { var fine = Math.min(top.cash * 0.06, Math.max(0.2, top.revDev * 0.35)); top.cash -= fine;
+        pushLog(G, '⚖️', top.n + ' שילמה ' + fmtM(fine) + ' בפשרת פטנטים.'); } } },
+  { id: 'recall', w: 4, t: 'ריקול על רכיב פגום',
+    x: 'אצווה שלמה של סוללות מוחזרת מהמדפים.',
+    eff: 'החברה שנפגעה מוחקת מלאי ומאבדת 3 נקודות מותג',
+    f: function (G) {
+      var ids = keys(G.cos);
+      var c = G.cos[pick(G, ids)];
+      c.brand = clamp(c.brand - 3, 5, 100);
+      var hit = 0;
+      G.prods.forEach(function (p) {
+        if (p.co !== c.id || !p.live || p.dead) return;
+        hit += p.inv * 0.45; p.inv *= 0.55;
+      });
+      pushLog(G, '🔧', c.n + ' מבצעת ריקול. ' + fmtU(hit) + ' יחידות מלאי נמחקו.',
+        c.id === G.me ? 'bad' : ''); } },
+  { id: 'exportban', w: 4, t: 'צו הגבלת ייצוא',
+    x: 'ממשלה חוסמת מכירת רכיבים מתקדמים ליעדים מסוימים.',
+    eff: 'קיבולת נחתכת אצל ספק אחד ל־3 חודשים, ועלות +5%',
+    f: function (G) { G.world.costMult *= 1.05; disruptRandomSupplier(G, 3, 0.7); } },
+  { id: 'talentwar', w: 5, t: 'מלחמת כישרונות',
+    x: 'שלוש חברות מתחרות על אותם עשרים אנשים.',
+    eff: 'חבילות החתימה של כל המועמדים מתייקרות ב־35%',
+    f: function (G) {
+      if (G.talent && G.talent.market) {
+        G.talent.market.forEach(function (t) { t.fee = round(t.fee * 1.35, 3); t.salary = round(t.salary * 1.2, 4); });
+      } } },
   { id: 'privacy', w: 5, t: 'שערוריית פרטיות',
     x: 'חשיפה על איסוף נתונים פוגעת בקטגוריה שלמה.',
+    eff: 'חום לבישים ו־XR יורד 12',
     f: function (G) { bumpHeat(G, ['wearable', 'xr'], -12); } },
   { id: 'xrpush', w: 5, t: 'פריצת דרך במשקפיים קלים',
     x: 'משקל מתחת ל־70 גרם עם תצוגה מלאה. השוק מתעורר.',
+    eff: 'חום XR +26 והבסיס המותקן שלו מזנק',
     f: function (G) { bumpHeat(G, ['xr'], 26); G.market.xr.trend += 0.010; } },
   { id: 'currency', w: 5, t: 'תנודה חדה במטבע',
     x: 'שערי החליפין מזיזים גם את העלות וגם את המחיר האפקטיבי בשווקים.',
+    eff: 'עלות וביקוש זזים 5% בכיוונים מנוגדים',
     f: function (G) { var d = rand(G) < .5 ? 0.95 : 1.05; G.world.costMult *= d; G.world.demandMult *= (2 - d) * 0.99 + 0.01; } },
   { id: 'repair', w: 4, t: 'חוק זכות התיקון',
     x: 'חובת חלקי חילוף וזמינות. עלות קטנה, נאמנות גדולה.',
+    eff: 'עלות ייצור +2%, כל המותגים +0.6',
     f: function (G) { G.world.costMult *= 1.02; keys(G.cos).forEach(function (i) { G.cos[i].brand = clamp(G.cos[i].brand + 0.6, 5, 100); }); } },
-  { id: 'algo', w: 6, t: 'שינוי אלגוריתם בפלטפורמות הווידאו',
+  { id: 'algo', w: 6, creatorOnly: 1, t: 'שינוי אלגוריתם בפלטפורמות הווידאו',
     x: 'מה שהיה עובד לפני חודש כבר לא נדחף. יוצרי התוכן מגלים את זה קשה.',
+    eff: 'משקלי הפורמטים בפלטפורמה מתחלפים — רלוונטי למצב יוצר תוכן',
     f: function (G) { shiftAlgorithm(G); } }
 ];
 
@@ -1056,11 +1360,14 @@ function worldTick(G) {
   });
 
   if (rand(G) < 0.26 && G.t > 1) {
-    var tot = sum(EVENTS.map(function (e) { return e.w; })), r = rand(G) * tot, acc = 0, ev = EVENTS[0];
-    for (var i = 0; i < EVENTS.length; i++) { acc += EVENTS[i].w; if (r <= acc) { ev = EVENTS[i]; break; } }
+    /* an event with no hook into the current mode is not an event, it is
+       flavour — so the pool is filtered before anything is rolled */
+    var pool = EVENTS.filter(function (e) { return !e.creatorOnly || G.mode === 'creator'; });
+    var tot = sum(pool.map(function (e) { return e.w; })), r = rand(G) * tot, acc = 0, ev = pool[0];
+    for (var i = 0; i < pool.length; i++) { acc += pool[i].w; if (r <= acc) { ev = pool[i]; break; } }
     ev.f(G);
-    pushLog(G, '🌍', ev.t + ' — ' + ev.x);
-    G.lastEvent = { t: ev.t, x: ev.x };
+    pushLog(G, '🌍', ev.t + ' — ' + ev.x, '', ev.eff);
+    G.lastEvent = { t: ev.t, x: ev.x, eff: ev.eff };
   } else G.lastEvent = null;
 }
 
@@ -1088,8 +1395,8 @@ function fmtPct(x, d) { return (x * 100).toFixed(d == null ? 1 : d) + '%'; }
 function fmtSignPct(x, d) { return (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(d == null ? 1 : d) + '%'; }
 function fmtPrice(p) { return '$' + Math.round(p).toLocaleString('en-US'); }
 
-function pushLog(G, ic, txt, kind) {
-  G.log.unshift({ t: G.t, ic: ic, x: txt, k: kind || '' });
+function pushLog(G, ic, txt, kind, eff) {
+  G.log.unshift({ t: G.t, ic: ic, x: txt, k: kind || '', e: eff || '' });
   if (G.log.length > 90) G.log.length = 90;
 }
 
@@ -1188,6 +1495,12 @@ function brandTick(G) {
        already carried before you sat down — reputations move, slowly */
     var target = clamp(avgRev * 0.34 + co.brand * 0.30 + (co.brand0 || co.brand) * 0.36, 5, 100);
     co.brand = clamp(co.brand + (target - co.brand) * 0.035, 5, 100);
+
+    /* Shelf space, carrier deals and retail presence are earned by shipping
+       volume and by being a name people ask for. Reach only ever ratchets
+       up: nobody loses the distribution they already built. */
+    var reachTarget = clamp(0.10 + co.brand / 190 + Math.min(0.34, (co.units || 0) / 42), 0.06, 1);
+    if (reachTarget > co.reach) co.reach = co.reach + (reachTarget - co.reach) * 0.025;
     /* chronic stock-outs read as incompetence, not as desirability */
     if (dem > 0 && so / dem > 0.15) co.brand = clamp(co.brand - 0.35, 5, 100);
 
@@ -1218,7 +1531,8 @@ function financeTick(G) {
   var mkt = sum(mine.map(function (p) { return p.mkt || 0; })) + (G.plan.press || 0) * 0.012 * Math.max(1, me.otherRev + 2) * 0.1;
   var rnd = sum(TK.map(function (k) { return Math.max(0, G.plan.rnd[k] || 0); }));
   /* fixed cost of owning factory capacity, whether or not it runs */
-  var opex = (revDev + revOther) * 0.170 + me.capacity * 0.012;
+  var salaries = talentUpkeep(G);
+  var opex = (revDev + revOther) * 0.170 + me.capacity * 0.012 + salaries;
 
   /* capex pipeline */
   var capexPaid = 0;
@@ -1245,18 +1559,23 @@ function financeTick(G) {
   me.profit = net;
 
   /* an overdrawn balance sheet turns into debt with a real interest bill */
-  if (me.cash < 0) { me.debt += -me.cash; me.cash = 0; }
+  if (me.cash < 0) { me.debt += -me.cash; me.overdraft = (me.overdraft || 0) + -me.cash; me.cash = 0; }
   if (me.debt > 0) {
     var interest = me.debt * 0.0045;
     me.debt += interest;
-    var repay = Math.min(me.cash * 0.35, me.debt);
-    me.cash -= repay; me.debt -= repay;
     net -= interest;
+    G.fin.interest = interest;
+    /* only an overdraft is swept automatically; a deliberate loan is repaid
+       when the player decides to, not the moment cash appears */
+    if (me.overdraft > 0) {
+      var repay = Math.min(me.cash * 0.35, me.overdraft, me.debt);
+      me.cash -= repay; me.debt -= repay; me.overdraft -= repay;
+    }
   }
 
   G.fin = {
     revDev: revDev, revOther: revOther, prodCost: prodCost, hold: holdCost, writeoff: writeoff,
-    mkt: mkt, rnd: rnd, opex: opex, capex: capexPaid, payout: payout, net: net,
+    mkt: mkt, rnd: rnd, opex: opex, salaries: salaries, capex: capexPaid, payout: payout, net: net,
     margin: gross > 0 ? net / gross : 0
   };
   G.fin.netTTM = (G.finPrev && G.finPrev.netTTM ? G.finPrev.netTTM : []).concat([net]).slice(-12);
@@ -1270,9 +1589,9 @@ function financeTick(G) {
 
 function yoyGrowth(me) {
   var r = me.rev12 || [];
-  if (r.length < 13) return null;
-  var now = sum(r.slice(-3)) / 3;
-  var then = sum(r.slice(-15, -12)) / 3;
+  if (r.length < 18) return null;
+  var now = sum(r.slice(-6)) / 6;
+  var then = sum(r.slice(-18, -12)) / 6;
   if (then <= 0.0001) return null;
   return now / then - 1;
 }
@@ -1316,8 +1635,9 @@ function boardTick(G) {
 
   /* 4b. an empty shelf is the one thing no board forgives */
   var liveMine = G.prods.filter(function (p) { return p.co === G.me && p.live && !p.dead; }).length;
+  var wantSku = me.arch === 'startup' ? 1 : (me.arch === 'challenger' ? 2 : 3);
   if (liveMine === 0) { d -= 9; notes.push('אין לנו אף מוצר פעיל בשוק. הדירקטוריון שואל למה אנחנו כאן.'); }
-  else if (liveMine < 2) { d -= 2.2; notes.push('קו המוצרים דק מדי לחברה בגודל הזה.'); }
+  else if (liveMine < wantSku) { d -= 2.2; notes.push('קו המוצרים דק מדי לחברה בגודל הזה.'); }
 
   /* 5. relevance */
   var totShare = sum(CK.map(function (c) { return (G.market[c].shares[G.me] || 0) * G.market[c].pool * CATS[c].ref; }));
@@ -1345,6 +1665,25 @@ function boardTick(G) {
     } else {
       pushLog(G, '🚨', 'אזהרת דירקטוריון ' + G.board.warnings + '/3: ' + G.board.lastNote, 'bad');
     }
+  }
+}
+
+/* A company that grows out of one stage inherits the next stage's board.
+   The 34%-a-year investors do not stay in the room forever — and neither
+   does the patience that came with them. */
+function archTick(G) {
+  var me = G.cos[G.me];
+  if (!me) return;
+  /* You graduate by tripling what you started at and clearing an absolute
+     floor — not by hitting a number that happens to suit a big company. */
+  var grad = Math.max(0.30, (me.rev0 || 0.05) * 3);
+  if (me.arch === 'startup' && me.revDev > grad && (me.rev12 || []).length > 15) {
+    me.arch = 'challenger';
+    pushLog(G, '📈', 'סבב הצמיחה נסגר. הדירקטוריון מתחלף: מעכשיו מודדים אותנו על נתח ועל מסלול לרווח, לא רק על קצב.', 'good');
+  } else if (me.arch === 'challenger' && me.revDev > 14 && me.brand > 66) {
+    me.arch = 'megacap';
+    G.plan.payout = Math.max(G.plan.payout, ARCH.megacap.payoutTarget * 0.7);
+    pushLog(G, '🏛️', 'נכנסנו למדד הגדולים. הדירקטוריון החדש רוצה שוליים, יציבות ודיבידנד.', 'warn');
   }
 }
 
@@ -1412,14 +1751,52 @@ function setContract(G, part, supId) {
 function buildCapacity(G, addUnits) {
   var me = G.cos[G.me];
   addUnits = Math.max(0, addUnits);
-  if (addUnits < 0.05) return { ok: false, why: 'הרחבה מינימלית היא 50 אלף יחידות בחודש.' };
-  var total = round(addUnits * CAPEX_PER_LINE, 3);
-  var perMonth = round(total / CAPEX_MONTHS, 4);
-  if (me.cash < perMonth * 2) return { ok: false, why: 'אין מזומן לתשלום הראשון.' };
-  G.plan.capexQueue.push({ add: addUnits, left: CAPEX_MONTHS, perMonth: perMonth, total: total });
-  pushLog(G, '🏗️', 'אישרנו קו ייצור נוסף: +' + fmtU(addUnits) + ' יחידות בחודש בעלות ' + fmtM(total) +
-    ', מוכן בעוד ' + CAPEX_MONTHS + ' חודשים.');
-  return { ok: true, total: total, perMonth: perMonth };
+  if (addUnits < 0.02) return { ok: false, why: 'הרחבה מינימלית היא 20 אלף יחידות בחודש.' };
+  var q = capexQuote(addUnits);
+  var perMonth = round(q.total / q.months, 4);
+  if (me.cash < perMonth * 1.5) return { ok: false, why: 'אין מזומן לתשלום הראשון.' };
+  G.plan.capexQueue.push({ add: addUnits, left: q.months, perMonth: perMonth, total: q.total });
+  pushLog(G, '🏗️', (q.contract ? 'שכרנו קיבולת אצל קבלן: +' : 'אישרנו קו ייצור נוסף: +') +
+    fmtU(addUnits) + ' יחידות בחודש בעלות ' + fmtM(q.total) + ', מוכן בעוד ' + q.months + ' חודשים.');
+  return { ok: true, total: q.total, perMonth: perMonth, months: q.months };
+}
+
+/* ── Borrowing ───────────────────────────────────────────────────────────
+   A credit line sized off the business you can actually show a lender.     */
+/* The debt level at which the creditors, not the board, end the game. */
+function insolvencyLimit(G) {
+  var me = G.cos[G.me];
+  return Math.max(1.2, (me.otherRev + (G.fin.revDev || 0) * 0.6 + 0.4) * 14);
+}
+/* A line sized off the business a lender can actually see — and deliberately
+   held below the level that would bankrupt you, so borrowing alone can never
+   lose the run. Spending the money still can. */
+function creditLimit(G) {
+  var me = G.cos[G.me];
+  var gross = (G.fin.revDev || 0) + (G.fin.revOther || 0);
+  var offered = Math.max(0.35, gross * 2.5 + me.capacity * 0.2) * (G.creditBoost || 1);
+  return Math.min(offered, insolvencyLimit(G) * 0.8);
+}
+function loanHeadroom(G) { return Math.max(0, creditLimit(G) - G.cos[G.me].debt); }
+
+function takeLoan(G, amount) {
+  var me = G.cos[G.me];
+  amount = Math.max(0, amount);
+  if (amount < 0.01) return { ok: false, why: 'סכום מינימלי להלוואה הוא 10 מיליון דולר.' };
+  if (amount > loanHeadroom(G) + 1e-9) return { ok: false, why: 'מסגרת האשראי מוגבלת ל־' + fmtM(loanHeadroom(G)) + '.' };
+  me.cash += amount;
+  me.debt += amount;
+  pushLog(G, '🏦', 'משכנו ' + fmtM(amount) + ' מהמסגרת. החוב עומד על ' + fmtM(me.debt) + '.', 'warn');
+  return { ok: true };
+}
+function repayLoan(G, amount) {
+  var me = G.cos[G.me];
+  amount = clamp(amount, 0, Math.min(me.cash, me.debt));
+  if (amount < 0.01) return { ok: false, why: 'אין מה להחזיר, או שאין מזומן.' };
+  me.cash -= amount;
+  me.debt -= amount;
+  pushLog(G, '🏦', 'החזרנו ' + fmtM(amount) + ' מהחוב.');
+  return { ok: true };
 }
 
 function capacityUsed(G, co) {
@@ -1646,6 +2023,104 @@ function creatorTick(G) {
   if (G.algo.since + ri(G, 5, 9) < G.t) shiftAlgorithm(G);
 }
 
+/* ── Crossing over ───────────────────────────────────────────────────────
+   A channel big enough and trusted enough stops being an audience and starts
+   being leverage: either investors will back a company you found, or a board
+   somewhere decides the person the market listens to should run the thing.  */
+var XOVER_SUBS = 1.2;
+var XOVER_CRED = 62;
+
+function canExpand(G) {
+  if (G.mode !== 'creator' || !G.creator) return false;
+  return G.creator.subs >= XOVER_SUBS && G.creator.cred >= XOVER_CRED;
+}
+/* What the channel is worth to a seed round, in $B. */
+function raiseAmount(G) {
+  var C = G.creator;
+  return round(0.12 * C.subs + 0.25 * (C.cred / 100) + Math.min(0.9, C.bank / 4000), 3);
+}
+/* Companies that would actually take the call: weak brand, thin cash, or
+   losing money — the ones with something to gain from a famous outsider. */
+function strugglingCompanies(G) {
+  return keys(G.cos).map(function (id) { return G.cos[id]; })
+    .filter(function (co) {
+      return CO_BY_ID[co.id] && CO_BY_ID[co.id].playable !== 0 &&
+        (co.brand < 62 || (co.profit || 0) < 0 || co.cash < co.otherRev * 4);
+    })
+    .sort(function (a, b) { return a.brand - b.brand; })
+    .slice(0, 3);
+}
+
+function expandToIndustry(G, path, targetId) {
+  if (!canExpand(G)) return { ok: false, why: 'הערוץ עדיין לא מספיק גדול או אמין.' };
+  var C = G.creator;
+  /* the channel does not vanish — it keeps amplifying whatever you ship */
+  var legacyMkt = 1 + clamp(C.subs / 26, 0, 0.45) + clamp((C.cred - 50) / 260, 0, 0.15);
+
+  if (path === 'found') {
+    var raise = raiseAmount(G);
+    var def = makeCustomDef(C.coName || ('הסטארטאפ של ' + C.name), {
+      cash: raise,
+      brand: Math.round(clamp(16 + C.cred * 0.30 + Math.min(22, C.subs * 1.5), 12, 62)),
+      capacity: round(clamp(0.22 + raise * 0.35, 0.2, 2.2), 2),
+      reach: round(clamp(0.10 + C.subs / 44, 0.1, 0.4), 3),
+      mktEff: round(1.25 * legacyMkt, 3),
+      catBrand: { phone: Math.round(14 + C.cred * 0.2), laptop: 9, wearable: 13, audio: 19, xr: 10 },
+      d: 'הוקמה על גב הערוץ. הקהל כבר מכיר אתכם — עכשיו הוא רוצה לראות מה תשלחו למדף.'
+    });
+    G.customDef = def;
+    registerCustom(G);
+    var co = {
+      id: def.id, n: def.n, he: def.he, tag: def.tag, arch: def.arch,
+      cash: def.cash, brand: def.brand, brand0: def.brand, otherRev: 0,
+      capacity: def.capacity, capBuild: [], installed: {}, staff: [],
+      reach: def.reach, costEff: def.costEff, mktEff: def.mktEff,
+      tech: JSON.parse(JSON.stringify(def.tech)),
+      catBrand: JSON.parse(JSON.stringify(def.catBrand)),
+      style: def.style,
+      revDev: 0, revLast: 0, rev12: [], profit: 0, share: {}, units: 0,
+      rndSpend: 0, debt: 0, overdraft: 0
+    };
+    CK.forEach(function (k) { co.installed[k] = 0; });
+    G.cos[def.id] = co;
+    seedPortfolio(G, co);
+    G.me = def.id;
+    pushLog(G, '🚀', 'גייסנו ' + fmtM(raise) + ' והקמנו את ' + def.n + '. הערוץ נשאר באוויר ומגביר כל השקה.', 'good');
+  } else {
+    var target = G.cos[targetId];
+    if (!target) return { ok: false, why: 'החברה הזו כבר לא על השולחן.' };
+    target.mktEff = round(target.mktEff * legacyMkt, 3);
+    G.me = targetId;
+    G.customDef = null;
+    /* inherit the seat's existing supplier book */
+    G.contracts = JSON.parse(JSON.stringify(aiContracts(target)));
+    pushLog(G, '💼', 'הדירקטוריון של ' + target.n + ' מינה אתכם למנכ״ל. הערוץ עובר לארכיון — וההשפעה שלו נשארת.', 'good');
+  }
+
+  var me = G.cos[G.me];
+  G.mode = 'ceo';
+  /* a second act needs room to actually play out */
+  G.horizon = Math.max(G.horizon || HORIZON, G.t + 40);
+  G.creatorPast = { name: C.name, subs: C.subs, cred: C.cred, bank: C.bank, at: G.t, path: path };
+  G.creator = null;
+  G.board = { mood: 60, warnings: 0, payout: ARCH[me.arch].payoutTarget, lastNote: '', notes: [], delta: 0 };
+  G.plan = { rnd: {}, capexQueue: [], payout: ARCH[me.arch].payoutTarget, press: 1 };
+  keys(PARTS).forEach(function (part) {
+    if (!G.contracts[part]) {
+      var opts = suppliersFor(part);
+      if (opts.length) G.contracts[part] = opts[Math.floor(opts.length / 2)].id;
+    }
+  });
+  var est = sum(G.prods.filter(function (p) { return p.co === G.me; })
+    .map(function (p) { return (p.demand || 0) * p.price / 1000; }));
+  var rndBudget = me.style.rnd * Math.max(0.015, me.otherRev * 0.6 + est * 0.9 + 0.03);
+  TK.forEach(function (k) { G.plan.rnd[k] = round(rndBudget / TK.length, 4); });
+  G.hist = { t: [], cash: [], rev: [], profit: [], share: [], brand: [], mood: [] };
+  G.talent = null;
+  primeFinancials(G);
+  return { ok: true };
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ENGINE §21 — the turn
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -1683,15 +2158,18 @@ function endTurn(G) {
   G.prods.forEach(function (p) { if (p.auto) autoManage(G, p); });
   playerAdStock(G);
   aiTick(G);
+  aiPoach(G);
+  if (!G.talent || G.t - (G.talent.refreshed || -9) >= 3) genTalent(G);
   rndTick(G);
   worldTick(G);
   marketTick(G);
   distributeAll(G);
   produceAndSell(G);
+  ecosystemTick(G);
   retireProducts(G);
   brandTick(G);
 
-  if (G.mode === 'ceo') { financeTick(G); boardTick(G); }
+  if (G.mode === 'ceo') { financeTick(G); archTick(G); boardTick(G); }
   else { creatorTick(G); }
 
   ageProducts(G);
@@ -1758,7 +2236,7 @@ function checkEnd(G) {
   if (G.over) return;
   if (G.mode === 'ceo') {
     var me = G.cos[G.me];
-    if (me.debt > Math.max(12, (me.otherRev + 1) * 14)) {
+    if (me.debt > insolvencyLimit(G)) {
       G.over = true;
       G.ending = { win: false, t: 'חדלות פירעון', x: 'החוב של ' + me.n + ' חצה את הקו. הנושים לקחו את ההגה.' };
       return;
@@ -1781,7 +2259,7 @@ function checkEnd(G) {
       return;
     }
   }
-  if (G.t >= HORIZON) {
+  if (G.t >= (G.horizon || HORIZON)) {
     G.over = true;
     G.ending = finalScore(G);
   }
@@ -1813,6 +2291,72 @@ function finalScore(G) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ENGINE §21b — easter eggs
+   Reachable by tapping the company badge in the top bar five times, which
+   opens a code field. Each code pays out once per run.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var CHEATS = [
+  { id: 'empire', codes: ['אימפריה', 'EMPIRE'], n: 'מימון שקט',
+    x: 'משקיע אנונימי העביר ' , f: function (G) {
+      var amt = G.mode === 'creator' ? 0 : 25;
+      if (G.mode === 'creator') { G.creator.bank += 450; return 'נכנסו $450K לחשבון הערוץ מתורם אלמוני.'; }
+      G.cos[G.me].cash += amt;
+      return 'נכנסו ' + fmtM(amt) + ' לקופה. אף אחד לא שואל מאיפה.';
+    } },
+  { id: 'prototype', codes: ['אבטיפוס', 'אב טיפוס', 'PROTOTYPE'], n: 'מעבדה חשאית',
+    f: function (G) {
+      if (G.mode === 'creator') { G.creator.skill = clamp(G.creator.skill + 14, 0, 100); return 'מצאתם ארגז ציוד נטוש. המיומנות קפצה.'; }
+      var me = G.cos[G.me];
+      TK.forEach(function (k) { me.tech[k] = clamp((me.tech[k] || 0) + 12, 0, 98); });
+      return 'תיקיית מחקר שכוחה נפתחה. כל תחומי הטכנולוגיה עלו ב־12.';
+    } },
+  { id: 'singularity', codes: ['סינגולריות', 'SINGULARITY'], n: 'קפיצת מדרגה',
+    f: function (G) {
+      bumpHeat(G, ['xr', 'wearable'], 40);
+      if (G.mode !== 'creator') {
+        var me = G.cos[G.me];
+        me.tech.ai = clamp(me.tech.ai + 20, 0, 98);
+        me.catBrand.xr = clamp((me.catBrand.xr || 10) + 18, 5, 100);
+      }
+      return 'הדגמה אחת שינתה את השיחה. XR ולבישים בוערים.';
+    } },
+  { id: 'legend', codes: ['1984'], n: 'הפרסומת ההיא',
+    f: function (G) {
+      if (G.mode === 'creator') { G.creator.cred = clamp(G.creator.cred + 14, 0, 100); return 'סרטון ישן שלכם התגלה מחדש. האמינות עלתה.'; }
+      var me = G.cos[G.me];
+      me.brand = clamp(me.brand + 15, 5, 100);
+      CK.forEach(function (k) { me.catBrand[k] = clamp((me.catBrand[k] || 20) + 6, 5, 100); });
+      return 'קמפיין אחד, שישים שניות, והמותג זז 15 נקודות.';
+    } },
+  { id: 'credit', codes: ['אשראי', 'CREDIT'], n: 'בנקאי ידידותי',
+    f: function (G) {
+      G.creditBoost = 2.5;
+      return 'מסגרת האשראי הוכפלה פי 2.5. השתמשו בזהירות.';
+    } }
+];
+
+function applyCheat(G, raw) {
+  var code = String(raw || '').trim().toUpperCase();
+  if (!code) return { ok: false, why: 'לא הוזן קוד.' };
+  G.cheats = G.cheats || {};
+  for (var i = 0; i < CHEATS.length; i++) {
+    var c = CHEATS[i];
+    var hit = c.codes.some(function (x) { return x.toUpperCase() === code; });
+    if (!hit) continue;
+    if (G.cheats[c.id]) return { ok: false, why: 'הקוד הזה כבר מומש.' };
+    G.cheats[c.id] = G.t + 1;   /* month 0 is falsy; store it one-based */
+    var msg = c.f(G);
+    pushLog(G, '🥚', c.n + ' — ' + msg, 'good');
+    if (keys(G.cheats).length >= CHEATS.length) {
+      pushLog(G, '🏆', 'מצאתם את כל הקודים. מי שקורא קוד מקור ראוי לזה.', 'good');
+    }
+    return { ok: true, msg: msg };
+  }
+  return { ok: false, why: 'הקוד לא מוכר.' };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ENGINE §22 — persistence & migration
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -1821,6 +2365,7 @@ function finalScore(G) {
 function migrateSave(G) {
   if (!G || typeof G !== 'object') return null;
   var v = G.version || 1;
+  registerCustom(G);
 
   if (v < 2) {
     G.plan = G.plan || {};
@@ -1839,9 +2384,26 @@ function migrateSave(G) {
     G.world = G.world || { demandMult: 1, costMult: 1, mood: 'יציב' };
     v = 3;
   }
+  if (v < 4) {
+    /* mechanics added after v3: ecosystem tracking, key talent, explicit
+       borrowing and the creator crossover. All default to "none of that
+       happened yet", which is exactly right for an older save. */
+    keys(G.cos || {}).forEach(function (id) {
+      var c = G.cos[id];
+      if (!c.installed) c.installed = {};
+      if (!c.staff) c.staff = [];
+      if (c.overdraft == null) c.overdraft = c.debt || 0;
+    });
+    if (G.talent == null) G.talent = null;
+    if (G.cheats == null) G.cheats = {};
+    if (G.customDef === undefined) G.customDef = null;
+    if (G.creatorPast === undefined) G.creatorPast = null;
+    v = 4;
+  }
 
   /* shape guards that apply to every version */
   G.version = VERSION;
+  if (!G.horizon) G.horizon = HORIZON;
   G.log = G.log || [];
   G.prods = G.prods || [];
   G.disrupt = G.disrupt || {};
@@ -1853,6 +2415,10 @@ function migrateSave(G) {
   keys(G.cos || {}).forEach(function (id) {
     var c = G.cos[id], d = CO_BY_ID[id];
     if (!d) return;
+    if (!c.installed) c.installed = {};
+    if (!c.staff) c.staff = [];
+    if (c.overdraft == null) c.overdraft = 0;
+    CK.forEach(function (k) { if (c.installed[k] == null) c.installed[k] = 0; });
     TK.forEach(function (k) { if (c.tech[k] == null) c.tech[k] = d.tech[k] != null ? d.tech[k] : 42; });
     CK.forEach(function (k) { if (c.catBrand[k] == null) c.catBrand[k] = d.catBrand[k] != null ? d.catBrand[k] : 30; });
     if (c.rev12 == null) c.rev12 = [];
@@ -1860,6 +2426,7 @@ function migrateSave(G) {
   });
   G.prods.forEach(function (p) {
     if (p.rev_by == null) p.rev_by = {};
+    if (p.peakSold == null) p.peakSold = p.sold || 0;
     if (p.auto == null) p.auto = 0;
     if (p.inv == null) p.inv = 0;
     if (p.prodPlan == null) p.prodPlan = 0;
@@ -2029,8 +2596,9 @@ function renderChrome() {
   var me = isCeo ? G.cos[G.me] : null;
   $('#tbBadge').textContent = isCeo ? me.n.slice(0, 2).toUpperCase() : '▶';
   $('#tbName').textContent = isCeo ? me.he + ' · ' + me.n : G.creator.name;
-  $('#tbDate').textContent = dateHe(G.t) + ' · חודש ' + (G.t + 1) + '/' + HORIZON;
-  $('#tbProg').style.width = (G.t / HORIZON * 100).toFixed(1) + '%';
+  var hz = G.horizon || HORIZON;
+  $('#tbDate').textContent = dateHe(G.t) + ' · חודש ' + (G.t + 1) + '/' + hz;
+  $('#tbProg').style.width = (G.t / hz * 100).toFixed(1) + '%';
 
   var stats;
   if (isCeo) {
@@ -2101,13 +2669,19 @@ function newsCard(limit) {
   if (!items.length) return '';
   return '<div class="card"><div class="card-h"><h3>מה קורה בתעשייה</h3>' +
     '<span class="hint">' + dateHe(G.t) + '</span></div><div class="ticker">' +
-    items.map(function (l) {
-      return '<div class="tick"><i>' + l.ic + '</i><span>' + esc(l.x) + '</span></div>';
-    }).join('') + '</div></div>';
+    items.map(tickRow).join('') + '</div></div>';
 }
 
 /* `sub` may mix a Hebrew label with a number; the number is isolated so a
    leading + or − never lands on the wrong side of it in an RTL line. */
+/* Every world event states what it actually did — there is no flavour-only
+   news in this game, so the ticker always has an effect line to show. */
+function tickRow(l, withDate) {
+  return '<div class="tick"><i>' + l.ic + '</i><span>' +
+    (withDate ? esc(dateHe(l.t)) + ' — ' : '') + esc(l.x) +
+    (l.e ? '<em>↳ ' + esc(l.e) + '</em>' : '') + '</span></div>';
+}
+
 function kpi(lab, val, sub, cls) {
   var subHtml = '';
   if (sub) {
@@ -2151,8 +2725,10 @@ SCREENS['ceo:dash'] = function () {
     (G.board.delta != null ? ' (' + fmtSignPct(G.board.delta / 100, 1).replace('%', '') + ')' : '') + '</output></div>' +
     '<div class="bar ' + moodCls + '"><i style="width:' + mood.toFixed(0) + '%"></i></div></div>' +
     '<p class="note" style="margin-top:11px">' + esc(G.board.lastNote || A.d) + '</p>' +
-    '<button class="btn btn-sm btn-ghost" data-act="boardSheet" style="margin-top:10px;width:100%">מה הדירקטוריון מודד</button>' +
+    '<button class="btn btn-sm btn-ghost" data-act="finance" data-v="board" style="margin-top:11px;width:100%">כספים ודירקטוריון</button>' +
     '</div>';
+
+  out += ecoCard();
 
   /* capacity */
   var pct = cap > 0 ? used / cap * 100 : 0;
@@ -2191,6 +2767,35 @@ SCREENS['ceo:dash'] = function () {
   out += newsCard(6);
   return out;
 };
+
+/* Ecosystem lock-in, made visible: which categories are pulling for you, and
+   what that pull is currently worth in the next category you enter. */
+function ecoCard() {
+  var me = G.cos[G.me];
+  var rows = CK.map(function (k) {
+    return { k: k, held: clamp((me.installed[k] || 0) / Math.max(1, G.market[k].base), 0, 1) };
+  }).sort(function (a, b) { return b.held - a.held; });
+  var best = rows[0];
+  var pulls = CK.map(function (k) { return { k: k, v: ecoPull(G, me, k) }; })
+    .sort(function (a, b) { return b.v - a.v; });
+
+  return '<div class="card card-violet"><div class="card-h"><h3>אקוסיסטם</h3>' +
+    '<span class="hint">משיכה עד ' + fmtPct(ECO_MAX, 0) + '</span></div>' +
+    '<p class="note">מי שכבר מחזיק מכשיר שלנו נוטה לקנות את המכשיר הבא שלו מאיתנו. ככל שיש לנו יותר מכשירים חיים בידיים של אנשים בקטגוריות אחרות — כך קל יותר להיכנס לקטגוריה חדשה.</p>' +
+    '<div class="stack" style="margin-top:12px">' + pulls.slice(0, 3).map(function (r) {
+      return '<div class="control"><div class="control-h"><label>' + CATS[r.k].ic + ' ' + esc(CATS[r.k].n) +
+        '</label><output>' + fmtSignPct(ECO_MAX * r.v, 0) + ' משקל</output></div>' +
+        '<div class="bar v"><i style="width:' + (r.v * 100).toFixed(0) + '%"></i></div></div>';
+    }).join('') + '</div>' +
+    '<div class="facts" style="margin-top:12px">' + rows.slice(0, 3).map(function (r) {
+      return '<div class="fact"><span>' + esc(CATS[r.k].n) + '</span><b>' + fmtU(me.installed[r.k] || 0) + '</b></div>';
+    }).join('') + '</div>' +
+    (best && best.held > 0.02
+      ? '<p class="note note-good" style="margin-top:11px">' + fmtU(me.installed[best.k] || 0) + ' מכשירי ' +
+        esc(CATS[best.k].n) + ' שלנו נמצאים בידיים של אנשים כרגע. זו הדלת לקטגוריה הבאה.</p>'
+      : '<p class="note note-warn" style="margin-top:11px">כמעט אין לנו בסיס מותקן. כל כניסה לקטגוריה חדשה תהיה מאפס.</p>') +
+    '</div>';
+}
 
 function prodCard(p) {
   var me = G.cos[G.me];
@@ -2332,6 +2937,8 @@ SCREENS['ceo:rnd'] = function () {
       '</div>';
   }).join('') + '</div></div>';
 
+  out += talentCard();
+
   out += '<div class="card"><div class="card-h"><h3>חזית התעשייה</h3></div>' +
     svgBars(TK.map(function (k) {
       var top = null, tv = -1;
@@ -2341,13 +2948,33 @@ SCREENS['ceo:rnd'] = function () {
   return out;
 };
 
+/* Key talent: a shortcut past years of research, priced accordingly. */
+function talentCard() {
+  var me = G.cos[G.me];
+  var staff = me.staff || [];
+  var market = (G.talent && G.talent.market) || [];
+  return '<div class="card"><div class="card-h"><h3>כישרונות מפתח</h3>' +
+    '<span class="hint">' + (market.length ? market.length + ' זמינים' : 'אין מועמדים') + '</span></div>' +
+    '<p class="note">כסף לבדו לא קונה עשור של ניסיון. חטיפה של אדם ספציפי מזיזה תחום טכנולוגי מיד, מאיצה בו את המחקר כל עוד הוא אצלנו — ומורידה את אותה יכולת אצל מי שאיבד אותו.</p>' +
+    (staff.length
+      ? '<div class="rows" style="margin-top:12px">' + staff.map(function (t) {
+          return '<div class="row"><span class="row-main"><b>' + esc(t.name) + '</b><small>' +
+            esc(ROLES[t.role].n) + ' · אצלנו ' + (G.t - t.since) + ' חודשים</small></span>' +
+            '<span class="row-end"><b class="up">+' + t.boost.toFixed(1) + '</b><small>' + fmtM(t.salary) + '</small></span></div>';
+        }).join('') + '</div>'
+      : '') +
+    '<button class="btn btn-sm ' + (market.length ? 'btn-primary' : 'btn-ghost') + '" data-act="talentSheet" style="margin-top:12px;width:100%"' +
+    (market.length ? '' : ' disabled') + '>' + (market.length ? 'שוק הכישרונות' : 'אין מועמדים החודש') + '</button>' +
+    '</div>';
+}
+
 /* Slider range for one R&D domain: roughly four times what a typical company
    of this size would spend there, so the default sits low on the track and
    there is real headroom to over-invest. */
 function rndCeiling() {
   var me = G.cos[G.me];
-  var scale = me.otherRev * 0.6 + (G.fin.revDev || 0) * 0.9 + 0.2;
-  return Math.max(0.05, 0.10 * scale / TK.length * 4);
+  var scale = me.otherRev * 0.6 + (G.fin.revDev || 0) * 0.9 + 0.06;
+  return Math.max(0.012, 0.10 * scale / TK.length * 4);
 }
 function rndSliderVal(k) {
   return clamp((G.plan.rnd[k] || 0) / rndCeiling(), 0, 1);
@@ -2357,19 +2984,13 @@ SCREENS['ceo:more'] = function () {
   var me = G.cos[G.me], f = G.fin;
   var out = '';
 
-  out += '<div class="card"><div class="card-h"><h3>דוח רווח והפסד</h3><span class="hint">' + dateHe(G.t - 1) + '</span></div>' +
-    '<div class="ledger">' +
-    ledRow('הכנסות ממוצרים', f.revDev) +
-    ledRow('הכנסות אחרות (שירותים, פרסום, B2B)', f.revOther) +
-    ledRow('עלות ייצור', -f.prodCost) +
-    ledRow('החזקת מלאי', -f.hold) +
-    (f.writeoff ? ledRow('מחיקת מלאי מת', -f.writeoff) : '') +
-    ledRow('שיווק', -f.mkt) +
-    ledRow('מו״פ', -f.rnd) +
-    ledRow('תפעול', -f.opex) +
-    (f.capex ? ledRow('השקעות הון', -f.capex) : '') +
-    (f.payout ? ledRow('חלוקה לבעלי מניות', -f.payout) : '') +
-    '<div class="led led-total"><span>רווח נקי</span><b class="' + deltaCls(f.net || 0) + '">' + fmtSign(f.net || 0) + '</b></div>' +
+  out += '<div class="card card-accent"><div class="card-h"><h3>כספים ודירקטוריון</h3>' +
+    '<span class="hint num">' + fmtSign(f.net || 0) + '</span></div>' +
+    '<p class="note">דוח החודש, מסגרת האשראי וציפיות הדירקטוריון — הכול בחלון אחד.</p>' +
+    '<div class="btn-row" style="margin-top:12px">' +
+    '<button class="btn btn-sm btn-primary" data-act="finance" data-v="pl">דוח</button>' +
+    '<button class="btn btn-sm btn-ghost" data-act="finance" data-v="credit">אשראי</button>' +
+    '<button class="btn btn-sm btn-ghost" data-act="finance" data-v="board">דירקטוריון</button>' +
     '</div></div>';
 
   out += '<div class="card"><div class="card-h"><h3>שרשרת אספקה</h3><span class="hint">' +
@@ -2385,14 +3006,10 @@ SCREENS['ceo:more'] = function () {
         '<span class="chev">‹</span></button>';
     }).join('') + '</div></div>';
 
-  out += '<div class="card"><div class="card-h"><h3>מדיניות</h3></div>' +
-    '<div class="control"><div class="control-h"><label>החזר הון לבעלי המניות</label><output>' + fmtPct(G.plan.payout, 0) + '</output></div>' +
-    '<input type="range" min="0" max="60" value="' + Math.round(G.plan.payout * 100) + '" data-act="payout" aria-label="החזר הון">' +
-    '<small class="mut">יעד הדירקטוריון: ' + fmtPct(ARCH[me.arch].payoutTarget, 0) + '. ' +
-    (ARCH[me.arch].wantsPayout ? 'ענקית שלא מחלקת נראית כמי שאין לה מה לעשות עם הכסף.' : 'בשלב הזה עדיף להשקיע כל שקל בחזרה בצמיחה.') + '</small></div>' +
-    '<div class="control" style="margin-top:12px"><div class="control-h"><label>תוכנית חשיפה מוקדמת ליוצרים</label><output>' + (G.plan.press || 0) + '/3</output></div>' +
+  out += '<div class="card"><div class="card-h"><h3>חשיפה מוקדמת ליוצרים</h3>' +
+    '<span class="hint num">' + (G.plan.press || 0) + '/3</span></div>' +
     '<input type="range" min="0" max="3" value="' + (G.plan.press || 0) + '" data-act="press" aria-label="חשיפה מוקדמת">' +
-    '<small class="mut">יחידות ביקורת מוקדמות משפרות מעט את ציוני הפתיחה. לא מספיק כדי להציל מכשיר גרוע.</small></div>' +
+    '<small class="mut">יחידות ביקורת מוקדמות משפרות מעט את ציוני הפתיחה. לא מספיק כדי להציל מכשיר גרוע.</small>' +
     '</div>';
 
   out += '<div class="card"><div class="card-h"><h3>יוצרי התוכן</h3><span class="hint">מי קובע את הטון</span></div><div class="rows">' +
@@ -2406,9 +3023,7 @@ SCREENS['ceo:more'] = function () {
     }).join('') + '</div></div>';
 
   out += '<div class="card"><div class="card-h"><h3>יומן</h3></div><div class="ticker">' +
-    G.log.slice(0, 24).map(function (l) {
-      return '<div class="tick"><i>' + l.ic + '</i><span>' + esc(dateHe(l.t)) + ' — ' + esc(l.x) + '</span></div>';
-    }).join('') + '</div></div>';
+    G.log.slice(0, 24).map(function (l) { return tickRow(l, 1); }).join('') + '</div></div>';
 
   out += settingsCard();
   return out;
@@ -2481,9 +3096,35 @@ SCREENS['creator:dash'] = function () {
       legend([{ n: 'אמינות', c: 'var(--cyan)' }, { n: 'אנרגיה (100 פחות שחיקה)', c: 'var(--good)' }]) + '</div>';
   }
 
+  out += crossoverCard();
   out += newsCard(6);
   return out;
 };
+
+/* The moment a channel becomes leverage. Shown as a locked goal until the
+   thresholds are met, so the player can steer toward it deliberately. */
+function crossoverCard() {
+  var C = G.creator;
+  var subsOk = C.subs >= XOVER_SUBS, credOk = C.cred >= XOVER_CRED;
+  if (subsOk && credOk) {
+    return '<div class="card card-accent"><div class="card-h"><h3>הרחבה לתעשייה</h3>' +
+      '<span class="tag tag-accent">נפתח</span></div>' +
+      '<p class="note">הקהל והאמינות מספיקים כדי לגייס הון — או כדי שדירקטוריון יציע לכם כיסא. אפשר להקים חברה משלכם בהון של ' +
+      N(fmtM(raiseAmount(G))) + ', או לקחת פיקוד על חברה קיימת שמדשדשת.</p>' +
+      '<button class="btn btn-primary" data-act="expand" style="width:100%;margin-top:12px">לבחון את המעבר</button></div>';
+  }
+  return '<div class="card"><div class="card-h"><h3>הרחבה לתעשייה</h3>' +
+    '<span class="hint">נעול</span></div>' +
+    '<p class="note">ערוץ מספיק גדול ומספיק אמין יכול להפסיק לסקר את התעשייה ולהתחיל להיות חלק ממנה — להקים חברה או לקבל כיסא מנכ״ל.</p>' +
+    '<div class="stack" style="margin-top:12px">' +
+    '<div class="control"><div class="control-h"><label>מנויים</label><output class="' + (subsOk ? 'up' : '') + '">' +
+    fmtU(C.subs) + ' / ' + fmtU(XOVER_SUBS) + '</output></div>' +
+    '<div class="bar ' + (subsOk ? 'g' : '') + '"><i style="width:' + clamp(C.subs / XOVER_SUBS * 100, 0, 100).toFixed(0) + '%"></i></div></div>' +
+    '<div class="control"><div class="control-h"><label>אמינות</label><output class="' + (credOk ? 'up' : '') + '">' +
+    Math.round(C.cred) + ' / ' + XOVER_CRED + '</output></div>' +
+    '<div class="bar c"><i style="width:' + clamp(C.cred / XOVER_CRED * 100, 0, 100).toFixed(0) + '%"></i></div></div>' +
+    '</div></div>';
+}
 
 SCREENS['creator:studio'] = function () {
   var C = G.creator, P = C.plan;
@@ -2604,9 +3245,7 @@ SCREENS['creator:more'] = function () {
     '<p class="note" style="margin-top:11px">אלה הערוצים שאתם מתחרים בהם על אותה שעת צפייה — ועל אותן יחידות ביקורת.</p></div>';
 
   out += '<div class="card"><div class="card-h"><h3>יומן</h3></div><div class="ticker">' +
-    G.log.slice(0, 24).map(function (l) {
-      return '<div class="tick"><i>' + l.ic + '</i><span>' + esc(dateHe(l.t)) + ' — ' + esc(l.x) + '</span></div>';
-    }).join('') + '</div></div>';
+    G.log.slice(0, 24).map(function (l) { return tickRow(l, 1); }).join('') + '</div></div>';
 
   out += settingsCard();
   return out;
@@ -2689,15 +3328,14 @@ function renderProductSheet(p) {
     }
   }
 
-  out += '<div class="card" style="padding:0;border:0"><h3 class="sec-title">מפרט</h3><div class="stack">' +
-    keys(C.w).map(function (part) {
-      var t = p.spec[part] || 3;
-      var sup = SUP_BY_ID[G.contracts[part]];
-      return '<div class="control"><div class="control-h"><label>' + esc(PARTS[part].n) + '</label>' +
-        '<output>' + esc(TIER_NAME[t - 1]) + '</output></div>' +
+  out += '<h3 class="sec-title">חבילות טכנולוגיה</h3><div class="stack">' +
+    pkgsFor(p.cat).map(function (k) {
+      var t = pkgTier(p, k);
+      return '<div class="control"><div class="control-h"><label>' + esc(PKGS[k].n) + '</label>' +
+        '<output>' + esc(GEN_NAME[t - 1]) + '</output></div>' +
         '<div class="bar v"><i style="width:' + (t / 5 * 100) + '%"></i></div>' +
-        '<small class="mut">' + (sup ? esc(sup.n) : '—') + ' · משקל ' + N(fmtPct(C.w[part], 0)) + '</small></div>';
-    }).join('') + '</div></div>';
+        '<small class="mut">' + esc(pkgSuppliers(p.cat, k)) + ' · משקל ' + N(fmtPct(pkgWeight(p.cat, k), 0)) + '</small></div>';
+    }).join('') + '</div>';
 
   if (p.rev_by && keys(p.rev_by).length) {
     out += '<h3 class="sec-title">ביקורות</h3><div class="rows">' +
@@ -2756,14 +3394,17 @@ function renderDesign() {
     }).join('') + '</div>' +
     '<small class="mut">' + fmtPct(C.bands[d.band], 0) + ' מהקונים בקטגוריה מחפשים במדף הזה.</small></div>';
 
-  out += '<h3 class="sec-title">מפרט</h3><div class="spec-grid">' + keys(C.w).map(function (part) {
-    var sup = SUP_BY_ID[G.contracts[part]];
-    return '<div class="control"><div class="control-h"><label>' + esc(PARTS[part].n) + '</label>' +
-      '<output>' + esc(TIER_NAME[d.spec[part] - 1]) + '</output></div>' +
+  /* Four packages instead of nine parts: the same engine underneath, a
+     decision a person can actually make on a phone screen. */
+  out += '<h3 class="sec-title">חבילות טכנולוגיה</h3><div class="spec-grid">' + pkgsFor(d.cat).map(function (k) {
+    var tier = pkgTier({ spec: d.spec, cat: d.cat }, k);
+    return '<div class="control"><div class="control-h"><label>' + esc(PKGS[k].n) + '</label>' +
+      '<output>' + esc(GEN_NAME[tier - 1]) + '</output></div>' +
       '<div class="tierbar">' + [1, 2, 3, 4, 5].map(function (t) {
-        return '<button class="' + (d.spec[part] === t ? 'is-on' : '') + '" data-act="dSpec" data-v="' + part + ':' + t + '">' + t + '</button>';
+        return '<button class="' + (tier === t ? 'is-on' : '') + '" data-act="dPkg" data-v="' + k + ':' + t + '">' + t + '</button>';
       }).join('') + '</div>' +
-      '<small class="mut">' + (sup ? esc(sup.n) : '—') + ' · משקל ' + N(fmtPct(C.w[part], 0)) + '</small></div>';
+      '<small class="mut">' + esc(PKGS[k].d) + ' · ' + esc(pkgSuppliers(d.cat, k)) +
+      ' · משקל ' + N(fmtPct(pkgWeight(d.cat, k), 0)) + '</small></div>';
   }).join('') + '</div>';
 
   var margin = d.price > 0 ? (d.price - d.cost) / d.price : 0;
@@ -2785,6 +3426,18 @@ function renderDesign() {
 
   return out;
 }
+/* Which of your supplier contracts a package actually draws on. */
+function pkgSuppliers(cat, k) {
+  var w = CATS[cat].w;
+  var names = [];
+  PKGS[k].parts.forEach(function (part) {
+    if (w[part] == null) return;
+    var sup = SUP_BY_ID[G.contracts[part]];
+    if (sup && names.indexOf(sup.n) < 0) names.push(sup.n);
+  });
+  return names.length ? names.join(' + ') : '—';
+}
+
 function suggestName(d) {
   return productName(G, CO_BY_ID[G.me], d.cat, d.band, 0) + ' ' + turnY(G.t);
 }
@@ -2819,38 +3472,117 @@ function sheetCapex() {
 }
 function renderCapex() {
   var me = G.cos[G.me], add = UI.draft.add;
-  var total = add * CAPEX_PER_LINE;
+  var q = capexQuote(add);
   var cap = effectiveCapacity(G, me);
-  var maxAdd = Math.max(1, cap * 0.6);
-  return '<p class="note">קו ייצור נבנה מראש ומגיע באיחור. משלמים ' + CAPEX_MONTHS +
-    ' תשלומים חודשיים, והקיבולת נכנסת לשירות רק בסוף. אחזקת קיבולת פנויה עולה כסף בכל חודש — עודף קיבולת זה בזבוז, חוסר קיבולת זה מכירות שלא קרו.</p>' +
+  var maxAdd = Math.max(1, cap * 0.8);
+  return '<p class="note">קיבולת קטנה נשכרת אצל קבלן הרכבה: זולה ליחידה ומגיעה תוך רבעון. קו משלנו עולה את המחיר המלא ולוקח חצי שנה. בשני המקרים משלמים מראש, והקיבולת נכנסת לשירות רק בסוף — ואחזקת קיבולת פנויה עולה כסף כל חודש.</p>' +
     '<div class="control"><div class="control-h"><label>תוספת קיבולת</label><output>' + fmtU(add) + ' יח׳/חודש</output></div>' +
     '<input type="range" min="5" max="1000" value="' + Math.round(add / maxAdd * 1000) + '" data-act="capexAmt" aria-label="תוספת קיבולת"></div>' +
+    '<p class="note ' + (q.contract ? 'note-good' : '') + '">' +
+    (q.contract ? 'בהיקף הזה זו <b>קיבולת קבלן</b>: תעריף מוזל ומוכן תוך שלושה חודשים.'
+                : 'בהיקף הזה זה <b>קו ייצור משלנו</b>: תעריף מלא ושישה חודשי בנייה.') + '</p>' +
     '<div class="facts">' +
     '<div class="fact"><span>קיבולת היום</span><b>' + fmtU(cap) + '</b></div>' +
     '<div class="fact"><span>אחרי הבנייה</span><b>' + fmtU(cap + add) + '</b></div>' +
-    '<div class="fact"><span>עלות כוללת</span><b>' + fmtM(total) + '</b></div>' +
-    '<div class="fact"><span>תשלום חודשי</span><b>' + fmtM(total / CAPEX_MONTHS) + '</b></div>' +
-    '<div class="fact"><span>מוכן בעוד</span><b>' + CAPEX_MONTHS + ' ח׳</b></div>' +
-    '<div class="fact"><span>מזומן</span><b class="' + (me.cash < total / CAPEX_MONTHS * 2 ? 'down' : '') + '">' + fmtM(me.cash) + '</b></div>' +
+    '<div class="fact"><span>עלות כוללת</span><b>' + fmtM(q.total) + '</b></div>' +
+    '<div class="fact"><span>תשלום חודשי</span><b>' + fmtM(q.total / q.months) + '</b></div>' +
+    '<div class="fact"><span>מוכן בעוד</span><b>' + q.months + ' ח׳</b></div>' +
+    '<div class="fact"><span>מזומן</span><b class="' + (me.cash < q.total / q.months * 1.5 ? 'down' : '') + '">' + fmtM(me.cash) + '</b></div>' +
     '</div>' +
     ((G.plan.capexQueue || []).length ? '<p class="note note-warn">כבר יש ' + G.plan.capexQueue.length +
       ' קווים בבנייה. כל אחד ממשיך לגבות תשלום חודשי.</p>' : '');
 }
 function capexFoot() {
-  var me = G.cos[G.me], total = UI.draft.add * CAPEX_PER_LINE;
-  var can = me.cash >= total / CAPEX_MONTHS * 2;
+  var me = G.cos[G.me], q = capexQuote(UI.draft.add);
+  var can = me.cash >= q.total / q.months * 1.5;
   return '<div class="btn-row"><button class="btn btn-primary" data-act="commitCapex"' + (can ? '' : ' disabled') + '>' +
     (can ? 'אישור בנייה' : 'אין מזומן לתשלום הראשון') + '</button>' +
     '<button class="btn btn-ghost btn-sm" data-act="closeSheet">ביטול</button></div>';
 }
 
-/* ── board explainer ────────────────────────────────────────────────────── */
-function sheetBoard() {
+/* ── Finance & Board: one window for every number that costs money ──────
+   Report, credit line and board expectations used to be three separate
+   places. On a phone that is three round trips to answer one question.  */
+function sheetFinance(tab) {
+  UI.finTab = tab || UI.finTab || 'pl';
+  openSheet('כספים ודירקטוריון', renderFinance(), financeFoot());
+}
+function financeFoot() {
+  return '<button class="btn btn-ghost" data-act="closeSheet" style="width:100%">סגירה</button>';
+}
+function renderFinance() {
+  var t = UI.finTab;
+  var head = '<div class="sheet-tabs">' +
+    [['pl', 'דוח החודש'], ['credit', 'אשראי'], ['board', 'דירקטוריון']].map(function (x) {
+      return '<button class="' + (t === x[0] ? 'is-on' : '') + '" data-act="finTab" data-v="' + x[0] + '">' + x[1] + '</button>';
+    }).join('') + '</div>';
+  return head + (t === 'credit' ? renderCredit() : t === 'board' ? renderBoard() : renderPL());
+}
+
+function renderPL() {
+  var me = G.cos[G.me], f = G.fin;
+  var gross = (f.revDev || 0) + (f.revOther || 0);
+  return '<div class="kpis">' +
+    kpi('מזומן', fmtM(me.cash), me.debt > 0 ? 'חוב ' + fmtM(me.debt) : 'ללא חוב', me.debt > 0 ? 'down' : 'mut') +
+    kpi('הכנסה', fmtM(gross), 'מוצרים ' + fmtM(f.revDev || 0)) +
+    kpi('רווח נקי', fmtSign(f.net || 0), 'שוליים ' + fmtPct(f.margin || 0, 0), deltaCls(f.net || 0)) +
+    kpi('שלב', ARCH[me.arch].n.replace('דירקטוריון של ', '').replace('משקיעי ה', ''), 'יעד ' + fmtPct(ARCH[me.arch].growth, 0)) +
+    '</div>' +
+    '<div class="ledger">' +
+    ledRow('הכנסות ממוצרים', f.revDev || 0) +
+    ledRow('הכנסות אחרות (שירותים, פרסום, B2B)', f.revOther || 0) +
+    ledRow('עלות ייצור', -(f.prodCost || 0)) +
+    ledRow('החזקת מלאי', -(f.hold || 0)) +
+    ((f.writeoff || 0) ? ledRow('מחיקת מלאי מת', -f.writeoff) : '') +
+    ledRow('שיווק', -(f.mkt || 0)) +
+    ledRow('מו״פ', -(f.rnd || 0)) +
+    ((f.salaries || 0) ? ledRow('שכר כישרונות מפתח', -f.salaries) : '') +
+    ledRow('תפעול', -((f.opex || 0) - (f.salaries || 0))) +
+    ((f.interest || 0) ? ledRow('ריבית על חוב', -f.interest) : '') +
+    ((f.capex || 0) ? ledRow('השקעות הון', -f.capex) : '') +
+    ((f.payout || 0) ? ledRow('חלוקה לבעלי מניות', -f.payout) : '') +
+    '<div class="led led-total"><span>רווח נקי</span><b class="' + deltaCls(f.net || 0) + '">' + fmtSign(f.net || 0) + '</b></div>' +
+    '</div>' +
+    '<div class="control"><div class="control-h"><label>החזר הון לבעלי המניות</label><output>' + fmtPct(G.plan.payout, 0) + '</output></div>' +
+    '<input type="range" min="0" max="60" value="' + Math.round(G.plan.payout * 100) + '" data-act="payout" aria-label="החזר הון">' +
+    '<small class="mut">יעד הדירקטוריון: ' + N(fmtPct(ARCH[me.arch].payoutTarget, 0)) + '. ' +
+    (ARCH[me.arch].wantsPayout ? 'ענקית שלא מחלקת נראית כמי שאין לה מה לעשות עם הכסף.'
+      : 'בשלב הזה עדיף להשקיע כל שקל בחזרה בצמיחה.') + '</small></div>';
+}
+
+function renderCredit() {
+  var me = G.cos[G.me];
+  var limit = creditLimit(G), head = loanHeadroom(G);
+  var d = UI.draft && UI.draft.loan != null ? UI.draft.loan : Math.min(head, Math.max(0.05, head * 0.3));
+  UI.draft = UI.draft || {}; UI.draft.loan = d;
+  return '<p class="note">מסגרת אשראי נמדדת מול העסק שאפשר להראות למלווה. הריבית נצברת כל חודש, וחוב שגדל מעבר לכושר ההחזר מסיים את המשחק — לא הדירקטוריון עושה את זה, אלא הנושים.</p>' +
+    '<div class="facts">' +
+    '<div class="fact"><span>מזומן</span><b>' + fmtM(me.cash) + '</b></div>' +
+    '<div class="fact"><span>חוב</span><b class="' + (me.debt > 0 ? 'down' : '') + '">' + fmtM(me.debt) + '</b></div>' +
+    '<div class="fact"><span>מסגרת</span><b>' + fmtM(limit) + '</b></div>' +
+    '<div class="fact"><span>פנוי למשיכה</span><b>' + fmtM(head) + '</b></div>' +
+    '<div class="fact"><span>ריבית חודשית</span><b>' + N('0.45%') + '</b></div>' +
+    '<div class="fact"><span>תשלום ריבית</span><b>' + fmtM(me.debt * 0.0045) + '</b></div>' +
+    '</div>' +
+    '<div class="control"><div class="control-h"><label>סכום</label><output>' + fmtM(d) + '</output></div>' +
+    '<input type="range" min="0" max="1000" value="' + Math.round(head > 0 ? clamp(d / head, 0, 1) * 1000 : 0) +
+    '" data-act="loanAmt" aria-label="סכום הלוואה"' + (head <= 0.01 ? ' disabled' : '') + '></div>' +
+    '<div class="btn-row">' +
+    '<button class="btn btn-sm btn-primary" data-act="loanTake"' + (head <= 0.01 ? ' disabled' : '') + '>משיכה</button>' +
+    '<button class="btn btn-sm btn-ghost" data-act="loanRepay"' + (me.debt <= 0.01 || me.cash <= 0.01 ? ' disabled' : '') + '>החזר</button>' +
+    '</div>' +
+    '<p class="note">המסגרת נעצרת מתחת לרף חדלות הפירעון (' + N(fmtM(insolvencyLimit(G))) +
+    '), כך שמשיכה לבדה לא יכולה לסיים את המשחק. מה שעושים עם הכסף — כן.</p>' +
+    (me.debt > limit * 0.75 ? '<p class="note note-bad">החוב מתקרב לגבול המסגרת. עוד משיכה אחת ואין יותר חבל הצלה.</p>' : '');
+}
+
+function renderBoard() {
   var me = G.cos[G.me], A = ARCH[me.arch];
-  var mt = CO_BY_ID[G.me].marginTarget != null ? CO_BY_ID[G.me].marginTarget : A.margin;
+  var mt = CO_BY_ID[G.me] && CO_BY_ID[G.me].marginTarget != null ? CO_BY_ID[G.me].marginTarget : A.margin;
   var g = yoyGrowth(me);
-  var body = '<p class="note">' + esc(A.d) + '</p>' +
+  var out = '<p class="note">' + esc(A.d) + '</p>' +
+    '<div class="control"><div class="control-h"><label>מצב רוח</label><output>' + Math.round(G.board.mood) + '/100</output></div>' +
+    '<div class="bar ' + (G.board.mood < 35 ? 'b' : G.board.mood < 55 ? 'w' : 'g') + '"><i style="width:' + G.board.mood.toFixed(0) + '%"></i></div></div>' +
     '<div class="rows">' +
     '<div class="row"><span class="row-main"><b>צמיחה שנתית</b><small>יעד ' + fmtPct(A.growth, 0) +
     (A.tol < 1 ? ' · חריגה גדולה נקראת כתנודתיות' : ' · אין תקרה') + '</small></span>' +
@@ -2867,10 +3599,98 @@ function sheetBoard() {
     '<span class="row-end"><b class="' + (G.board.warnings ? 'down' : '') + '">' + G.board.warnings + '/3</b></span></div>' +
     '</div>';
   if ((G.board.notes || []).length) {
-    body += '<h3 class="sec-title">מה נאמר בישיבה</h3><div class="ticker">' +
+    out += '<h3 class="sec-title">מה נאמר בישיבה</h3><div class="ticker">' +
       G.board.notes.map(function (n) { return '<div class="tick"><i>•</i><span>' + esc(n) + '</span></div>'; }).join('') + '</div>';
   }
-  openSheet('ציפיות הדירקטוריון', body, '<button class="btn btn-ghost" data-act="closeSheet" style="width:100%">סגירה</button>');
+  if (G.creatorPast) {
+    out += '<p class="note note-good">הגעתם לכאן מערוץ עם ' + N(fmtU(G.creatorPast.subs)) +
+      ' מנויים. הקהל הזה עדיין מגביר כל השקה שלנו.</p>';
+  }
+  return out;
+}
+
+/* ── talent market ──────────────────────────────────────────────────────── */
+function sheetTalent() {
+  openSheet('שוק הכישרונות', renderTalent(),
+    '<button class="btn btn-ghost" data-act="closeSheet" style="width:100%">סגירה</button>');
+}
+function renderTalent() {
+  var me = G.cos[G.me];
+  var market = (G.talent && G.talent.market) || [];
+  if (!market.length) return '<div class="empty">אף אחד לא זמין החודש. הרשימה מתרעננת כל שלושה חודשים.</div>';
+  return '<p class="note">חטיפה מזיזה את התחום מיד — ומורידה אותו אצל מי שאיבד את האדם. יש עלות חתימה חד־פעמית ושכר חודשי, ומי שלא מרוצה מהחברה עלול לעזוב.</p>' +
+    '<div class="stack">' + market.map(function (t) {
+      var from = G.cos[t.from];
+      var can = me.cash >= t.fee;
+      return '<div class="scard"><div class="scard-h"><b>' + esc(t.name) + '</b>' +
+        '<span class="tag tag-violet">' + esc(TECH[t.role].n) + '</span></div>' +
+        '<small class="mut">' + esc(ROLES[t.role].n) + ' · ' + esc(from ? from.n : '—') + ' · ' + esc(ROLES[t.role].d) + '</small>' +
+        '<div class="facts">' +
+        '<div class="fact"><span>קפיצה מיידית</span><b class="up">+' + t.boost.toFixed(1) + '</b></div>' +
+        '<div class="fact"><span>הרמה שלנו</span><b>' + Math.round(me.tech[t.role] || 0) + '</b></div>' +
+        '<div class="fact"><span>נאמנות</span><b>' + t.loyalty + '</b></div>' +
+        '<div class="fact"><span>חתימה</span><b>' + fmtM(t.fee) + '</b></div>' +
+        '<div class="fact"><span>שכר חודשי</span><b>' + fmtM(t.salary) + '</b></div>' +
+        '<div class="fact"><span>מזומן</span><b class="' + (can ? '' : 'down') + '">' + fmtM(me.cash) + '</b></div>' +
+        '</div>' +
+        '<button class="btn btn-sm ' + (can ? 'btn-primary' : 'btn-ghost') + '" data-act="hire" data-v="' + t.id + '"' +
+        (can ? '' : ' disabled') + '>' + (can ? 'חתימה' : 'אין מספיק מזומן') + '</button></div>';
+    }).join('') + '</div>';
+}
+
+/* ── crossing over from a channel to a company ──────────────────────────── */
+function sheetExpand() {
+  var C = G.creator;
+  var raise = raiseAmount(G);
+  var targets = strugglingCompanies(G);
+  UI.draft = { coName: C.coName || '' };
+  var body = '<p class="note">' + N(fmtU(C.subs)) + ' מנויים ואמינות ' + N(Math.round(C.cred)) +
+    ' זה כבר לא קהל — זו מנוף. אפשר לגייס הון ולהקים חברה, או לקחת כיסא מנכ״ל בחברה שצריכה בדיוק את מי שהשוק מקשיב לו. בשני המקרים הערוץ נשאר באוויר ומגביר כל השקה, והמשחק מתארך כדי שיהיה זמן לבנות משהו.</p>';
+
+  body += '<div class="card card-accent"><div class="card-h"><h3>להקים חברה משלנו</h3>' +
+    '<span class="hint num">' + fmtM(raise) + '</span></div>' +
+    '<p class="note">גיוס הסיד נגזר מגודל הערוץ, מהאמינות ומהמזומן שצברתם. מתחילים קטן — אבל הכול שלכם.</p>' +
+    '<label class="field" style="margin-top:11px"><span class="field-lab">שם החברה</span>' +
+    '<input type="text" value="' + esc(UI.draft.coName) + '" placeholder="' + esc('הסטארטאפ של ' + C.name) +
+    '" maxlength="22" data-act="xName" autocomplete="off"></label>' +
+    '<button class="btn btn-primary" data-act="xFound" style="width:100%;margin-top:11px">לגייס ' + fmtM(raise) + ' ולהקים</button>' +
+    '</div>';
+
+  body += '<h3 class="sec-title">או לקחת כיסא קיים</h3><div class="stack">' + targets.map(function (co) {
+    return '<div class="scard"><div class="scard-h"><b>' + esc(co.he || co.n) + ' · ' + esc(co.n) + '</b>' +
+      '<span class="tag ' + (co.profit < 0 ? 'tag-bad' : 'tag-warn') + '">' + (co.profit < 0 ? 'מפסידה' : 'מדשדשת') + '</span></div>' +
+      '<div class="facts">' +
+      '<div class="fact"><span>מותג</span><b>' + Math.round(co.brand) + '</b></div>' +
+      '<div class="fact"><span>מזומן</span><b>' + fmtM(co.cash) + '</b></div>' +
+      '<div class="fact"><span>הכנסה</span><b>' + fmtM(co.revDev || 0) + '</b></div>' +
+      '<div class="fact"><span>קיבולת</span><b>' + fmtU(co.capacity) + '</b></div>' +
+      '<div class="fact"><span>הכנסה אחרת</span><b>' + fmtM(co.otherRev) + '</b></div>' +
+      '<div class="fact"><span>שלב</span><b>' + (co.arch === 'megacap' ? 'ענקית' : co.arch === 'challenger' ? 'מאתגרת' : 'סטארטאפ') + '</b></div>' +
+      '</div>' +
+      '<button class="btn btn-sm btn-primary" data-act="xHire" data-v="' + co.id + '">לקבל את התפקיד</button></div>';
+  }).join('') + '</div>';
+
+  openSheet('הרחבה לתעשייה', body, '<button class="btn btn-ghost" data-act="closeSheet" style="width:100%">עוד לא</button>');
+}
+
+/* ── easter eggs ────────────────────────────────────────────────────────── */
+function sheetCheat() {
+  var found = keys(G.cheats || {}).length;
+  var body = '<p class="note">מצאתם את הדלת האחורית. יש כאן חמישה קודים; כל אחד עובד פעם אחת בכל משחק. הרמזים פזורים בין הקוד למקור לבין ההיסטוריה של התעשייה.</p>' +
+    '<label class="field"><span class="field-lab">קוד</span>' +
+    '<input type="text" id="cheatIn" placeholder="הקלידו קוד" maxlength="24" autocomplete="off" spellcheck="false"></label>' +
+    '<button class="btn btn-primary" data-act="cheatGo" style="width:100%">הפעלה</button>' +
+    '<div class="facts" style="margin-top:6px">' +
+    '<div class="fact"><span>נמצאו</span><b>' + found + '/' + CHEATS.length + '</b></div>' +
+    '</div>';
+  if (found) {
+    body += '<h3 class="sec-title">מה כבר מומש</h3><div class="rows">' +
+      CHEATS.filter(function (c) { return G.cheats[c.id]; }).map(function (c) {
+        return '<div class="row"><span class="row-main"><b>' + esc(c.n) + '</b><small>חודש ' + (G.cheats[c.id]) + '</small></span>' +
+          '<span class="row-end"><b class="up">✓</b></span></div>';
+      }).join('') + '</div>';
+  }
+  openSheet('קודים', body, '<button class="btn btn-ghost" data-act="closeSheet" style="width:100%">סגירה</button>');
 }
 
 /* ── month-end report ───────────────────────────────────────────────────── */
@@ -2934,8 +3754,7 @@ function sheetReport() {
   var news = G.log.filter(function (l) { return l.t === G.t - 1; }).slice(0, 6);
   if (news.length) {
     body += '<div class="card"><div class="card-h"><h3>מהיומן</h3></div><div class="ticker">' +
-      news.map(function (l) { return '<div class="tick"><i>' + l.ic + '</i><span>' + esc(l.x) + '</span></div>'; }).join('') +
-      '</div></div>';
+      news.map(function (l) { return tickRow(l); }).join('') + '</div></div>';
   }
 
   openSheet('סיכום ' + dateHe(G.t - 1), body,
@@ -3028,7 +3847,61 @@ var ACTIONS = {
     if (!r.ok) { toast(r.why); return; }
     closeSheet(); render(); toast('הקו נכנס לבנייה');
   },
-  boardSheet: function () { sheetBoard(); },
+  finance: function (v) { sheetFinance(v); },
+  finTab: function (v) {
+    UI.finTab = v;
+    $('#sheetBody').innerHTML = renderFinance();
+    paintRanges($('#sheetBody'));
+  },
+  loanTake: function () {
+    var r = takeLoan(G, UI.draft.loan || 0);
+    if (!r.ok) { toast(r.why); return; }
+    UI.draft.loan = Math.min(UI.draft.loan || 0, loanHeadroom(G));
+    ACTIONS.finTab('credit'); render(); toast('המשיכה בוצעה');
+  },
+  loanRepay: function () {
+    var r = repayLoan(G, UI.draft.loan || 0);
+    if (!r.ok) { toast(r.why); return; }
+    ACTIONS.finTab('credit'); render(); toast('החוב קטן');
+  },
+
+  talentSheet: function () { sheetTalent(); },
+  hire: function (v) {
+    var r = hireTalent(G, v);
+    if (!r.ok) { toast(r.why); return; }
+    $('#sheetBody').innerHTML = renderTalent();
+    render(); toast('חתמנו עם ' + r.t.name);
+  },
+
+  cheatSheet: function () { sheetCheat(); },
+  cheatGo: function () {
+    var el = document.getElementById('cheatIn');
+    var r = applyCheat(G, el ? el.value : '');
+    if (!r.ok) { toast(r.why); return; }
+    saveGame(G); sheetCheat(); render(); toast(r.msg);
+  },
+
+  expand: function () { sheetExpand(); },
+  xFound: function () {
+    if (UI.draft && UI.draft.coName) G.creator.coName = UI.draft.coName.slice(0, 22);
+    var r = expandToIndustry(G, 'found');
+    if (!r.ok) { toast(r.why); return; }
+    UI.tab = 'dash'; UI.cat = CO_BY_ID[G.me].focus[0];
+    closeSheet(); saveGame(G); render(); toast('החברה קמה');
+  },
+  xHire: function (v) {
+    var r = expandToIndustry(G, 'hire', v);
+    if (!r.ok) { toast(r.why); return; }
+    UI.tab = 'dash'; UI.cat = (CO_BY_ID[G.me] || { focus: ['phone'] }).focus[0];
+    closeSheet(); saveGame(G); render(); toast('התפקיד שלכם');
+  },
+
+  dPkg: function (v) {
+    var parts = v.split(':');
+    setPkgTier({ spec: UI.draft.spec, cat: UI.draft.cat }, parts[0], +parts[1]);
+    UI.draft.touched = 0;
+    refreshDesign();
+  },
 
   /* creator */
   rest: function () { G.creator.plan.rest = G.creator.plan.rest ? 0 : 1; render(); },
@@ -3113,9 +3986,16 @@ var INPUTS = {
     $('#sheetBody').innerHTML = renderProductSheet(p); paintRanges($('#sheetBody'));
   },
   dPrice: function (v) { UI.draft.price = +v; UI.draft.touched = 1; refreshDesign(); },
+  xName: function (v) { UI.draft = UI.draft || {}; UI.draft.coName = v; },
+  loanAmt: function (v) {
+    UI.draft = UI.draft || {};
+    UI.draft.loan = round(v / 1000 * loanHeadroom(G), 3);
+    $('#sheetBody').innerHTML = renderFinance();
+    paintRanges($('#sheetBody'));
+  },
   dName: function (v) { UI.draft.name = v; },
   capexAmt: function (v) {
-    var maxAdd = Math.max(1, effectiveCapacity(G, G.cos[G.me]) * 0.6);
+    var maxAdd = Math.max(1, effectiveCapacity(G, G.cos[G.me]) * 0.8);
     UI.draft.add = round(v / 1000 * maxAdd, 3);
     $('#sheetBody').innerHTML = renderCapex();
     $('#sheetFoot').innerHTML = capexFoot();
@@ -3153,7 +4033,21 @@ function bootInit() {
 }
 
 function renderPickers() {
-  $('#coList').innerHTML = CO_DEFS.filter(function (d) { return d.playable; }).map(function (d) {
+  var customCard =
+    '<button class="co-card' + (UI.mode === 'ceo' && UI.pick === CUSTOM_ID ? ' is-on' : '') + '" data-pick="' + CUSTOM_ID + '">' +
+    '<span class="co-top">' +
+    '<span class="co-mark" style="color:var(--accent)">+</span>' +
+    '<span class="co-h"><strong>הסטארטאפ שלכם</strong><small>' + esc(ARCH.startup.n) + '</small></span>' +
+    '</span>' +
+    '<span class="co-desc">להתחיל מאפס: לתת שם, מוצר אחד, קו ייצור זעיר ומסלול מזומן קצר. אין מותג ואין ערוץ הפצה — אבל גם אף אחד לא מצפה מכם לדיבידנד ברבעון הבא.</span>' +
+    '<span class="co-stats">' +
+    '<span class="tag">מזומן ' + N(fmtM(0.55)) + '</span>' +
+    '<span class="tag">מותג ' + N(14) + '</span>' +
+    '<span class="tag tag-cyan">קיבולת ' + N(fmtU(0.42)) + '</span>' +
+    '<span class="tag tag-accent">המסלול הקשה</span>' +
+    '</span></button>';
+
+  $('#coList').innerHTML = customCard + CO_DEFS.filter(function (d) { return d.playable; }).map(function (d) {
     var A = ARCH[d.arch];
     return '<button class="co-card' + (UI.mode === 'ceo' && UI.pick === d.id ? ' is-on' : '') + '" data-pick="' + d.id + '">' +
       '<span class="co-top">' +
@@ -3188,20 +4082,26 @@ function renderPickers() {
 
 function syncStart() {
   var b = $('#startBtn');
+  var custom = UI.mode === 'ceo' && UI.pick === CUSTOM_ID;
+  $('#customFields').hidden = !custom;
   b.disabled = !UI.pick;
-  b.textContent = UI.pick
-    ? (UI.mode === 'ceo'
-      ? 'להיכנס לתפקיד ב' + CO_BY_ID[UI.pick].he
-      : 'להעלות את הערוץ לאוויר')
-    : 'בחרו כיסא כדי להתחיל';
+  b.textContent = !UI.pick ? 'בחרו כיסא כדי להתחיל'
+    : custom ? 'להקים את החברה'
+      : UI.mode === 'ceo' ? 'להיכנס לתפקיד ב' + CO_BY_ID[UI.pick].he
+        : 'להעלות את הערוץ לאוויר';
 }
 
 function startGame() {
   if (!UI.pick) return;
   var seed = ($('#seedIn').value || '').trim();
-  G = newGame(UI.pick, seed, UI.mode);
+  var opts = null;
+  if (UI.mode === 'ceo' && UI.pick === CUSTOM_ID) {
+    var nm = ($('#coNameIn').value || '').trim().slice(0, 22);
+    opts = { custom: { name: nm || 'החברה שלנו' } };
+  }
+  G = newGame(UI.pick, seed, UI.mode, opts);
   UI.tab = 'dash';
-  UI.cat = G.mode === 'ceo' ? (CO_BY_ID[G.me] ? CO_BY_ID[G.me].focus[0] : 'phone') : 'phone';
+  UI.cat = G.mode === 'ceo' && CO_BY_ID[G.me] ? CO_BY_ID[G.me].focus[0] : 'phone';
   enterShell();
 }
 
@@ -3281,6 +4181,16 @@ if (typeof document !== 'undefined') {
 
   $('#menuBtn').addEventListener('click', function () { UI.tab = 'more'; render(); });
 
+  /* Five taps on the company badge opens the code field. Nothing announces
+     it; the count resets if you dawdle. */
+  var badgeTaps = 0, badgeTimer = null;
+  $('#tbBadge').addEventListener('click', function () {
+    badgeTaps++;
+    clearTimeout(badgeTimer);
+    badgeTimer = setTimeout(function () { badgeTaps = 0; }, 1400);
+    if (badgeTaps >= 5) { badgeTaps = 0; sheetCheat(); }
+  });
+
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && UI.sheet) closeSheet();
   });
@@ -3317,14 +4227,21 @@ if (typeof document !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     newGame: newGame, endTurn: endTurn, migrateSave: migrateSave,
+    hireTalent: hireTalent, genTalent: genTalent, takeLoan: takeLoan, repayLoan: repayLoan,
+    creditLimit: creditLimit, loanHeadroom: loanHeadroom, insolvencyLimit: insolvencyLimit,
+    applyCheat: applyCheat,
+    canExpand: canExpand, expandToIndustry: expandToIndustry, raiseAmount: raiseAmount,
+    strugglingCompanies: strugglingCompanies, ecoPull: ecoPull,
+    PKGS: PKGS, pkgsFor: pkgsFor, pkgTier: pkgTier, setPkgTier: setPkgTier, makeCustomDef: makeCustomDef,
     designProduct: designProduct, cancelProduct: cancelProduct, setContract: setContract,
     buildCapacity: buildCapacity, devCost: devCost, devMonths: devMonths,
-    capacityUsed: capacityUsed, effectiveCapacity: effectiveCapacity,
+    capacityUsed: capacityUsed, effectiveCapacity: effectiveCapacity, capexQuote: capexQuote,
     fairPrice: fairPrice, hypeOf: hypeOf, freshnessOf: freshnessOf,
     LINE_USE: LINE_USE, CAPEX_PER_LINE: CAPEX_PER_LINE, CAPEX_MONTHS: CAPEX_MONTHS,
     scoreOf: scoreOf, qualityOf: qualityOf, unitCostOf: unitCostOf,
     CATS: CATS, CO_DEFS: CO_DEFS, SUPPLIERS: SUPPLIERS, CREATORS: CREATORS,
     ARCH: ARCH, TECH: TECH, PARTS: PARTS, VERSION: VERSION,
-    FORMATS: FORMATS, CREATOR_DEFS: CREATOR_DEFS, DILEMMAS: DILEMMAS
+    FORMATS: FORMATS, CREATOR_DEFS: CREATOR_DEFS, DILEMMAS: DILEMMAS,
+    EVENTS: EVENTS, CHEATS: CHEATS, ROLES: ROLES, CUSTOM_ID: CUSTOM_ID
   };
 }

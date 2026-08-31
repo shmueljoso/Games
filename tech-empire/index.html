@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#080B14">
+<meta name="theme-color" content="#08080B">
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,10 +16,17 @@
 <title>אימפריית טק</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&family=Heebo:wght@600;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600&family=Heebo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- ═══ ambient canvas ═══════════════════════════════════════════════════
+     Three very large, very soft glows behind everything. The glass panels
+     need something to refract; without them the blur has nothing to say. -->
+<div class="orbs" aria-hidden="true">
+  <i class="orb-1"></i><i class="orb-2"></i><i class="orb-3"></i>
+</div>
 
 <!-- ═══ boot / company picker ═══════════════════════════════════════════ -->
 <div id="boot" class="boot">
@@ -46,6 +53,12 @@
     </section>
 
     <div class="boot-foot">
+      <div id="customFields" hidden>
+        <label class="field">
+          <span class="field-lab">שם החברה שלכם</span>
+          <input id="coNameIn" type="text" inputmode="text" placeholder="למשל: אורבן לאבס" maxlength="22" autocomplete="off">
+        </label>
+      </div>
       <label class="field">
         <span class="field-lab">זרע אקראיות (אופציונלי)</span>
         <input id="seedIn" type="text" inputmode="text" placeholder="השאירו ריק לעולם חדש" autocomplete="off">
