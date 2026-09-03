@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080B14">
+<meta name="color-scheme" content="dark">
+<title>משחקים</title>
+<meta name="description" content="סימולציות עסקיות בעברית, כאתרים סטטיים בלי שלב בנייה.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600&family=Heebo:wght@700;900&display=swap">
+<style>
+  :root{--ground:#080B14;--panel:#111726;--line:#232C45;--ink:#E8ECF8;--ink-2:#94A0BE;--accent:#FF7A45;--cyan:#3ED9E8}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100dvh;background:var(--ground);color:var(--ink);
+    background-image:radial-gradient(rgba(150,175,255,.055) 1px,transparent 1.1px),
+      radial-gradient(120% 70% at 50% -10%,rgba(62,217,232,.07),transparent 62%);
+    background-size:4px 4px,100% 100%;background-attachment:fixed;
+    font-family:'Assistant',system-ui,sans-serif;line-height:1.6;
+    padding:calc(env(safe-area-inset-top,0px) + 40px) 18px calc(env(safe-area-inset-bottom,0px) + 40px)}
+  main{max-width:640px;margin:0 auto}
+  h1{font-family:'Heebo',sans-serif;font-weight:900;font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--ink-2);margin:0 0 26px}
+  a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;
+    transition:border-color .16s ease,transform .09s ease}
+  a.card:hover{border-color:var(--accent)}
+  a.card:active{transform:scale(.99)}
+  a.card h2{font-family:'Heebo',sans-serif;font-size:18px;margin:0 0 6px}
+  a.card p{margin:0;color:var(--ink-2);font-size:14px}
+  a.card span{display:inline-block;margin-top:10px;font-size:12px;color:var(--cyan)}
+  footer{color:#66728F;font-size:13px;margin-top:22px}
+  a.plain{color:var(--cyan)}
+</style>
+</head>
+<body>
+<main>
+  <h1>משחקים</h1>
+  <p class="sub">סימולציות עסקיות בעברית. בלי שלב בנייה, בלי התקנה, ורצות גם בלי רשת.</p>
+
+  <a class="card" href="tech-empire/">
+    <h2>אימפריית טק</h2>
+    <p>מנהלים את Apple, Samsung, Google או Xiaomi מ־2026: שוק בגודל אמיתי עם מחזור החלפה,
+       קווי ייצור ומלאי מת, שרשרת אספקה של TSMC ופוקסקון, ודירקטוריון שמצפה בדיוק למה
+       שמתאים לגודל החברה. או שפותחים ערוץ ביקורות ומגלים כמה עולה חסות אחת מפוקפקת.</p>
+    <span>שני מצבי משחק · 120 חודשים</span>
+  </a>
+
+  <a class="card" href="tech-tycoon/">
+    <h2>מסלול הברזל</h2>
+    <p>סימולציית קריירה בתעשיית הטכנולוגיה. מעבר טכנולוגי קורה רק אם מישהו מימן אותו
+       במו״פ — אין תאריכים קשיחים. שוק טאלנטים, מיזוגים ורכישות, כנסי חשיפה ותקציב שחור.</p>
+    <span>עשר חברות לבחירה</span>
+  </a>
+
+  <footer>הקוד ב־<a class="plain" href="https://github.com/shmueljoso/games">GitHub</a>.</footer>
+</main>
+</body>
+</html>
