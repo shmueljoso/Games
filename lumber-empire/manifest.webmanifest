@@ -1,0 +1,20 @@
+{
+  "name": "אימפריית העצים — משחק אידל",
+  "short_name": "אימפריית העצים",
+  "description": "חוטבים עצים ביד, בונים שרשרת ייצור שלמה — עצים, קורות, עיסת נייר ונייר — ומוכרים לעולם. פריסטייג' עם זרעי זהב מעלה את התפוקה לתמיד.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0A0C12",
+  "theme_color": "#0A0C12",
+  "categories": ["games", "simulation"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
