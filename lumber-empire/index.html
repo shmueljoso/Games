@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#8FD3F4">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="אימפריית העצים">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<title>אימפריית העצים</title>
+<meta name="description" content="מתחילים מעץ בודד שחוטבים ביד, ובונים שרשרת ייצור שלמה — עצים, קורות, עיסת נייר ונייר — עד שהאימפריה שלכם מוכרת נייר לכל העולם.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@500;700;900&display=swap">
+<style>
+:root{
+  --sky-top:#6EC3F0; --sky-bottom:#FFE7B0;
+  --card:#FFF8EA; --card-2:#FFEFCE; --wood:#C98A44; --wood-dark:#8A5A26;
+  --ink:#4A2E12; --ink-2:#8A6A3F; --ink-3:#B79A6E;
+  --accent:#3FA34D; --accent-2:#6ED27A; --accent-glow:rgba(63,163,77,.35);
+  --gold:#F2A93C; --gold-2:#FFD873; --bad:#E2574C;
+  --r:20px; --r-sm:14px;
+  --body:'Assistant',system-ui,'Segoe UI',sans-serif;
+  --display:'Heebo','Assistant',system-ui,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; color:var(--ink); font-family:var(--body);
+  -webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(circle at 85% 6%, rgba(255,244,200,.9), rgba(255,244,200,0) 22%),
+    linear-gradient(180deg, var(--sky-top) 0%, #BFE3F4 42%, var(--sky-bottom) 78%, #FFDA9E 100%);
+  background-attachment:fixed;
+}
+button{font-family:inherit; -webkit-tap-highlight-color:transparent;}
+#app{max-width:520px; margin:0 auto; padding:0 14px calc(40px + env(safe-area-inset-bottom)); position:relative; z-index:1;}
+
+/* ── decorative fixed scenery: sun, clouds, distant hills ── */
+.scenery{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
+.scenery .hill{position:absolute; left:-15%; width:130%; border-radius:50%;}
+.scenery .hill-back{bottom:-22vh; height:36vh; background:#7ECB7E; opacity:.55;}
+.scenery .hill-front{bottom:-26vh; height:32vh; background:#5FBD63; opacity:.5; left:-25%; width:150%;}
+.scenery .cloud{position:absolute; background:rgba(255,255,255,.8); border-radius:999px;}
+.scenery .cloud::before, .scenery .cloud::after{content:''; position:absolute; background:inherit; border-radius:999px;}
+.scenery .cloud-1{width:90px; height:30px; top:8%; right:12%;}
+.scenery .cloud-1::before{width:50px; height:42px; top:-22px; right:10px;}
+.scenery .cloud-1::after{width:40px; height:32px; top:-14px; right:45px;}
+.scenery .cloud-2{width:70px; height:24px; top:18%; left:8%; opacity:.7;}
+.scenery .cloud-2::before{width:38px; height:32px; top:-16px; right:8px;}
+.scenery .cloud-2::after{width:30px; height:24px; top:-10px; right:32px;}
+
+/* ── top bar ── */
+.topbar{
+  position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between;
+  padding:calc(10px + env(safe-area-inset-top)) 2px 10px;
+}
+.money-block{
+  display:flex; align-items:center; gap:8px; background:var(--card); border-radius:999px;
+  padding:8px 16px 8px 10px; box-shadow:0 4px 0 rgba(138,90,38,.25), 0 6px 14px rgba(74,46,18,.15);
+}
+.money-block .coin-icon{font-size:22px; filter:drop-shadow(0 1px 0 rgba(0,0,0,.15));}
+.money-stack{display:flex; flex-direction:column;}
+.money-value{font-family:var(--display); font-weight:900; font-size:22px; color:var(--gold); line-height:1.1;}
+.money-rate{font-size:11px; color:var(--ink-2);}
+.topbar-icons{display:flex; gap:8px;}
+.icon-btn{
+  width:42px; height:42px; border-radius:50%; border:none; background:var(--card);
+  box-shadow:0 4px 0 rgba(138,90,38,.25); color:var(--ink); display:flex; align-items:center;
+  justify-content:center; font-size:18px; cursor:pointer; transition:transform .1s ease, box-shadow .1s ease;
+}
+.icon-btn:active{transform:translateY(3px); box-shadow:none;}
+.seed-badge{
+  display:flex; align-items:center; gap:5px; background:linear-gradient(160deg,var(--gold-2),var(--gold));
+  border-radius:999px; padding:9px 14px; font-weight:800; font-size:13px; color:#4A2A02; cursor:pointer;
+  box-shadow:0 4px 0 #B5720A;
+}
+
+/* ── event banner ── */
+.event-banner{
+  background:linear-gradient(135deg, var(--gold-2), var(--gold)); border:none;
+  border-radius:16px; padding:11px 16px; margin-bottom:12px; font-size:13px; font-weight:700; color:#4A2A02;
+  display:flex; justify-content:space-between; align-items:center; animation:banner-in .3s ease;
+  box-shadow:0 4px 0 #B5720A;
+}
+@keyframes banner-in{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+.event-banner[hidden]{display:none;}
+
+/* ── chop section ── */
+.chop-card{
+  background:linear-gradient(180deg, var(--card), var(--card-2)); border:3px solid #fff;
+  outline:3px solid var(--wood); outline-offset:-3px;
+  border-radius:28px; padding:22px; display:flex; flex-direction:column; align-items:center;
+  margin-bottom:18px; position:relative; overflow:hidden; box-shadow:0 6px 0 rgba(138,90,38,.3), 0 14px 26px rgba(74,46,18,.18);
+}
+.tree-btn{
+  background:none; border:none; cursor:pointer; font-size:92px; line-height:1; user-select:none;
+  transition:transform .08s ease; filter:drop-shadow(0 10px 14px rgba(63,163,77,.35));
+  animation:tree-sway 3.4s ease-in-out infinite;
+}
+@keyframes tree-sway{0%,100%{transform:rotate(-2deg);} 50%{transform:rotate(2deg);}}
+.tree-btn:active{transform:scale(.9) rotate(-6deg) !important;}
+.wood-readout{font-family:var(--display); font-weight:800; font-size:21px; margin-top:10px; color:var(--ink);}
+.wood-readout .unit{color:var(--ink-2); font-weight:600; font-size:13px; margin-right:4px;}
+.chop-hint{color:var(--ink-2); font-size:12px; margin-top:2px;}
+.floater{
+  position:absolute; font-weight:800; font-family:var(--display); color:var(--accent); pointer-events:none;
+  text-shadow:0 1px 0 #fff; animation:float-up .8s ease-out forwards;
+}
+@keyframes float-up{ to{ transform:translateY(-60px); opacity:0; } }
+.ax-row{
+  display:flex; align-items:center; justify-content:space-between; width:100%; margin-top:18px;
+  padding-top:16px; border-top:2px dashed var(--wood);
+}
+.ax-row .info{font-size:13px; color:var(--ink-2);}
+.ax-row .info b{color:var(--ink); font-family:var(--display);}
+
+/* ── chain ── */
+.section-title{font-family:var(--display); font-weight:900; font-size:17px; margin:22px 4px 12px; color:var(--wood-dark); text-shadow:0 1px 0 rgba(255,255,255,.5);}
+.chain{display:flex; flex-direction:column;}
+.stage-card{
+  background:linear-gradient(180deg, var(--card), var(--card-2)); border:none; border-radius:var(--r);
+  padding:14px 16px; display:flex; align-items:center; gap:12px; position:relative;
+  box-shadow:0 4px 0 rgba(138,90,38,.25), 0 8px 16px rgba(74,46,18,.12);
+}
+.stage-icon{
+  width:50px; height:50px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+  font-size:25px; flex-shrink:0; background:var(--stage-color, var(--accent)); box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);
+}
+.stage-body{flex:1; min-width:0;}
+.stage-name{font-weight:800; font-family:var(--display); font-size:15px; color:var(--ink);}
+.stage-sub{font-size:12px; color:var(--ink-2); margin-top:2px;}
+.stage-buy{
+  display:flex; flex-direction:column; align-items:center; gap:2px; border:none; border-radius:14px;
+  background:linear-gradient(160deg,var(--accent-2),var(--accent)); color:#0A2E10; font-weight:800;
+  padding:10px 12px; cursor:pointer; min-width:80px; box-shadow:0 4px 0 #226B2C;
+  transition:transform .1s ease, box-shadow .1s ease, opacity .15s ease;
+}
+.stage-buy:active{transform:translateY(3px); box-shadow:none;}
+.stage-buy[disabled]{opacity:.4; background:#E4D6BC; color:var(--ink-3); box-shadow:0 4px 0 #C9B892; cursor:default;}
+.stage-buy[disabled]:active{transform:none; box-shadow:0 4px 0 #C9B892;}
+.stage-buy .cost{font-size:13px;}
+.stage-buy .label{font-size:9px; opacity:.85;}
+.connector{
+  height:16px; width:3px; background:var(--wood); margin:0 auto; position:relative; overflow:visible; border-radius:2px;
+}
+.connector .dot{
+  position:absolute; width:7px; height:7px; border-radius:50%; background:var(--gold); right:-2px; top:-4px;
+  opacity:0; box-shadow:0 0 6px rgba(242,169,60,.8);
+}
+.connector.active .dot{animation:flow 1.1s linear infinite;}
+@keyframes flow{ 0%{opacity:0; top:-4px;} 15%{opacity:1;} 85%{opacity:1;} 100%{opacity:0; top:16px;} }
+
+/* ── prestige ── */
+.prestige-card{
+  background:linear-gradient(160deg, var(--gold-2), var(--gold)); border:none;
+  border-radius:24px; padding:20px; margin-top:22px; box-shadow:0 6px 0 #B5720A, 0 14px 26px rgba(74,46,18,.2);
+}
+.prestige-card .section-title{color:#4A2A02; text-shadow:none;}
+.prestige-card > p{color:#5C3A08 !important;}
+.prestige-row{display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#5C3A08; margin-bottom:6px;}
+.prestige-row b{color:#3A2400; font-family:var(--display);}
+.btn{
+  appearance:none; border:none; border-radius:999px; padding:15px 20px; font-size:15px;
+  font-weight:800; font-family:var(--display); cursor:pointer; width:100%; margin-top:12px;
+  transition:transform .1s ease, box-shadow .1s ease;
+}
+.btn:active{transform:translateY(3px); box-shadow:none !important;}
+.btn-gold{background:linear-gradient(160deg,#fff,var(--card-2)); color:#4A2A02; box-shadow:0 5px 0 #B5720A;}
+.btn-gold[disabled]{background:rgba(255,255,255,.4); color:#8A6A3F; box-shadow:0 5px 0 rgba(138,90,38,.25); cursor:default;}
+.btn-ghost{background:rgba(255,255,255,.5); color:var(--ink); box-shadow:0 3px 0 rgba(138,90,38,.2);}
+
+/* ── overlays ── */
+.overlay{position:fixed; inset:0; background:rgba(74,46,18,.45); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; z-index:30; padding:20px;}
+.overlay[hidden]{display:none;}
+.card{background:linear-gradient(180deg,var(--card),var(--card-2)); border:4px solid #fff; outline:3px solid var(--wood); outline-offset:-3px; border-radius:26px; padding:30px 24px; width:min(360px,100%); display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 50px rgba(74,46,18,.35); animation:pop-in .3s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop-in{from{transform:scale(.85); opacity:0;} to{transform:scale(1); opacity:1;}}
+.card h2{margin:0; font-family:var(--display); text-align:center; color:var(--wood-dark);}
+.card p{color:var(--ink-2); font-size:14px; text-align:center; margin:0;}
+.toggle-row{display:flex; align-items:center; justify-content:space-between; width:100%; padding:10px 0; border-bottom:2px dashed var(--wood);}
+.toggle-row:last-child{border-bottom:none;}
+.switch{width:46px; height:27px; border-radius:14px; background:#E4D6BC; position:relative; cursor:pointer; border:none;}
+.switch::after{content:''; position:absolute; width:21px; height:21px; border-radius:50%; background:#fff; top:3px; right:3px; transition:.2s ease; box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.switch.on{background:linear-gradient(135deg,var(--accent),var(--accent-2));}
+.switch.on::after{right:22px;}
+</style>
+</head>
+<body>
+
+<div class="scenery" aria-hidden="true">
+  <div class="hill hill-back"></div>
+  <div class="hill hill-front"></div>
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="money-block">
+      <span class="coin-icon">🪙</span>
+      <span class="money-stack">
+        <span class="money-value" id="moneyValue">₪0</span>
+        <span class="money-rate" id="moneyRate">₪0 / שנייה</span>
+      </span>
+    </div>
+    <div class="topbar-icons">
+      <div class="seed-badge" id="seedBadge" title="זרעי זהב">🌟 <span id="seedCount">0</span></div>
+      <button class="icon-btn" id="btnSettings" aria-label="הגדרות">⚙︎</button>
+    </div>
+  </div>
+
+  <div class="event-banner" id="eventBanner" hidden>
+    <span id="eventLabel"></span><span id="eventTimer"></span>
+  </div>
+
+  <div class="chop-card" id="chopCard">
+    <button class="tree-btn" id="treeBtn" aria-label="חטבו עץ">🌲</button>
+    <div class="wood-readout"><span id="woodValue">0</span><span class="unit">עצים גולמיים</span></div>
+    <p class="chop-hint">לחצו על העץ כדי לחטוב עצים ביד</p>
+    <div class="ax-row">
+      <div class="info">השחזת גרזן — <b id="axPower">+1</b> עץ ללחיצה</div>
+      <button class="stage-buy" id="buyAx"><span class="cost" id="axCost">15</span><span class="label">₪</span></button>
+    </div>
+  </div>
+
+  <div class="section-title">שרשרת הייצור</div>
+  <div class="chain" id="chain"></div>
+
+  <div class="prestige-card">
+    <div class="section-title" style="margin-top:0;">🌟 יער חדש</div>
+    <p style="color:var(--ink-2); font-size:13px; margin:0 0 10px;">איפוס האימפריה הנוכחית תמורת זרעי זהב — כל זרע מוסיף 2% תפוקה לתמיד, גם אחרי האיפוס.</p>
+    <div class="prestige-row"><span>זרעים שיש לכם</span><b id="seedsOwned">0</b></div>
+    <div class="prestige-row"><span>מכפיל תפוקה נוכחי</span><b id="currentMult">×1.00</b></div>
+    <div class="prestige-row"><span>זרעים זמינים עכשיו</span><b id="seedsAvail">0</b></div>
+    <button class="btn btn-gold" id="btnPrestige" disabled>התחילו יער חדש</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlayOffline" hidden>
+  <div class="card">
+    <h2>ברוכים השבים! 🌙</h2>
+    <p id="offlineTimeText">נעדרתם 0 דקות.</p>
+    <p style="color:var(--gold); font-size:16px; font-weight:700;" id="offlineGainText">הרווחתם ₪0</p>
+    <button class="btn btn-gold" id="btnCloseOffline">קדימה!</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlayPrestigeConfirm" hidden>
+  <div class="card">
+    <h2>לפתוח יער חדש?</h2>
+    <p>כל המשאבים והבניינים יתאפסו. תקבלו <b id="confirmSeeds" style="color:var(--gold);">0</b> זרעי זהב שנשארים לתמיד ומעלים את התפוקה שלכם ב-<span id="confirmPct">0%</span>.</p>
+    <button class="btn btn-gold" id="btnConfirmPrestige">כן, בואו נתחיל מחדש</button>
+    <button class="btn btn-ghost" id="btnCancelPrestige">לא עכשיו</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlaySettings" hidden>
+  <div class="card">
+    <h2>הגדרות</h2>
+    <div style="width:100%;">
+      <div class="toggle-row"><span>צליל</span><button class="switch on" id="toggleSound"></button></div>
+    </div>
+    <button class="btn btn-ghost" id="btnResetProgress">איפוס מלא (כולל זרעים)</button>
+    <button class="btn btn-gold" id="btnCloseSettings">סגירה</button>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script>
+'use strict';
+const engine = window.LumberEngine;
+
+/* ═══════════════════ שמירה ═══════════════════ */
+const SAVE_KEY = 'lumberEmpireSave.v1';
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+let settings = { sound: true };
+try { const s = localStorage.getItem('lumberEmpireSettings'); if (s) settings = Object.assign(settings, JSON.parse(s)); } catch (e) {}
+function persistSettings() { localStorage.setItem('lumberEmpireSettings', JSON.stringify(settings)); }
+
+let state = engine.createState(Date.now());
+let offlineSummary = null;
+
+const saved = loadSave();
+if (saved && saved.state) {
+  Object.assign(state, saved.state);
+  state.rng = engine.makeRng(Date.now());
+  state.lastEvents = [];
+  const deltaSec = Math.min(8 * 3600, Math.max(0, (Date.now() - (saved.lastSaveTime || Date.now())) / 1000));
+  if (deltaSec > 15) {
+    const result = engine.fastForward(state, deltaSec);
+    offlineSummary = { seconds: deltaSec, moneyGained: result.moneyGained, paperGained: result.paperGained };
+  }
+}
+
+function persist() {
+  const { rng, lastEvents, ...serializable } = state;
+  localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 1, state: serializable, lastSaveTime: Date.now() }));
+}
+
+/* ═══════════════════ צליל (Web Audio, סינתטי) ═══════════════════ */
+let actx = null;
+function ensureAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }
+function beep(freq, duration, type, gain, delay) {
+  if (!settings.sound || !actx) return;
+  const t0 = actx.currentTime + (delay || 0);
+  const osc = actx.createOscillator();
+  const g = actx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(gain || 0.15, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+  osc.connect(g); g.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + duration + 0.02);
+}
+function sfxChop() { beep(200 + Math.random() * 60, 0.09, 'triangle', 0.12); }
+function sfxBuy() { beep(660, 0.1, 'square', 0.1); beep(880, 0.1, 'square', 0.08, 0.05); }
+function sfxPrestige() { [523, 659, 784, 1047, 1319].forEach((f, i) => beep(f, 0.25, 'triangle', 0.15, i * 0.08)); }
+function sfxEvent() { beep(784, 0.15, 'sine', 0.12); beep(988, 0.15, 'sine', 0.1, 0.08); }
+
+/* ═══════════════════ UI: שרשרת הייצור ═══════════════════ */
+const STAGE_ICONS = { lumberjack: '🪓', sawmill: '🪚', pulpMill: '💧', paperPress: '📄', salesTeam: '🛒' };
+const STAGE_UNIT = { lumberjack: 'עצים/שנ׳', sawmill: 'קורות/שנ׳', pulpMill: 'עיסה/שנ׳', paperPress: 'נייר/שנ׳', salesTeam: '₪/שנ׳' };
+const STAGE_COLOR = { lumberjack: '#6ED27A', sawmill: '#D9A15C', pulpMill: '#6EC3F0', paperPress: '#E8E4DA', salesTeam: '#FFD873' };
+const chainEl = document.getElementById('chain');
+const stageEls = {};
+
+function buildChainUI() {
+  chainEl.innerHTML = '';
+  engine.BUILDING_ORDER.forEach((key, i) => {
+    if (i > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'connector';
+      conn.innerHTML = '<div class="dot"></div>';
+      chainEl.appendChild(conn);
+      stageEls[key + 'Conn'] = conn;
+    }
+    const def = engine.BUILDINGS[key];
+    const card = document.createElement('div');
+    card.className = 'stage-card';
+    card.innerHTML = `
+      <div class="stage-icon" style="--stage-color:${STAGE_COLOR[key]}">${STAGE_ICONS[key]}</div>
+      <div class="stage-body">
+        <div class="stage-name">${def.name}</div>
+        <div class="stage-sub"><span id="${key}Count">0</span> יחידות · <span id="${key}Rate">0</span> ${STAGE_UNIT[key]}</div>
+      </div>
+      <button class="stage-buy" id="${key}Buy">
+        <span class="cost" id="${key}Cost">0</span>
+        <span class="label">₪ קנייה</span>
+      </button>`;
+    chainEl.appendChild(card);
+    stageEls[key] = card;
+    document.getElementById(key + 'Buy').addEventListener('click', () => {
+      if (engine.buyBuilding(state, key)) { sfxBuy(); flashCard(card); render(true); }
+    });
+  });
+}
+buildChainUI();
+
+function flashCard(el) {
+  el.style.transform = 'scale(1.03)';
+  el.style.boxShadow = '0 4px 0 rgba(138,90,38,.25), 0 0 0 3px var(--accent-2), 0 8px 16px rgba(74,46,18,.12)';
+  setTimeout(() => { el.style.transform = ''; el.style.boxShadow = ''; }, 220);
+}
+
+/* ═══════════════════ חטיבת עצים ═══════════════════ */
+const treeBtn = document.getElementById('treeBtn');
+const chopCard = document.getElementById('chopCard');
+treeBtn.addEventListener('click', evt => {
+  ensureAudio();
+  engine.chopWood(state);
+  sfxChop();
+  treeBtn.style.transform = 'scale(0.85) rotate(-6deg)';
+  setTimeout(() => { treeBtn.style.transform = ''; }, 90);
+  spawnFloater(chopCard, '+' + engine.formatNumber(engine.clickPower(state)));
+});
+function spawnFloater(container, text) {
+  const el = document.createElement('div');
+  el.className = 'floater';
+  el.textContent = text;
+  el.style.left = (40 + Math.random() * 20) + '%';
+  el.style.top = '30%';
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 850);
+}
+document.getElementById('buyAx').addEventListener('click', () => {
+  if (engine.buyAx(state)) { sfxBuy(); render(true); }
+});
+
+/* ═══════════════════ פריסטייג' ═══════════════════ */
+const overlayPrestigeConfirm = document.getElementById('overlayPrestigeConfirm');
+document.getElementById('btnPrestige').addEventListener('click', () => {
+  const seeds = engine.seedsAvailable(state);
+  if (seeds < 1) return;
+  document.getElementById('confirmSeeds').textContent = seeds;
+  document.getElementById('confirmPct').textContent = (seeds * engine.SEED_BONUS * 100).toFixed(0) + '%';
+  overlayPrestigeConfirm.hidden = false;
+});
+document.getElementById('btnCancelPrestige').addEventListener('click', () => { overlayPrestigeConfirm.hidden = true; });
+document.getElementById('btnConfirmPrestige').addEventListener('click', () => {
+  const gained = engine.prestige(state);
+  overlayPrestigeConfirm.hidden = true;
+  if (gained > 0) {
+    lastMoneySample = state.moneyThisRun;
+    moneyRateDisplay = 0;
+    sfxPrestige(); persist(); render(true);
+  }
+});
+
+/* ═══════════════════ הגדרות ═══════════════════ */
+const overlaySettings = document.getElementById('overlaySettings');
+document.getElementById('btnSettings').addEventListener('click', () => {
+  document.getElementById('toggleSound').classList.toggle('on', settings.sound);
+  overlaySettings.hidden = false;
+});
+document.getElementById('btnCloseSettings').addEventListener('click', () => { overlaySettings.hidden = true; });
+document.getElementById('toggleSound').addEventListener('click', () => {
+  settings.sound = !settings.sound; persistSettings();
+  document.getElementById('toggleSound').classList.toggle('on', settings.sound);
+});
+document.getElementById('btnResetProgress').addEventListener('click', () => {
+  if (!confirm('לאפס לגמרי את המשחק, כולל זרעי הזהב?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+});
+
+/* ═══════════════════ מסך אופליין ═══════════════════ */
+if (offlineSummary && (offlineSummary.moneyGained > 1 || offlineSummary.paperGained > 0.5)) {
+  const mins = offlineSummary.seconds / 60;
+  const text = mins < 60 ? Math.round(mins) + ' דקות' : (mins / 60).toFixed(1) + ' שעות';
+  document.getElementById('offlineTimeText').textContent = 'נעדרתם ' + text + '.';
+  document.getElementById('offlineGainText').textContent =
+    'הרווחתם ₪' + engine.formatNumber(offlineSummary.moneyGained) + ' ועוד ' + engine.formatNumber(offlineSummary.paperGained) + ' נייר';
+  document.getElementById('overlayOffline').hidden = false;
+}
+document.getElementById('btnCloseOffline').addEventListener('click', () => {
+  document.getElementById('overlayOffline').hidden = true;
+});
+
+/* ═══════════════════ אירועים ═══════════════════ */
+const eventBanner = document.getElementById('eventBanner');
+function handleEvents(events) {
+  for (const e of events) {
+    if (e.type === 'eventStart') {
+      document.getElementById('eventLabel').textContent = e.label;
+      eventBanner.hidden = false;
+      sfxEvent();
+    } else if (e.type === 'eventEnd') {
+      eventBanner.hidden = true;
+    }
+  }
+}
+
+/* ═══════════════════ לולאת רינדור ═══════════════════ */
+let lastTime = performance.now();
+let renderAccum = 0;
+let lastMoneySample = state.moneyThisRun;
+let moneyRateDisplay = 0;
+let sampleAccum = 0;
+
+function render(force) {
+  document.getElementById('moneyValue').textContent = '₪' + engine.formatNumber(state.resources.money);
+  document.getElementById('moneyRate').textContent = '₪' + engine.formatNumber(moneyRateDisplay) + ' / שנייה';
+  document.getElementById('woodValue').textContent = engine.formatNumber(state.resources.wood);
+  document.getElementById('axPower').textContent = '+' + engine.formatNumber(engine.clickPower(state));
+  document.getElementById('axCost').textContent = engine.formatNumber(engine.axCost(state));
+  document.getElementById('buyAx').disabled = state.resources.money < engine.axCost(state);
+
+  for (const key of engine.BUILDING_ORDER) {
+    const def = engine.BUILDINGS[key];
+    document.getElementById(key + 'Count').textContent = state.buildings[key];
+    const rate = state.buildings[key] * def.rate * engine.globalMult(state);
+    document.getElementById(key + 'Rate').textContent = engine.formatNumber(rate);
+    const cost = engine.currentBuildingCost(state, key);
+    document.getElementById(key + 'Cost').textContent = engine.formatNumber(cost);
+    document.getElementById(key + 'Buy').disabled = state.resources.money < cost;
+    const conn = stageEls[key + 'Conn'];
+    if (conn) conn.classList.toggle('active', state.buildings[key] > 0);
+  }
+
+  document.getElementById('seedCount').textContent = engine.formatNumber(state.prestige.seeds);
+  document.getElementById('seedsOwned').textContent = engine.formatNumber(state.prestige.seeds);
+  document.getElementById('currentMult').textContent = '×' + engine.globalMult(state).toFixed(2);
+  const avail = engine.seedsAvailable(state);
+  document.getElementById('seedsAvail').textContent = avail;
+  document.getElementById('btnPrestige').disabled = avail < 1;
+}
+
+function loop(now) {
+  let dt = (now - lastTime) / 1000;
+  lastTime = now;
+  dt = Math.min(dt, 0.25);
+
+  engine.tick(state, dt);
+  handleEvents(state.lastEvents);
+
+  sampleAccum += dt;
+  if (sampleAccum >= 1) {
+    moneyRateDisplay = state.moneyThisRun - lastMoneySample;
+    lastMoneySample = state.moneyThisRun;
+    sampleAccum = 0;
+    persist();
+  }
+
+  renderAccum += dt;
+  if (renderAccum >= 1 / 12) { render(); renderAccum = 0; }
+
+  requestAnimationFrame(loop);
+}
+
+render(true);
+if (state.activeEvent) eventBanner.hidden = false, document.getElementById('eventLabel').textContent = state.activeEvent.label;
+requestAnimationFrame(loop);
+
+window.addEventListener('beforeunload', persist);
+document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+</script>
+</body>
+</html>
