@@ -1,0 +1,20 @@
+{
+  "name": "מילים! — חבילת משחקי מילים",
+  "short_name": "מילים!",
+  "description": "ארבעה משחקי מילים בעברית במקום אחד: וורדעברי, שרשרת מילים, פיצוח אותיות ואנגרם בזק — עם אתגר חדש כל יום.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#F4ECDA",
+  "theme_color": "#F4ECDA",
+  "categories": ["games", "word", "puzzle"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

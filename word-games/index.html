@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4ECDA">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="מילים!">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<title>מילים! — חבילת משחקי מילים</title>
+<meta name="description" content="ארבעה משחקי מילים בעברית במקום אחד: וורדעברי, שרשרת מילים, פיצוח אותיות ואנגרם בזק.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Rubik:wght@600;700;800;900&display=swap">
+<style>
+:root{
+  --paper:#F4ECDA; --paper-2:#ECE0C4; --paper-deep:#E1D1A5; --paper-line:#D8C79C;
+  --ink:#2B241A; --ink-soft:#5C503B; --ink-faint:#948566;
+  --card:#127A6B; --card-2:#1FA88F;
+  --teal:#127A6B; --teal-2:#1FA88F;
+  --coral:#C93F17; --coral-2:#F0693A;
+  --mustard:#B87A0E; --mustard-2:#E3A62A;
+  --violet:#5B3E96; --violet-2:#7E5BC9;
+  --good:#127A6B; --good-2:#1FA88F; --present:#B87A0E; --present-2:#E3A62A; --bad:#C93F17;
+  --r:18px; --r-sm:12px;
+  --shadow-1:0 4px 0; --shadow-2:0 3px 0;
+  --body:'Assistant',system-ui,'Segoe UI',sans-serif;
+  --display:'Rubik','Assistant',system-ui,sans-serif;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; color:var(--ink); font-family:var(--body);
+  overscroll-behavior:none; user-select:none;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(18,122,107,.10), transparent 42%),
+    radial-gradient(circle at 90% 12%, rgba(201,63,23,.10), transparent 40%),
+    radial-gradient(circle at 20% 95%, rgba(91,62,150,.09), transparent 42%),
+    linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  background-attachment:fixed;
+}
+button{font-family:inherit;}
+[hidden]{display:none !important;}
+.screen{
+  position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+  padding:max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+.screen[hidden]{display:none;}
+
+/* ═══ shared bits ═══ */
+.icon-btn{
+  width:44px; height:44px; border-radius:50%; border:2px solid var(--ink);
+  background:var(--paper); color:var(--ink); display:flex; align-items:center; justify-content:center;
+  font-size:19px; cursor:pointer; box-shadow:0 3px 0 var(--ink); transition:transform .1s, box-shadow .1s;
+  flex:0 0 auto;
+}
+.icon-btn:active{transform:translateY(3px); box-shadow:none;}
+.top-row{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:520px; margin-bottom:10px;}
+.top-row h1{font-family:var(--display); font-size:20px; font-weight:800; margin:0;}
+.btn{
+  appearance:none; border:2px solid var(--ink); border-radius:999px; padding:14px 26px; font-size:16px;
+  font-weight:800; font-family:var(--display); cursor:pointer; color:var(--ink); background:var(--paper);
+  box-shadow:var(--shadow-1) var(--ink); transition:transform .1s ease, box-shadow .1s ease;
+}
+.btn:active{transform:translateY(4px); box-shadow:none;}
+.btn-primary{background:linear-gradient(135deg,var(--card),var(--card-2)); color:#fff; border-color:transparent; box-shadow:var(--shadow-1) color-mix(in srgb, var(--card) 60%, black);}
+.btn-primary:active{box-shadow:none;}
+.btn-ghost{background:transparent; box-shadow:none; padding:9px 16px; font-size:13px;}
+.btn-ghost:active{transform:scale(.95); box-shadow:none;}
+.pill-tabs{display:flex; gap:6px; background:var(--paper-deep); border-radius:999px; padding:4px; margin-bottom:14px;}
+.pill-tab{border:none; background:transparent; border-radius:999px; padding:8px 18px; font-family:var(--display); font-weight:700; font-size:13px; color:var(--ink-soft); cursor:pointer;}
+.pill-tab.active{background:var(--ink); color:var(--paper);}
+.chip{display:inline-flex; align-items:center; gap:4px; background:var(--paper-deep); border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; color:var(--ink-soft);}
+.toast-host{position:fixed; top:max(14px, env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:80; display:flex; flex-direction:column; gap:8px; align-items:center;}
+.toast{background:var(--ink); color:var(--paper); font-weight:700; font-size:14px; padding:9px 18px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,.25); animation:toast-in .25s ease;}
+@keyframes toast-in{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+
+/* ═══ hub ═══ */
+#screen-hub{justify-content:flex-start; padding-top:max(20px, calc(env(safe-area-inset-top) + 10px));}
+.hub-wordmark{font-family:var(--display); font-weight:900; font-size:clamp(30px,9vw,44px); text-align:center; margin:2px 0 4px; position:relative;}
+.hub-wordmark .dot{color:var(--coral);}
+.hub-sub{color:var(--ink-soft); font-size:13px; margin:0 0 16px; text-align:center;}
+.streak-strip{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; justify-content:center;}
+.streak-chip{background:#fff; border:2px solid var(--ink); border-radius:14px; padding:7px 14px; font-size:12px; font-weight:700; display:flex; gap:6px; align-items:center; box-shadow:0 2px 0 var(--ink);}
+.mode-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; width:100%; max-width:520px;}
+.mode-card{
+  --card-shadow: color-mix(in srgb, var(--card) 55%, black);
+  position:relative; border:none; border-radius:20px; padding:16px 14px 14px; cursor:pointer; text-align:right;
+  background:#fff; box-shadow:0 4px 0 var(--card-shadow), 0 8px 20px rgba(0,0,0,.08);
+  display:flex; flex-direction:column; gap:8px; align-items:flex-start; transition:transform .1s, box-shadow .1s;
+  border-top:8px solid var(--card); overflow:hidden;
+}
+.mode-card:active{transform:translateY(4px); box-shadow:0 0 0 transparent;}
+.mode-card .mode-icon{width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,var(--card),var(--card-2)); display:flex; align-items:center; justify-content:center; color:#fff;}
+.mode-card .mode-name{font-family:var(--display); font-weight:800; font-size:16px;}
+.mode-card .mode-desc{font-size:11.5px; color:var(--ink-soft); line-height:1.5; min-height:32px;}
+.mode-card .mode-badge{align-self:flex-start; font-size:11px; font-weight:800; color:var(--card); background:color-mix(in srgb, var(--card) 14%, white); border-radius:999px; padding:3px 10px;}
+
+/* ═══ generic tile board (wordle + ladder share this) ═══ */
+.board{display:flex; flex-direction:column; gap:7px; margin:6px 0 16px; align-items:center;}
+.tile-row{display:flex; gap:7px; direction:rtl;}
+.tile{
+  width:min(13vw,52px); height:min(13vw,52px); border-radius:10px; border:2.5px solid var(--paper-line);
+  background:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--display);
+  font-weight:800; font-size:min(6vw,24px); color:var(--ink); position:relative;
+  transition:transform .15s;
+}
+.tile.filled{border-color:var(--ink-faint); transform:scale(1.04);}
+.tile.flip{animation:tile-flip .5s ease forwards;}
+@keyframes tile-flip{0%{transform:rotateX(0);} 50%{transform:rotateX(90deg);} 100%{transform:rotateX(0);}}
+.tile.correct{background:linear-gradient(155deg,var(--good),var(--good-2)); border-color:transparent; color:#fff;}
+.tile.present{background:linear-gradient(155deg,var(--present),var(--present-2)); border-color:transparent; color:#fff;}
+.tile.absent{background:var(--paper-deep); border-color:transparent; color:var(--ink-faint);}
+.tile.correct::after{content:'✓'; position:absolute; bottom:2px; left:4px; font-size:10px; opacity:.85;}
+.tile.present::after{content:''; position:absolute; inset:0; border-radius:8px; background:repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 3px, transparent 3px 7px); pointer-events:none;}
+.tile.locked{background:var(--paper-deep); color:var(--ink-soft); border-color:transparent;}
+.tile.target{background:transparent; border:2.5px dashed var(--ink-faint); color:var(--ink-faint);}
+.tile.diff{outline:3px solid var(--coral); outline-offset:1px;}
+.tile.shake{animation:shake .4s;}
+@keyframes shake{10%,90%{transform:translateX(-2px);} 20%,80%{transform:translateX(4px);} 30%,50%,70%{transform:translateX(-8px);} 40%,60%{transform:translateX(8px);}}
+
+/* ═══ keyboard (shared: wordle + ladder) ═══ */
+.kb{display:flex; flex-direction:column; gap:6px; width:100%; max-width:480px; margin-top:auto; padding-top:10px;}
+.kb-row{display:flex; gap:5px; justify-content:center;}
+.key{
+  min-width:26px; flex:1; max-width:38px; height:46px; border-radius:8px; border:none; background:var(--paper-deep);
+  color:var(--ink); font-family:var(--display); font-weight:700; font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:transform .08s, background .15s;
+}
+.key:active{transform:scale(.9); background:var(--ink-faint); color:#fff;}
+.key.wide{flex:1.6; max-width:66px; font-size:12px;}
+.key.correct{background:var(--good); color:#fff;}
+.key.present{background:var(--present); color:#fff;}
+.key.absent{background:#cabb96; color:var(--paper);}
+
+/* מסכים נמוכים (כמו iPhone SE ישן, 320×568) — לוח+מקלדת גדולים מדי לא נכנסים
+   בגובה, אז מצמצמים את שניהם כדי שהכול יהיה גלוי בלי גלילה. */
+@media (max-height:620px){
+  .top-row{margin-bottom:4px;}
+  .pill-tabs{padding:3px; margin-bottom:8px;}
+  .pill-tab{padding:6px 14px;}
+  .board{gap:5px; margin:4px 0 10px;}
+  .tile-row{gap:5px;}
+  .tile{width:min(11vw,40px); height:min(11vw,40px); font-size:min(5vw,20px);}
+  .kb{gap:4px; padding-top:6px;}
+  .kb-row{gap:4px;}
+  .key{height:38px; font-size:13px;}
+}
+
+/* ═══ wordle specifics ═══ */
+#screen-wordle{padding-bottom:8px;}
+.wl-hint{font-size:12px; color:var(--ink-soft); margin-bottom:4px; text-align:center;}
+
+/* ═══ ladder specifics ═══ */
+.ladder-wrap{display:flex; width:100%; max-width:420px; gap:10px; align-items:stretch; flex:1; min-height:0;}
+.ladder-rail{width:14px; position:relative; flex:0 0 auto;}
+.ladder-rail::before, .ladder-rail::after{content:''; position:absolute; top:4px; bottom:4px; width:3px; background:var(--paper-deep); border-radius:2px;}
+.ladder-rail::before{right:0;} .ladder-rail::after{left:0;}
+.ladder-steps{flex:1; display:flex; flex-direction:column; gap:10px; overflow-y:auto; padding:4px 0;}
+.ladder-current-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:8px;}
+.step-count{font-size:12px; color:var(--ink-soft); text-align:center; margin-top:2px;}
+
+/* ═══ boggle specifics ═══ */
+.boggle-top{display:flex; width:100%; max-width:380px; justify-content:space-between; align-items:center; margin-bottom:8px; gap:10px;}
+.timer-bar-track{flex:1; height:12px; border-radius:999px; background:var(--paper-deep); overflow:hidden; border:2px solid var(--ink);}
+.timer-bar-fill{height:100%; background:linear-gradient(90deg,var(--coral),var(--mustard)); width:100%; transition:width 1s linear;}
+.current-word{min-height:30px; font-family:var(--display); font-weight:800; font-size:22px; margin-bottom:8px; letter-spacing:2px; direction:rtl;}
+.boggle-grid{display:grid; gap:8px; touch-action:none; position:relative; margin-bottom:12px;}
+.boggle-cell{
+  width:min(18vw,70px); height:min(18vw,70px); border-radius:14px; background:#fff; border:2.5px solid var(--paper-line);
+  display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:800;
+  font-size:min(8vw,28px); color:var(--ink); box-shadow:0 3px 0 var(--paper-line); transition:transform .1s, background .15s, border-color .15s;
+}
+.boggle-cell.sel{background:linear-gradient(135deg,var(--coral),var(--coral-2)); color:#fff; border-color:transparent; transform:scale(.94); box-shadow:0 1px 0 var(--coral);}
+.found-words{display:flex; flex-wrap:wrap; gap:6px; max-width:420px; justify-content:center; margin-bottom:10px;}
+.found-chip{background:#fff; border:2px solid var(--teal); color:var(--teal); border-radius:999px; padding:4px 12px; font-size:12px; font-weight:700;}
+
+/* ═══ anagram specifics ═══ */
+.ana-answer{display:flex; gap:6px; min-height:56px; margin-bottom:16px; direction:rtl;}
+.ana-tiles{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; direction:rtl; margin-bottom:18px;}
+.ana-letter{
+  width:48px; height:48px; border-radius:10px; background:linear-gradient(135deg,var(--violet),var(--violet-2)); color:#fff;
+  font-family:var(--display); font-weight:800; font-size:22px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow:0 3px 0 color-mix(in srgb, var(--violet) 60%, black); transition:transform .1s;
+}
+.ana-letter:active{transform:translateY(3px);}
+.ana-letter.used{opacity:.25; pointer-events:none;}
+.lives{display:flex; gap:4px; font-size:18px;}
+.ana-hud{display:flex; justify-content:space-between; width:100%; max-width:420px; margin-bottom:10px; align-items:center;}
+
+/* ═══ result overlay ═══ */
+.overlay{position:fixed; inset:0; background:rgba(43,36,26,.55); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px;}
+.overlay[hidden]{display:none;}
+.card-modal{background:var(--paper); border-radius:22px; padding:26px 22px; max-width:360px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.3); border:3px solid var(--ink);}
+.card-modal h2{font-family:var(--display); font-size:24px; margin:0 0 8px;}
+.card-modal p{color:var(--ink-soft); font-size:14px; line-height:1.6; margin:0 0 16px;}
+.card-modal .stats-row{display:flex; justify-content:center; gap:18px; margin-bottom:18px;}
+.card-modal .stat{display:flex; flex-direction:column; align-items:center;}
+.card-modal .stat b{font-family:var(--display); font-size:22px;}
+.card-modal .stat span{font-size:10px; color:var(--ink-soft);}
+
+/* ═══ settings overlay ═══ */
+.settings-row{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--paper-deep); font-weight:700; font-size:14px;}
+.switch{width:46px; height:26px; border-radius:999px; background:var(--paper-deep); border:none; position:relative; cursor:pointer;}
+.switch::after{content:''; position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.switch.on{background:var(--teal);}
+.switch.on::after{transform:translateX(-20px);}
+
+.loading-veil{position:fixed; inset:0; background:var(--paper); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:100; gap:14px;}
+.loading-veil[hidden]{display:none;}
+.spin{width:40px; height:40px; border-radius:50%; border:4px solid var(--paper-deep); border-top-color:var(--coral); animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media (min-width:480px){ .mode-grid{max-width:460px;} }
+</style>
+</head>
+<body>
+
+<div class="loading-veil" id="loadingVeil"><div class="spin"></div><div style="font-family:var(--display); font-weight:700;">טוען מילון…</div></div>
+<div class="toast-host" id="toastHost"></div>
+
+<!-- ═══════════ HUB ═══════════ -->
+<div class="screen" id="screen-hub" hidden>
+  <div class="top-row" style="max-width:520px;">
+    <button class="icon-btn" id="btnSettings" aria-label="הגדרות">⚙</button>
+    <div></div>
+    <button class="icon-btn" id="btnInstall" hidden aria-label="התקנה">⭳</button>
+  </div>
+  <div class="hub-wordmark">מילים<span class="dot">!</span></div>
+  <p class="hub-sub">ארבעה משחקי מילים בעברית — אתגר חדש כל יום</p>
+  <div class="streak-strip" id="streakStrip"></div>
+  <div class="mode-grid">
+    <button class="mode-card" data-mode="wordle" style="--card:var(--teal);--card-2:var(--teal-2)">
+      <span class="mode-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="17" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg></span>
+      <span class="mode-name">וורדעברי</span>
+      <span class="mode-desc">מנחשים את מילת היום ב-6 ניסיונות</span>
+      <span class="mode-badge" id="badgeWordle">חדש</span>
+    </button>
+    <button class="mode-card" data-mode="ladder" style="--card:var(--violet);--card-2:var(--violet-2)">
+      <span class="mode-icon"><svg width="20" height="22" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 1v22M16 1v22M4 7h12M4 13h12M4 19h12"/></svg></span>
+      <span class="mode-name">שרשרת מילים</span>
+      <span class="mode-desc">משנים אות אחת בכל צעד עד מילת היעד</span>
+      <span class="mode-badge" id="badgeLadder">חדש</span>
+    </button>
+    <button class="mode-card" data-mode="boggle" style="--card:var(--coral);--card-2:var(--coral-2)">
+      <span class="mode-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="4" cy="4" r="3" fill="currentColor"/><circle cx="20" cy="6" r="3" fill="currentColor"/><circle cx="6" cy="20" r="3" fill="currentColor"/><circle cx="19" cy="18" r="3" fill="currentColor"/><path d="M4 4L20 6L6 20L19 18" stroke="currentColor" stroke-width="1.6" opacity=".6"/></svg></span>
+      <span class="mode-name">פיצוח אותיות</span>
+      <span class="mode-desc">מחברים אותיות שכנות ומוצאים כמה שיותר מילים</span>
+      <span class="mode-badge" id="badgeBoggle">שיא: 0</span>
+    </button>
+    <button class="mode-card" data-mode="anagram" style="--card:var(--mustard);--card-2:var(--mustard-2)">
+      <span class="mode-icon"><svg width="24" height="20" viewBox="0 0 26 20" fill="none"><rect x="0" y="6" width="9" height="9" rx="2" fill="currentColor" transform="rotate(-12 4.5 10.5)"/><rect x="9" y="1" width="9" height="9" rx="2" fill="currentColor" opacity=".75" transform="rotate(8 13.5 5.5)"/><rect x="17" y="8" width="9" height="9" rx="2" fill="currentColor" opacity=".55" transform="rotate(-6 21.5 12.5)"/></svg></span>
+      <span class="mode-name">אנגרם בזק</span>
+      <span class="mode-desc">מפרקים מילה מעורבבת נגד השעון</span>
+      <span class="mode-badge" id="badgeAnagram">שיא: 0</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════ WORDLE ═══════════ -->
+<div class="screen" id="screen-wordle" hidden>
+  <div class="top-row">
+    <button class="icon-btn" data-back>→</button>
+    <h1>וורדעברי</h1>
+    <button class="icon-btn" id="btnWordleHelp">?</button>
+  </div>
+  <div class="pill-tabs" id="wordleTabs">
+    <button class="pill-tab active" data-wtab="daily">יומי</button>
+    <button class="pill-tab" data-wtab="practice">תרגול</button>
+  </div>
+  <div class="pill-tabs" id="wordlePracticeLen" hidden>
+    <button class="pill-tab active" data-wlen="5">5</button>
+    <button class="pill-tab" data-wlen="6">6</button>
+    <button class="pill-tab" data-wlen="7">7</button>
+  </div>
+  <div class="board" id="wordleBoard"></div>
+  <div class="kb" id="wordleKb"></div>
+</div>
+
+<!-- ═══════════ LADDER ═══════════ -->
+<div class="screen" id="screen-ladder" hidden>
+  <div class="top-row">
+    <button class="icon-btn" data-back>→</button>
+    <h1>שרשרת מילים</h1>
+    <button class="icon-btn" id="btnLadderHint">💡</button>
+  </div>
+  <div class="pill-tabs" id="ladderTabs">
+    <button class="pill-tab active" data-ltab="daily">יומי</button>
+    <button class="pill-tab" data-ltab="practice">תרגול</button>
+  </div>
+  <div class="tile-row" id="ladderStart"></div>
+  <div class="ladder-wrap">
+    <div class="ladder-rail"></div>
+    <div class="ladder-steps" id="ladderSteps"></div>
+  </div>
+  <div class="ladder-current-wrap">
+    <div class="tile-row" id="ladderCurrent"></div>
+    <div class="step-count" id="ladderStepCount"></div>
+  </div>
+  <div class="tile-row" id="ladderTarget"></div>
+  <div class="kb" id="ladderKb"></div>
+</div>
+
+<!-- ═══════════ BOGGLE ═══════════ -->
+<div class="screen" id="screen-boggle" hidden>
+  <div class="top-row">
+    <button class="icon-btn" data-back>→</button>
+    <h1>פיצוח אותיות</h1>
+    <span class="chip" id="boggleScore">0</span>
+  </div>
+  <div class="boggle-top">
+    <span class="chip" id="boggleTimerLabel">90</span>
+    <div class="timer-bar-track"><div class="timer-bar-fill" id="boggleTimerFill"></div></div>
+  </div>
+  <div class="current-word" id="boggleCurrent">&nbsp;</div>
+  <div class="boggle-grid" id="boggleGrid"></div>
+  <div class="found-words" id="boggleFound"></div>
+  <button class="btn" id="btnBoggleStart">התחל סיבוב</button>
+</div>
+
+<!-- ═══════════ ANAGRAM ═══════════ -->
+<div class="screen" id="screen-anagram" hidden>
+  <div class="top-row">
+    <button class="icon-btn" data-back>→</button>
+    <h1>אנגרם בזק</h1>
+    <span class="lives" id="anaLives"></span>
+  </div>
+  <div class="ana-hud">
+    <span class="chip" id="anaScore">ניקוד: 0</span>
+    <div class="timer-bar-track" style="flex:1; margin-inline:10px;"><div class="timer-bar-fill" id="anaTimerFill" style="background:linear-gradient(90deg,var(--violet),var(--mustard));"></div></div>
+    <span class="chip" id="anaRound">סיבוב 1</span>
+  </div>
+  <div class="ana-answer" id="anaAnswer"></div>
+  <div class="ana-tiles" id="anaTiles"></div>
+  <div style="display:flex; gap:10px;">
+    <button class="btn btn-ghost" id="btnAnaShuffle">🔀 ערבוב</button>
+    <button class="btn btn-ghost" id="btnAnaClear">נקה</button>
+    <button class="btn btn-primary" id="btnAnaStart">התחל</button>
+  </div>
+</div>
+
+<!-- ═══════════ overlays ═══════════ -->
+<div class="overlay" id="overlaySettings" hidden>
+  <div class="card-modal">
+    <h2>הגדרות</h2>
+    <div class="settings-row"><span>צליל</span><button class="switch on" id="switchSound"></button></div>
+    <div class="settings-row"><span>רטט</span><button class="switch on" id="switchHaptics"></button></div>
+    <button class="btn" style="margin-top:18px; width:100%;" id="btnCloseSettings">סגירה</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlayResult" hidden>
+  <div class="card-modal">
+    <h2 id="resultTitle">כל הכבוד!</h2>
+    <p id="resultBody"></p>
+    <div class="stats-row" id="resultStats"></div>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button class="btn btn-ghost" id="btnResultClose">סגירה</button>
+      <button class="btn btn-primary" id="btnResultAgain">שוב</button>
+    </div>
+  </div>
+</div>
+
+<script src="dict.js"></script>
+<script src="engine.js"></script>
+<script>
+'use strict';
+/* ═══════════════════ אתחול מנוע ═══════════════════ */
+var Engine = window.WordGamesEngine;
+var engine = null; // נבנה אסינכרונית כדי לא לתקוע את ה-thread הראשי יותר מדי
+
+/* ═══════════════════ שמירה ═══════════════════ */
+var SAVE_KEY = 'wordGamesSave.v2';
+function defaultSave() {
+  return {
+    version: 2,
+    settings: { sound: true, haptics: true },
+    wordle: { streak: 0, best: 0, lastWinDate: null, daily: null },
+    ladder: { streak: 0, best: 0, lastWinDate: null, daily: null },
+    boggle: { highScore: 0 },
+    anagram: { highScore: 0 }
+  };
+}
+function loadSave() {
+  try {
+    var raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) throw 0;
+    var data = JSON.parse(raw);
+    if (data.version !== 2) throw 0;
+    return data;
+  } catch (e) { return defaultSave(); }
+}
+var save = loadSave();
+function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+
+/* ═══════════════════ תאריך מקומי (לא UTC, כדי שהיום יתחלף בחצות המקומית) ═══════════════════ */
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function dailySeedInt(salt) { return Engine.hashStringToSeed(todayStr() + '|' + salt); }
+
+/* ═══════════════════ צליל (Web Audio, סינתטי) ═══════════════════ */
+var actx = null;
+function ensureAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }
+function beep(freq, duration, type, gain, delay) {
+  if (!save.settings.sound || !actx) return;
+  var t0 = actx.currentTime + (delay || 0);
+  var osc = actx.createOscillator();
+  var g = actx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(gain || 0.18, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+  osc.connect(g); g.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + duration + 0.02);
+}
+function sfxKey() { beep(440, 0.05, 'triangle', 0.08); }
+function sfxCorrect() { [523, 659, 784].forEach(function (f, i) { beep(f, 0.15, 'triangle', 0.12, i * 0.06); }); }
+function sfxPresent() { beep(392, 0.12, 'sine', 0.1); }
+function sfxAbsent() { beep(180, 0.1, 'sine', 0.06); }
+function sfxWin() { [523, 659, 784, 1047].forEach(function (f, i) { beep(f, 0.22, 'triangle', 0.14, i * 0.09); }); }
+function sfxLose() { [300, 250, 200, 150].forEach(function (f, i) { beep(f, 0.25, 'sawtooth', 0.1, i * 0.08); }); }
+function sfxFound(len) { beep(440 + len * 30, 0.15, 'triangle', 0.12); }
+function sfxTick() { beep(880, 0.04, 'square', 0.05); }
+function haptic(pattern) { if (save.settings.haptics && navigator.vibrate) navigator.vibrate(pattern); }
+
+/* ═══════════════════ toast ═══════════════════ */
+function toast(msg) {
+  var host = document.getElementById('toastHost');
+  var el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(function () { el.remove(); }, 1800);
+}
+
+/* ═══════════════════ ניווט מסכים ═══════════════════ */
+var screens = ['hub', 'wordle', 'ladder', 'boggle', 'anagram'].reduce(function (o, k) {
+  o[k] = document.getElementById('screen-' + k); return o;
+}, {});
+function showScreen(name) {
+  Object.keys(screens).forEach(function (k) { screens[k].hidden = (k !== name); });
+}
+document.querySelectorAll('[data-back]').forEach(function (btn) {
+  btn.addEventListener('click', function () { showScreen('hub'); refreshHub(); });
+});
+document.querySelectorAll('.mode-card').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    ensureAudio();
+    var mode = btn.dataset.mode;
+    showScreen(mode);
+    if (mode === 'wordle') Wordle.enter();
+    if (mode === 'ladder') Ladder.enter();
+    if (mode === 'boggle') Boggle.enter();
+    if (mode === 'anagram') Anagram.enter();
+  });
+});
+
+/* ═══════════════════ הגדרות ═══════════════════ */
+var overlaySettings = document.getElementById('overlaySettings');
+document.getElementById('btnSettings').addEventListener('click', function () {
+  document.getElementById('switchSound').classList.toggle('on', save.settings.sound);
+  document.getElementById('switchHaptics').classList.toggle('on', save.settings.haptics);
+  overlaySettings.hidden = false;
+});
+document.getElementById('btnCloseSettings').addEventListener('click', function () { overlaySettings.hidden = true; });
+document.getElementById('switchSound').addEventListener('click', function () {
+  save.settings.sound = !save.settings.sound; persist();
+  this.classList.toggle('on', save.settings.sound);
+  if (save.settings.sound) { ensureAudio(); sfxKey(); }
+});
+document.getElementById('switchHaptics').addEventListener('click', function () {
+  save.settings.haptics = !save.settings.haptics; persist();
+  this.classList.toggle('on', save.settings.haptics);
+  if (save.settings.haptics) haptic(20);
+});
+
+/* ═══════════════════ תוצאה (overlay משותף) ═══════════════════ */
+var overlayResult = document.getElementById('overlayResult');
+var resultAgainHandler = null;
+function showResult(opts) {
+  document.getElementById('resultTitle').textContent = opts.title;
+  document.getElementById('resultBody').textContent = opts.body || '';
+  var statsEl = document.getElementById('resultStats');
+  statsEl.innerHTML = '';
+  (opts.stats || []).forEach(function (s) {
+    var d = document.createElement('div'); d.className = 'stat';
+    d.innerHTML = '<b>' + s.value + '</b><span>' + s.label + '</span>';
+    statsEl.appendChild(d);
+  });
+  var againBtn = document.getElementById('btnResultAgain');
+  againBtn.hidden = !opts.onAgain;
+  resultAgainHandler = opts.onAgain || null;
+  overlayResult.hidden = false;
+}
+document.getElementById('btnResultClose').addEventListener('click', function () { overlayResult.hidden = true; });
+document.getElementById('btnResultAgain').addEventListener('click', function () {
+  overlayResult.hidden = true;
+  if (resultAgainHandler) resultAgainHandler();
+});
+
+/* ═══════════════════ hub badges ═══════════════════ */
+function refreshHub() {
+  document.getElementById('badgeWordle').textContent = save.wordle.streak > 0 ? ('🔥 ' + save.wordle.streak) : 'התחילו';
+  document.getElementById('badgeLadder').textContent = save.ladder.streak > 0 ? ('🔥 ' + save.ladder.streak) : 'התחילו';
+  document.getElementById('badgeBoggle').textContent = 'שיא: ' + save.boggle.highScore;
+  document.getElementById('badgeAnagram').textContent = 'שיא: ' + save.anagram.highScore;
+  var strip = document.getElementById('streakStrip');
+  strip.innerHTML = '';
+  if (save.wordle.streak > 0) strip.innerHTML += '<span class="streak-chip">🔤 ' + save.wordle.streak + ' ימים</span>';
+  if (save.ladder.streak > 0) strip.innerHTML += '<span class="streak-chip">🪜 ' + save.ladder.streak + ' ימים</span>';
+}
+
+/* ═══════════════════ מקלדת עברית משותפת ═══════════════════ */
+var KB_ROWS = [
+  ['ק', 'ר', 'א', 'ט', 'ו', 'ן', 'ם', 'פ'],
+  ['ש', 'ד', 'ג', 'כ', 'ע', 'י', 'ח', 'ל', 'ך', 'ף'],
+  ['ENTER', 'ז', 'ס', 'ב', 'ה', 'נ', 'מ', 'צ', 'ת', 'ץ', 'BACK']
+];
+function buildKeyboard(container, onKey) {
+  container.innerHTML = '';
+  KB_ROWS.forEach(function (row) {
+    var rowEl = document.createElement('div'); rowEl.className = 'kb-row';
+    row.forEach(function (k) {
+      var btn = document.createElement('button');
+      btn.className = 'key' + (k === 'ENTER' || k === 'BACK' ? ' wide' : '');
+      btn.textContent = k === 'ENTER' ? 'אישור' : k === 'BACK' ? '⌫' : k;
+      btn.dataset.key = k;
+      btn.addEventListener('click', function () { ensureAudio(); onKey(k); });
+      rowEl.appendChild(btn);
+    });
+    container.appendChild(rowEl);
+  });
+}
+function setKeyStatus(container, letter, status) {
+  var priority = { absent: 0, present: 1, correct: 2 };
+  var btn = container.querySelector('[data-key="' + letter + '"]');
+  if (!btn) return;
+  var current = btn.dataset.status;
+  if (current && priority[current] >= priority[status]) return;
+  btn.dataset.status = status;
+  btn.classList.remove('correct', 'present', 'absent');
+  btn.classList.add(status);
+}
+
+/* ═══════════════════ עזר: יצירת שורת אריחים ═══════════════════ */
+function makeTileRow(length, cls) {
+  var row = document.createElement('div'); row.className = 'tile-row' + (cls ? ' ' + cls : '');
+  for (var i = 0; i < length; i++) {
+    var t = document.createElement('div'); t.className = 'tile';
+    row.appendChild(t);
+  }
+  return row;
+}
+// ממלא שורת אריחים קיימת (עצמה, לא מכולה שעוטפת אותה) במילה נתונה, ומוסיף/מוריד
+// תאים כדי להתאים לאורך. משמש למחוונים הקבועים (שורת התחלה/יעד/נוכחי) שכבר
+// קיימים ב-DOM, בניגוד ל-makeTileRow שיוצר שורה חדשה מאפס.
+function paintRow(rowEl, word, length, cls) {
+  while (rowEl.children.length < length) rowEl.appendChild(document.createElement('div'));
+  while (rowEl.children.length > length) rowEl.removeChild(rowEl.lastChild);
+  var tiles = rowEl.children;
+  for (var i = 0; i < length; i++) {
+    var ch = word ? word[i] : '';
+    tiles[i].className = 'tile' + (ch ? ' filled' : '') + (cls ? ' ' + cls : '');
+    tiles[i].textContent = ch || '';
+  }
+  return tiles;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   וורדעברי
+   ══════════════════════════════════════════════════════════════ */
+var Wordle = (function () {
+  var state = null; // {length, answer, guesses:[], current:'', maxGuesses, mode:'daily'|'practice', done:false}
+
+  function maxGuessesFor(len) { return len + 1; }
+
+  function newGame(mode, length) {
+    length = length || 5;
+    var answer, seedTag;
+    if (mode === 'daily') {
+      answer = Engine.pickDailyWord(engine, 5, todayStr());
+      length = 5;
+    } else {
+      var pool = engine.answerPools[length];
+      var idx = Math.floor(Math.random() * pool.length);
+      answer = pool[idx];
+    }
+    state = { length: length, answer: answer, guesses: [], current: '', maxGuesses: maxGuessesFor(length), mode: mode, done: false };
+    if (mode === 'daily') {
+      var d = save.wordle.daily;
+      if (d && d.date === todayStr()) {
+        state.guesses = d.guesses.slice();
+        state.done = d.done;
+      }
+    }
+    render();
+  }
+
+  function render() {
+    var board = document.getElementById('wordleBoard');
+    board.innerHTML = '';
+    var kb = document.getElementById('wordleKb');
+    buildKeyboard(kb, handleKey);
+    for (var r = 0; r < state.maxGuesses; r++) {
+      var rowStr = state.guesses[r] !== undefined ? state.guesses[r] : (r === state.guesses.length ? state.current : '');
+      var row = makeTileRow(state.length);
+      var tiles = row.children;
+      var evaluated = state.guesses[r] !== undefined ? Engine.evaluateGuess(state.guesses[r], state.answer) : null;
+      for (var c = 0; c < state.length; c++) {
+        var ch = rowStr[c] || '';
+        tiles[c].textContent = ch;
+        if (ch) tiles[c].classList.add('filled');
+        if (evaluated) tiles[c].classList.add(evaluated[c]);
+      }
+      board.appendChild(row);
+    }
+    if (state.guesses.length > 0) {
+      var last = state.guesses[state.guesses.length - 1];
+      var lastEval = Engine.evaluateGuess(last, state.answer);
+      for (var i = 0; i < last.length; i++) setKeyStatus(kb, last[i], lastEval[i]);
+    }
+  }
+
+  function handleKey(k) {
+    if (state.done) return;
+    if (k === 'BACK') { state.current = state.current.slice(0, -1); render(); return; }
+    if (k === 'ENTER') { submit(); return; }
+    if (state.current.length < state.length) { state.current += k; sfxKey(); render(); }
+  }
+
+  function submit() {
+    if (state.current.length !== state.length) { toast('חסרות אותיות'); shakeCurrentRow(); return; }
+    if (!Engine.isValidWordleGuess(engine, state.current)) { toast('לא מילה מוכרת'); shakeCurrentRow(); return; }
+    var guess = state.current;
+    state.guesses.push(guess);
+    state.current = '';
+    var win = guess === state.answer;
+    var lose = !win && state.guesses.length >= state.maxGuesses;
+    if (win || lose) state.done = true;
+    render();
+    var evalRes = Engine.evaluateGuess(guess, state.answer);
+    if (evalRes.every(function (s) { return s === 'correct'; })) sfxWin();
+    else if (evalRes.some(function (s) { return s === 'present'; })) sfxPresent();
+    else sfxAbsent();
+
+    if (state.mode === 'daily') {
+      save.wordle.daily = { date: todayStr(), guesses: state.guesses, done: state.done };
+      if (win) updateStreak();
+      else if (lose) { save.wordle.streak = 0; }
+      persist();
+    }
+    if (win || lose) setTimeout(function () { endGame(win); }, 650);
+  }
+
+  function updateStreak() {
+    if (save.wordle.lastWinDate === todayStr()) return;
+    save.wordle.streak += 1;
+    save.wordle.best = Math.max(save.wordle.best, save.wordle.streak);
+    save.wordle.lastWinDate = todayStr();
+  }
+
+  function shakeCurrentRow() {
+    var rows = document.getElementById('wordleBoard').children;
+    var row = rows[state.guesses.length];
+    if (row) { row.classList.add('shake'); haptic(30); setTimeout(function () { row.classList.remove('shake'); }, 400); }
+  }
+
+  function endGame(win) {
+    showResult({
+      title: win ? 'כל הכבוד! 🎉' : 'הפעם לא הצליח',
+      body: win ? 'ניחשתם ב-' + state.guesses.length + ' ניסיונות' : 'המילה הייתה: ' + state.answer,
+      stats: state.mode === 'daily' ? [
+        { value: save.wordle.streak, label: 'רצף ימים' },
+        { value: save.wordle.best, label: 'שיא' }
+      ] : [{ value: state.guesses.length, label: 'ניסיונות' }],
+      onAgain: state.mode === 'practice' ? function () { newGame('practice', state.length); } : null
+    });
+  }
+
+  function enter() {
+    document.getElementById('wordleTabs').querySelectorAll('.pill-tab').forEach(function (t) {
+      t.classList.toggle('active', t.dataset.wtab === 'daily');
+    });
+    document.getElementById('wordlePracticeLen').hidden = true;
+    newGame('daily');
+  }
+
+  document.getElementById('wordleTabs').addEventListener('click', function (e) {
+    var btn = e.target.closest('.pill-tab'); if (!btn) return;
+    this.querySelectorAll('.pill-tab').forEach(function (t) { t.classList.toggle('active', t === btn); });
+    var practice = btn.dataset.wtab === 'practice';
+    document.getElementById('wordlePracticeLen').hidden = !practice;
+    if (practice) newGame('practice', 5); else newGame('daily');
+  });
+  document.getElementById('wordlePracticeLen').addEventListener('click', function (e) {
+    var btn = e.target.closest('.pill-tab'); if (!btn) return;
+    this.querySelectorAll('.pill-tab').forEach(function (t) { t.classList.toggle('active', t === btn); });
+    newGame('practice', Number(btn.dataset.wlen));
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (screens.wordle.hidden || !state || state.done) return;
+    if (e.key === 'Backspace') handleKey('BACK');
+    else if (e.key === 'Enter') handleKey('ENTER');
+    else if (e.key.length === 1 && /[א-ת]/.test(e.key)) handleKey(e.key);
+  });
+
+  return { enter: enter };
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   שרשרת מילים
+   ══════════════════════════════════════════════════════════════ */
+var Ladder = (function () {
+  var state = null; // {start,end,solution,steps,current,history:[],selPos,done}
+  var LEN = 4;
+
+  function newGame(mode) {
+    var seed = mode === 'daily' ? dailySeedInt('ladder') : Math.floor(Math.random() * 1e9);
+    var puzzle = null;
+    for (var tryLen = 0; tryLen < 3 && !puzzle; tryLen++) {
+      puzzle = Engine.generateLadderPuzzle(engine, LEN, seed + tryLen * 999331, 2, 6);
+    }
+    if (!puzzle) { toast('לא הצלחנו ליצור חידה, מנסים שוב'); return; }
+    state = { start: puzzle.start, end: puzzle.end, solution: puzzle.solution, current: puzzle.start, history: [puzzle.start], selPos: 0, mode: mode, done: false, hints: 0 };
+    if (mode === 'daily') {
+      var d = save.ladder.daily;
+      if (d && d.date === todayStr() && d.start === puzzle.start) {
+        state.history = d.history.slice();
+        state.current = state.history[state.history.length - 1];
+        state.done = d.done;
+      }
+    }
+    render();
+  }
+
+  function render() {
+    paintRow(document.getElementById('ladderStart'), state.start, LEN, 'locked');
+
+    var stepsEl = document.getElementById('ladderSteps');
+    stepsEl.innerHTML = '';
+    for (var i = 1; i < state.history.length; i++) {
+      var rowEl = document.createElement('div'); rowEl.className = 'tile-row';
+      stepsEl.appendChild(rowEl);
+      paintRow(rowEl, state.history[i], LEN, 'locked');
+    }
+
+    var tiles = paintRow(document.getElementById('ladderCurrent'), state.current, LEN, '');
+    for (var p = 0; p < LEN; p++) {
+      tiles[p].style.cursor = 'pointer';
+      tiles[p].classList.toggle('diff', p === state.selPos);
+      (function (pos) { tiles[pos].onclick = function () { if (!state.done) { state.selPos = pos; render(); } }; })(p);
+    }
+
+    paintRow(document.getElementById('ladderTarget'), state.end, LEN, state.done ? 'locked' : 'target');
+
+    document.getElementById('ladderStepCount').textContent =
+      (state.history.length - 1) + ' צעדים (הכי קצר: ' + (state.solution.length - 1) + ')';
+
+    buildKeyboard(document.getElementById('ladderKb'), handleKey);
+  }
+
+  function handleKey(k) {
+    if (state.done) return;
+    if (k === 'BACK') return;
+    if (k === 'ENTER') { commitStep(); return; }
+    var chars = state.current.split('');
+    chars[state.selPos] = k;
+    state.current = chars.join('');
+    sfxKey();
+    state.selPos = Math.min(state.selPos + 1, LEN - 1);
+    render();
+  }
+
+  function commitStep() {
+    var prev = state.history[state.history.length - 1];
+    if (state.current === prev) { toast('שנו אות אחת קודם'); return; }
+    var usedSet = new Set(state.history);
+    var check = Engine.validateLadderStep(engine, prev, state.current, usedSet);
+    if (!check.ok) {
+      var msg = check.reason === 'not-one-letter' ? 'משנים אות אחת בלבד'
+        : check.reason === 'not-a-word' ? 'לא מילה מוכרת'
+        : 'כבר השתמשתם במילה הזו';
+      toast(msg);
+      haptic(30);
+      return;
+    }
+    state.history.push(state.current);
+    state.selPos = 0;
+    if (state.current === state.end) {
+      state.done = true;
+      sfxWin();
+      if (state.mode === 'daily') {
+        if (save.ladder.lastWinDate !== todayStr()) {
+          save.ladder.streak += 1;
+          save.ladder.best = Math.max(save.ladder.best, save.ladder.streak);
+          save.ladder.lastWinDate = todayStr();
+        }
+      }
+      persistDaily();
+      render();
+      setTimeout(function () {
+        showResult({
+          title: 'הגעתם ליעד! 🪜',
+          body: (state.history.length - 1) + ' צעדים (הכי קצר האפשרי: ' + (state.solution.length - 1) + ')',
+          stats: state.mode === 'daily' ? [{ value: save.ladder.streak, label: 'רצף ימים' }, { value: save.ladder.best, label: 'שיא' }] : [],
+          onAgain: state.mode === 'practice' ? function () { newGame('practice'); } : null
+        });
+      }, 500);
+      return;
+    }
+    sfxPresent();
+    persistDaily();
+    render();
+  }
+
+  function persistDaily() {
+    if (state.mode !== 'daily') return;
+    save.ladder.daily = { date: todayStr(), start: state.start, history: state.history, done: state.done };
+    persist();
+  }
+
+  function giveHint() {
+    if (state.done) return;
+    var idx = state.history.length - 1;
+    if (idx >= state.solution.length - 1) { toast('אין רמז נוסף'); return; }
+    var usedSet = new Set(state.history);
+    var next = state.solution[idx + 1];
+    state.history.push(next);
+    state.current = next;
+    if (next === state.end) {
+      state.done = true;
+      persistDaily();
+      render();
+      showResult({ title: 'הושלם עם רמזים', body: 'המילה הייתה: ' + state.end, stats: [], onAgain: state.mode === 'practice' ? function () { newGame('practice'); } : null });
+      return;
+    }
+    persistDaily();
+    render();
+  }
+
+  function enter() {
+    document.getElementById('ladderTabs').querySelectorAll('.pill-tab').forEach(function (t) {
+      t.classList.toggle('active', t.dataset.ltab === 'daily');
+    });
+    newGame('daily');
+  }
+
+  document.getElementById('ladderTabs').addEventListener('click', function (e) {
+    var btn = e.target.closest('.pill-tab'); if (!btn) return;
+    this.querySelectorAll('.pill-tab').forEach(function (t) { t.classList.toggle('active', t === btn); });
+    newGame(btn.dataset.ltab);
+  });
+  document.getElementById('btnLadderHint').addEventListener('click', giveHint);
+
+  return { enter: enter };
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   פיצוח אותיות (Boggle)
+   ══════════════════════════════════════════════════════════════ */
+var Boggle = (function () {
+  var SIZE = 4, ROUND_SECONDS = 90;
+  var state = null; // {letters, found:Set, selection:[], score, timeLeft, timerId, playing}
+
+  function enter() {
+    if (!state) setupIdle();
+    render();
+  }
+
+  function setupIdle() {
+    state = { letters: null, foundWords: {}, selection: [], score: 0, timeLeft: ROUND_SECONDS, timerId: null, playing: false };
+  }
+
+  function start() {
+    var seed = Math.floor(Math.random() * 1e9);
+    var board = Engine.generateBoggleBoard(engine, SIZE, seed, 20);
+    state = { letters: board.letters, allFound: board.found, foundWords: {}, selection: [], score: 0, timeLeft: ROUND_SECONDS, playing: true };
+    renderGrid();
+    document.getElementById('btnBoggleStart').textContent = 'מפעיל מחדש';
+    tick();
+    state.timerId = setInterval(tick, 1000);
+    render();
+  }
+
+  function tick() {
+    if (!state.playing) return;
+    state.timeLeft--;
+    if (state.timeLeft <= 5 && state.timeLeft > 0) sfxTick();
+    updateTimerUI();
+    if (state.timeLeft <= 0) endRound();
+  }
+
+  function updateTimerUI() {
+    document.getElementById('boggleTimerLabel').textContent = Math.max(0, state.timeLeft);
+    document.getElementById('boggleTimerFill').style.width = Math.max(0, (state.timeLeft / ROUND_SECONDS) * 100) + '%';
+  }
+
+  function endRound() {
+    state.playing = false;
+    clearInterval(state.timerId);
+    if (state.score > save.boggle.highScore) { save.boggle.highScore = state.score; persist(); }
+    sfxWin();
+    var missed = [];
+    state.allFound.forEach(function (path, w) { if (!state.foundWords[w] && w.length >= 5) missed.push(w); });
+    missed.sort(function (a, b) { return b.length - a.length; });
+    showResult({
+      title: 'הזמן נגמר!',
+      body: 'מצאתם ' + Object.keys(state.foundWords).length + ' מילים' + (missed.length ? ('. אפשר היה גם: ' + missed.slice(0, 5).join(', ')) : ''),
+      stats: [{ value: state.score, label: 'ניקוד' }, { value: save.boggle.highScore, label: 'שיא' }],
+      onAgain: function () { start(); }
+    });
+    document.getElementById('btnBoggleStart').textContent = 'סיבוב חדש';
+  }
+
+  var gridEl = document.getElementById('boggleGrid');
+  var inputWired = false;
+
+  function renderGrid() {
+    gridEl.style.gridTemplateColumns = 'repeat(' + SIZE + ', 1fr)';
+    gridEl.innerHTML = '';
+    state.letters.forEach(function (ch, i) {
+      var cell = document.createElement('div');
+      cell.className = 'boggle-cell'; cell.textContent = ch; cell.dataset.idx = i;
+      gridEl.appendChild(cell);
+    });
+    if (!inputWired) { wireInput(gridEl); inputWired = true; }
+  }
+
+  function wireInput(grid) {
+    var dragging = false;
+    function cellAt(x, y) {
+      var el = document.elementFromPoint(x, y);
+      return el && el.classList.contains('boggle-cell') ? el : null;
+    }
+    function tryAdd(cell) {
+      if (!cell || !state.playing) return;
+      var idx = Number(cell.dataset.idx);
+      if (state.selection.indexOf(idx) !== -1) return;
+      if (state.selection.length > 0) {
+        var last = state.selection[state.selection.length - 1];
+        if (Engine.neighborCells(last, SIZE).indexOf(idx) === -1) return;
+      }
+      state.selection.push(idx);
+      cell.classList.add('sel');
+      haptic(8);
+      updateCurrentWord();
+    }
+    function updateCurrentWord() {
+      var word = state.selection.map(function (i) { return state.letters[i]; }).join('');
+      document.getElementById('boggleCurrent').textContent = word || ' ';
+    }
+    function finishSelection() {
+      if (!dragging) return;
+      dragging = false;
+      var plain = state.selection.map(function (i) { return state.letters[i]; }).join('');
+      var final = Engine.finalizeWord(plain);
+      var valid = plain.length >= 3 && (engine.trie.has(plain) || engine.trie.has(final));
+      var word = engine.trie.has(final) ? final : plain;
+      if (valid && !state.foundWords[word]) {
+        state.foundWords[word] = true;
+        var pts = Engine.scoreWord(word);
+        state.score += pts;
+        sfxFound(word.length);
+        haptic([10, 30, 10]);
+        addFoundChip(word, pts);
+        document.getElementById('boggleScore').textContent = state.score;
+      } else if (valid && state.foundWords[word]) {
+        toast('כבר מצאתם את ' + word);
+      } else if (plain.length >= 3) {
+        toast('לא מילה מוכרת');
+      }
+      grid.querySelectorAll('.sel').forEach(function (c) { c.classList.remove('sel'); });
+      state.selection = [];
+      updateCurrentWord();
+    }
+    grid.addEventListener('pointerdown', function (e) {
+      if (!state.playing) return;
+      dragging = true;
+      tryAdd(e.target.closest('.boggle-cell'));
+      e.preventDefault();
+    });
+    grid.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      tryAdd(cellAt(e.clientX, e.clientY));
+    });
+    window.addEventListener('pointerup', finishSelection);
+  }
+
+  function addFoundChip(word, pts) {
+    var host = document.getElementById('boggleFound');
+    var chip = document.createElement('span');
+    chip.className = 'found-chip'; chip.textContent = word + ' +' + pts;
+    host.insertBefore(chip, host.firstChild);
+  }
+
+  function render() {
+    document.getElementById('boggleFound').innerHTML = '';
+    document.getElementById('boggleScore').textContent = state.score || 0;
+    document.getElementById('boggleCurrent').textContent = ' ';
+    updateTimerUI();
+    if (state.letters) renderGrid();
+    document.getElementById('btnBoggleStart').textContent = state.letters ? 'סיבוב חדש' : 'התחל סיבוב';
+  }
+
+  document.getElementById('btnBoggleStart').addEventListener('click', function () { ensureAudio(); start(); });
+
+  return { enter: enter };
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   אנגרם בזק
+   ══════════════════════════════════════════════════════════════ */
+var Anagram = (function () {
+  var ROUND_LENGTHS = [4, 4, 5, 5, 6, 6, 7];
+  var TIME_BY_LEN = { 4: 22, 5: 26, 6: 32, 7: 40 };
+  var state = null; // {round, lives, score, word, scrambled, answerIdx:[], timeLeft, timerId, playing}
+
+  function enter() { if (!state) idle(); renderIdle(); }
+
+  function idle() { state = { round: 0, lives: 3, score: 0, playing: false }; }
+
+  function start() {
+    state = { round: 0, lives: 3, score: 0, playing: true };
+    nextRound();
+  }
+
+  function nextRound() {
+    state.round++;
+    var len = ROUND_LENGTHS[Math.min(state.round - 1, ROUND_LENGTHS.length - 1)];
+    var seed = Date.now() ^ (state.round * 7919);
+    var word = Engine.pickAnagramWord(engine, len, seed);
+    var scrambled = Engine.shuffleLetters(word, seed + 1);
+    state.word = word; state.scrambled = scrambled; state.answerIdx = [];
+    state.timeLeft = TIME_BY_LEN[len] || 30;
+    render();
+    clearInterval(state.timerId);
+    state.timerId = setInterval(function () {
+      state.timeLeft -= 0.2;
+      updateTimerBar(len);
+      if (state.timeLeft <= 0) roundFail('הזמן נגמר');
+    }, 200);
+  }
+
+  function updateTimerBar(len) {
+    var total = TIME_BY_LEN[len] || 30;
+    document.getElementById('anaTimerFill').style.width = Math.max(0, (state.timeLeft / total) * 100) + '%';
+  }
+
+  function render() {
+    document.getElementById('anaRound').textContent = 'סיבוב ' + state.round;
+    document.getElementById('anaScore').textContent = 'ניקוד: ' + state.score;
+    renderLives();
+    renderTiles();
+    renderAnswer();
+    document.getElementById('btnAnaStart').hidden = true;
+  }
+
+  function renderIdle() {
+    document.getElementById('anaRound').textContent = 'מוכנים?';
+    document.getElementById('anaScore').textContent = 'שיא: ' + save.anagram.highScore;
+    document.getElementById('anaAnswer').innerHTML = '';
+    document.getElementById('anaTiles').innerHTML = '';
+    document.getElementById('anaLives').textContent = '';
+    document.getElementById('btnAnaStart').hidden = false;
+  }
+
+  function renderLives() {
+    document.getElementById('anaLives').textContent = '❤️'.repeat(Math.max(0, state.lives));
+  }
+
+  function renderTiles() {
+    var host = document.getElementById('anaTiles');
+    host.innerHTML = '';
+    state.scrambled.split('').forEach(function (ch, i) {
+      var t = document.createElement('div');
+      t.className = 'ana-letter' + (state.answerIdx.indexOf(i) !== -1 ? ' used' : '');
+      t.textContent = ch;
+      t.addEventListener('click', function () {
+        if (!state.playing || state.answerIdx.indexOf(i) !== -1) return;
+        state.answerIdx.push(i);
+        sfxKey();
+        renderTiles(); renderAnswer();
+        if (state.answerIdx.length === state.scrambled.length) checkAnswer();
+      });
+      host.appendChild(t);
+    });
+  }
+
+  function renderAnswer() {
+    var host = document.getElementById('anaAnswer');
+    host.innerHTML = '';
+    state.answerIdx.forEach(function (i) {
+      var t = document.createElement('div'); t.className = 'tile filled';
+      t.textContent = state.scrambled[i];
+      host.appendChild(t);
+    });
+    for (var i = state.answerIdx.length; i < state.scrambled.length; i++) {
+      var t2 = document.createElement('div'); t2.className = 'tile';
+      host.appendChild(t2);
+    }
+  }
+
+  function checkAnswer() {
+    var guess = state.answerIdx.map(function (i) { return state.scrambled[i]; }).join('');
+    if (Engine.checkAnagramAnswer(engine, state.scrambled, guess)) {
+      clearInterval(state.timerId);
+      var pts = guess.length * 10 + Math.round(state.timeLeft * 2);
+      state.score += pts;
+      sfxCorrect(); haptic([10, 30, 10]);
+      toast('כל הכבוד! +' + pts);
+      setTimeout(nextRound, 700);
+    } else {
+      state.answerIdx = [];
+      sfxAbsent(); haptic(40);
+      toast('לא מדויק, נסו שוב');
+      renderTiles(); renderAnswer();
+    }
+  }
+
+  function roundFail(reason) {
+    clearInterval(state.timerId);
+    state.lives--;
+    sfxLose(); haptic([40, 40, 40]);
+    toast(reason + ' — המילה: ' + state.word);
+    if (state.lives <= 0) { endGame(); return; }
+    setTimeout(nextRound, 900);
+  }
+
+  function endGame() {
+    state.playing = false;
+    if (state.score > save.anagram.highScore) { save.anagram.highScore = state.score; persist(); }
+    showResult({
+      title: 'המשחק נגמר',
+      body: 'הגעתם לסיבוב ' + state.round,
+      stats: [{ value: state.score, label: 'ניקוד' }, { value: save.anagram.highScore, label: 'שיא' }],
+      onAgain: function () { start(); }
+    });
+    renderIdle();
+  }
+
+  document.getElementById('btnAnaStart').addEventListener('click', function () { ensureAudio(); start(); });
+  document.getElementById('btnAnaShuffle').addEventListener('click', function () {
+    if (!state || !state.playing || state.answerIdx.length > 0) return;
+    state.scrambled = Engine.shuffleLetters(state.word, Date.now());
+    renderTiles();
+  });
+  document.getElementById('btnAnaClear').addEventListener('click', function () {
+    if (!state || !state.playing) return;
+    state.answerIdx = [];
+    renderTiles(); renderAnswer();
+  });
+
+  return { enter: enter };
+})();
+
+/* ═══════════════════ אתחול כללי ═══════════════════ */
+function boot() {
+  engine = Engine.buildEngine(window.WordGamesDict);
+  document.getElementById('loadingVeil').hidden = true;
+  showScreen('hub');
+  refreshHub();
+}
+setTimeout(boot, 30); // מאפשר לצייר את מסך הטעינה לפני החישוב הכבד
+
+/* ═══════════════════ התקנת PWA ═══════════════════ */
+var installEvt = null;
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault(); installEvt = e;
+  document.getElementById('btnInstall').hidden = false;
+});
+document.getElementById('btnInstall').addEventListener('click', function () {
+  if (installEvt) { installEvt.prompt(); installEvt = null; this.hidden = true; }
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
