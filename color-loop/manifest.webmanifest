@@ -1,0 +1,20 @@
+{
+  "name": "מעגל הצבעים — פאזל צבעים",
+  "short_name": "מעגל הצבעים",
+  "description": "כדורים זורמים סביב לולאה אל עבר הבור. יורים כדורים מהמרכז כדי ליצור שלשות תואמות ולפלוט אותן לפני שהראש מגיע לסוף.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0A0C12",
+  "theme_color": "#0A0C12",
+  "categories": ["games", "puzzle"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

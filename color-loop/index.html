@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0C12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="מעגל הצבעים">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<title>מעגל הצבעים</title>
+<meta name="description" content="פאזל צבעים בקצב מהיר: כדורים זזים סביב לולאה למרכז המסך, ואתם יורים כדורים משלכם כדי ליצור שלשות תואמות ולפלוט אותם לפני שהם מגיעים לבור.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@500;700;900&display=swap">
+<style>
+:root{
+  --ground:#0A0C12; --sunk:#070911;
+  --panel:#141824; --panel-2:#1A2030; --raise:#222941;
+  --line:#252C40; --line-soft:#1C2233;
+  --ink:#E9ECF6; --ink-2:#98A2BD; --ink-3:#69738F;
+  --accent:#FF7A45; --accent-2:#FFA173; --accent-glow:rgba(255,122,69,.16);
+  --good:#3FCF8E; --bad:#F2545B; --warn:#F0B429;
+  --r:16px; --r-sm:10px;
+  --body:'Assistant',system-ui,'Segoe UI',sans-serif;
+  --display:'Heebo','Assistant',system-ui,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--ground); color:var(--ink); font-family:var(--body);
+  overscroll-behavior:none; -webkit-tap-highlight-color:transparent; user-select:none;
+  touch-action:none;
+}
+button{font-family:inherit; -webkit-tap-highlight-color:transparent;}
+.screen{
+  position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  transition:opacity .25s ease; overflow:hidden;
+}
+.screen[hidden]{display:none;}
+.title{
+  font-family:var(--display); font-weight:900; font-size:clamp(28px,8vw,44px);
+  background:linear-gradient(135deg,var(--accent),#3ED9E8,#8B7BFF);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  margin:0 0 6px; text-align:center;
+}
+.subtitle{color:var(--ink-2); margin:0 0 28px; text-align:center; font-size:15px; max-width:320px; line-height:1.6;}
+.btn{
+  appearance:none; border:none; border-radius:var(--r); padding:16px 28px; font-size:17px;
+  font-weight:700; font-family:var(--display); cursor:pointer; color:var(--ink);
+  background:var(--panel-2); border:1px solid var(--line); transition:transform .1s ease, background .15s ease;
+  min-width:220px;
+}
+.btn:active{transform:scale(.96);}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#FF9564); color:#1A0D06; box-shadow:0 8px 24px var(--accent-glow);}
+.btn-ghost{background:transparent; border-color:var(--line); color:var(--ink-2); min-width:0; padding:10px 18px; font-size:14px;}
+.menu-stack{display:flex; flex-direction:column; gap:12px; align-items:center; width:100%;}
+.icon-btn{
+  width:44px; height:44px; border-radius:50%; border:1px solid var(--line); background:var(--panel);
+  color:var(--ink-2); display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer;
+}
+.top-bar{position:absolute; top:max(14px, env(safe-area-inset-top)); left:14px; right:14px; display:flex; justify-content:space-between; z-index:5;}
+
+/* ── level select ── */
+#screen-levels{justify-content:flex-start; padding-top:max(70px, calc(env(safe-area-inset-top) + 60px));}
+.level-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px; width:100%; max-width:420px;
+  overflow-y:auto; padding-bottom:24px;
+}
+.level-cell{
+  aspect-ratio:1; border-radius:var(--r-sm); border:1px solid var(--line); background:var(--panel);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;
+  color:var(--ink); font-weight:700; position:relative;
+}
+.level-cell.locked{opacity:.35; cursor:default;}
+.level-cell .num{font-family:var(--display); font-size:18px;}
+.level-cell .stars{font-size:10px; letter-spacing:1px; color:var(--warn);}
+
+/* ── game screen ── */
+#screen-game{padding:0; justify-content:flex-start;}
+.hud{
+  position:absolute; top:0; left:0; right:0; z-index:6; display:flex; justify-content:space-between;
+  align-items:flex-start; padding:max(12px, env(safe-area-inset-top)) 14px 0;
+  pointer-events:none;
+}
+.hud > *{pointer-events:auto;}
+.hud-chip{
+  background:rgba(20,24,36,.82); backdrop-filter:blur(6px); border:1px solid var(--line);
+  border-radius:12px; padding:8px 14px; display:flex; flex-direction:column; gap:1px;
+}
+.hud-chip .label{font-size:10px; color:var(--ink-3); letter-spacing:.5px;}
+.hud-chip .value{font-family:var(--display); font-weight:800; font-size:20px;}
+#gameCanvas{display:block; width:100%; height:100%; touch-action:none;}
+.combo-badge{
+  position:absolute; top:70px; left:50%; transform:translateX(-50%) scale(0); z-index:6;
+  font-family:var(--display); font-weight:900; font-size:22px; color:var(--warn);
+  text-shadow:0 0 12px rgba(240,180,41,.6); transition:transform .18s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+}
+.combo-badge.show{transform:translateX(-50%) scale(1);}
+.tutorial-hint{
+  position:absolute; bottom:max(28px, env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+  z-index:6; background:rgba(20,24,36,.92); border:1px solid var(--line); border-radius:14px;
+  padding:12px 18px; max-width:280px; text-align:center; font-size:14px; color:var(--ink-2);
+  opacity:0; transition:opacity .4s ease; pointer-events:none;
+}
+.tutorial-hint.show{opacity:1;}
+
+/* ── overlays ── */
+.overlay{
+  position:absolute; inset:0; background:rgba(7,9,17,.86); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center; z-index:20;
+}
+.overlay[hidden]{display:none;}
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:32px 28px;
+  display:flex; flex-direction:column; align-items:center; gap:14px; width:min(320px, 88vw);
+  animation:pop-in .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pop-in{from{transform:scale(.85); opacity:0;} to{transform:scale(1); opacity:1;}}
+.card h2{margin:0; font-family:var(--display);}
+.stars-row{display:flex; gap:8px; font-size:34px; line-height:1; margin:4px 0;}
+.stars-row span{opacity:.25; transition:opacity .2s ease, transform .2s ease;}
+.stars-row span.lit{opacity:1; animation:star-pop .35s ease;}
+@keyframes star-pop{0%{transform:scale(0) rotate(-30deg);} 60%{transform:scale(1.3) rotate(8deg);} 100%{transform:scale(1) rotate(0);}}
+.score-line{color:var(--ink-2); font-size:14px;}
+
+/* ── toggle ── */
+.toggle-row{display:flex; align-items:center; justify-content:space-between; width:100%; padding:10px 0; border-bottom:1px solid var(--line-soft);}
+.toggle-row:last-child{border-bottom:none;}
+.switch{width:44px; height:26px; border-radius:14px; background:var(--raise); position:relative; cursor:pointer; border:none;}
+.switch::after{content:''; position:absolute; width:20px; height:20px; border-radius:50%; background:var(--ink-2); top:3px; right:3px; transition:.2s ease;}
+.switch.on{background:var(--accent);}
+.switch.on::after{background:#1A0D06; right:21px;}
+
+@media (max-width:380px){
+  .level-grid{grid-template-columns:repeat(4,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ תפריט ראשי ═══════ -->
+<section class="screen" id="screen-menu">
+  <div class="top-bar">
+    <button class="icon-btn" id="btnSettings" aria-label="הגדרות">⚙︎</button>
+    <button class="icon-btn" id="btnInstall" aria-label="התקנה" hidden>⤓</button>
+  </div>
+  <h1 class="title">מעגל הצבעים</h1>
+  <p class="subtitle">כדורים זורמים סביב הלולאה אל עבר הבור. יירו כדורים מהמרכז כדי ליצור שלשות באותו צבע ולפלוט אותן — לפני שהראש מגיע לסוף.</p>
+  <div class="menu-stack">
+    <button class="btn btn-primary" id="btnPlay">שחקו</button>
+    <button class="btn" id="btnLevels">בחירת שלב</button>
+  </div>
+</section>
+
+<!-- ═══════ בחירת שלב ═══════ -->
+<section class="screen" id="screen-levels" hidden>
+  <div class="top-bar">
+    <button class="icon-btn" id="btnLevelsBack" aria-label="חזרה">→</button>
+  </div>
+  <div class="level-grid" id="levelGrid"></div>
+</section>
+
+<!-- ═══════ מסך משחק ═══════ -->
+<section class="screen" id="screen-game" hidden>
+  <div class="hud">
+    <div class="hud-chip">
+      <span class="label">שלב</span>
+      <span class="value" id="hudLevel">1</span>
+    </div>
+    <div class="hud-chip" style="align-items:center;">
+      <span class="label">ניקוד</span>
+      <span class="value" id="hudScore">0</span>
+    </div>
+    <button class="icon-btn" id="btnPause" aria-label="השהיה">⏸</button>
+  </div>
+  <div class="combo-badge" id="comboBadge">שילוב ×2!</div>
+  <canvas id="gameCanvas"></canvas>
+  <div class="tutorial-hint" id="tutorialHint">גררו כדי לכוון, שחררו כדי לירות — שלושה כדורים באותו צבע נפלטים 🎯</div>
+
+  <div class="overlay" id="overlayPause" hidden>
+    <div class="card">
+      <h2>השהיה</h2>
+      <button class="btn btn-primary" id="btnResume">המשך</button>
+      <button class="btn" id="btnPauseSound">🔊 צליל</button>
+      <button class="btn btn-ghost" id="btnPauseMenu">תפריט ראשי</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlayWin" hidden>
+    <div class="card">
+      <h2>ניצחתם! 🎉</h2>
+      <div class="stars-row" id="winStars"><span>★</span><span>★</span><span>★</span></div>
+      <p class="score-line" id="winScoreLine">ניקוד: 0</p>
+      <button class="btn btn-primary" id="btnNextLevel">השלב הבא</button>
+      <button class="btn btn-ghost" id="btnWinMenu">תפריט ראשי</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlayLose" hidden>
+    <div class="card">
+      <h2>הכדורים הגיעו לבור...</h2>
+      <p class="score-line" id="loseScoreLine">ניקוד: 0</p>
+      <button class="btn btn-primary" id="btnRetry">נסו שוב</button>
+      <button class="btn btn-ghost" id="btnLoseMenu">תפריט ראשי</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ הגדרות ═══════ -->
+<div class="overlay" id="overlaySettings" hidden>
+  <div class="card">
+    <h2>הגדרות</h2>
+    <div style="width:100%;">
+      <div class="toggle-row">
+        <span>צליל</span>
+        <button class="switch on" id="toggleSound"></button>
+      </div>
+      <div class="toggle-row">
+        <span>רטט</span>
+        <button class="switch on" id="toggleHaptics"></button>
+      </div>
+    </div>
+    <button class="btn btn-ghost" id="btnResetProgress">איפוס התקדמות</button>
+    <button class="btn btn-primary" id="btnCloseSettings">סגירה</button>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="levels.js"></script>
+<script>
+'use strict';
+const engine = window.ColorLoopEngine;
+const LEVELS = window.ColorLoopLevels.buildLevels();
+const starsFor = window.ColorLoopLevels.starsFor;
+
+/* ═══════════════════ שמירה ═══════════════════ */
+const SAVE_KEY = 'colorLoopSave.v1';
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) throw 0;
+    const data = JSON.parse(raw);
+    if (data.version !== 1) throw 0;
+    if (typeof data.tutorialSeen !== 'boolean') data.tutorialSeen = false;
+    return data;
+  } catch (e) {
+    return { version: 1, unlockedLevel: 1, stars: {}, settings: { sound: true, haptics: true }, tutorialSeen: false };
+  }
+}
+const save = loadSave();
+function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+
+/* ═══════════════════ צליל (Web Audio, סינתטי — בלי קבצים) ═══════════════════ */
+let actx = null;
+function ensureAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }
+function beep(freq, duration, type, gain, delay) {
+  if (!save.settings.sound || !actx) return;
+  const t0 = actx.currentTime + (delay || 0);
+  const osc = actx.createOscillator();
+  const g = actx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(gain || 0.18, t0 + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+  osc.connect(g); g.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + duration + 0.02);
+}
+function sfxShoot() { beep(520, 0.07, 'triangle', 0.1); }
+function sfxPop(combo) { const f = 380 + Math.min(combo, 10) * 55; beep(f, 0.16, 'square', 0.16); beep(f * 1.5, 0.12, 'sine', 0.08, 0.03); }
+function sfxWin() { [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.22, 'triangle', 0.14, i * 0.09)); }
+function sfxLose() { [300, 250, 200, 150].forEach((f, i) => beep(f, 0.25, 'sawtooth', 0.1, i * 0.08)); }
+function haptic(pattern) { if (save.settings.haptics && navigator.vibrate) navigator.vibrate(pattern); }
+
+/* ═══════════════════ ניווט מסכים ═══════════════════ */
+const screens = {
+  menu: document.getElementById('screen-menu'),
+  levels: document.getElementById('screen-levels'),
+  game: document.getElementById('screen-game'),
+};
+function showScreen(name) {
+  for (const k in screens) screens[k].hidden = k !== name;
+}
+
+/* ═══════════════════ בחירת שלב ═══════════════════ */
+const levelGrid = document.getElementById('levelGrid');
+function renderLevelGrid() {
+  levelGrid.innerHTML = '';
+  for (const lvl of LEVELS) {
+    const locked = lvl.id > save.unlockedLevel;
+    const cell = document.createElement('div');
+    cell.className = 'level-cell' + (locked ? ' locked' : '');
+    const s = save.stars[lvl.id] || 0;
+    cell.innerHTML = `<span class="num">${locked ? '🔒' : lvl.id}</span>` +
+      (locked ? '' : `<span class="stars">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>`);
+    if (!locked) cell.addEventListener('click', () => startLevel(lvl.id));
+    levelGrid.appendChild(cell);
+  }
+}
+
+document.getElementById('btnPlay').addEventListener('click', () => { ensureAudio(); startLevel(save.unlockedLevel); });
+document.getElementById('btnLevels').addEventListener('click', () => { ensureAudio(); renderLevelGrid(); showScreen('levels'); });
+document.getElementById('btnLevelsBack').addEventListener('click', () => showScreen('menu'));
+
+/* ═══════════════════ הגדרות ═══════════════════ */
+const overlaySettings = document.getElementById('overlaySettings');
+function syncSettingsUI() {
+  document.getElementById('toggleSound').classList.toggle('on', save.settings.sound);
+  document.getElementById('toggleHaptics').classList.toggle('on', save.settings.haptics);
+}
+document.getElementById('btnSettings').addEventListener('click', () => { syncSettingsUI(); overlaySettings.hidden = false; });
+document.getElementById('btnCloseSettings').addEventListener('click', () => { overlaySettings.hidden = true; });
+document.getElementById('toggleSound').addEventListener('click', () => { save.settings.sound = !save.settings.sound; persist(); syncSettingsUI(); });
+document.getElementById('toggleHaptics').addEventListener('click', () => { save.settings.haptics = !save.settings.haptics; persist(); syncSettingsUI(); });
+document.getElementById('btnResetProgress').addEventListener('click', () => {
+  if (!confirm('לאפס את כל ההתקדמות?')) return;
+  save.unlockedLevel = 1; save.stars = {}; persist(); renderLevelGrid();
+});
+
+/* ═══════════════════ התקנה כאפליקציה ═══════════════════ */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; document.getElementById('btnInstall').hidden = false; });
+document.getElementById('btnInstall').addEventListener('click', () => { if (installEvt) { installEvt.prompt(); installEvt = null; } });
+
+/* ═══════════════════ גיאומטריית הטבעת ═══════════════════ */
+const GAP = 0.5; // רדיאנים — הפער החזותי למעלה, שם הכדורים "נכנסים" ו"נופלים"
+const START_ANGLE = -Math.PI / 2 + GAP / 2;
+const SWEEP = Math.PI * 2 - GAP;
+
+function posToAngle(pos, trackLength) { return START_ANGLE + (pos / trackLength) * SWEEP; }
+function angleToPos(theta, trackLength) {
+  let diff = theta - START_ANGLE;
+  diff = ((diff % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  if (diff > SWEEP) {
+    const distToStart = 2 * Math.PI - diff;
+    const distToEnd = diff - SWEEP;
+    diff = (distToEnd < distToStart) ? SWEEP : 0;
+  }
+  return (diff / SWEEP) * trackLength;
+}
+
+const COLORS = [
+  { hex: '#FF6B4A', shape: 'dot' },
+  { hex: '#3ED9E8', shape: 'triangle' },
+  { hex: '#8B7BFF', shape: 'square' },
+  { hex: '#3FCF8E', shape: 'diamond' },
+  { hex: '#F0B429', shape: 'plus' },
+  { hex: '#F2545B', shape: 'ring' },
+];
+
+function drawShape(ctx, shape, x, y, s) {
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.strokeStyle = 'rgba(255,255,255,.85)';
+  ctx.lineWidth = Math.max(1.5, s * 0.22);
+  ctx.beginPath();
+  switch (shape) {
+    case 'dot':
+      ctx.arc(x, y, s * 0.32, 0, Math.PI * 2); ctx.fill(); break;
+    case 'triangle':
+      ctx.moveTo(x, y - s * 0.42); ctx.lineTo(x + s * 0.4, y + s * 0.3); ctx.lineTo(x - s * 0.4, y + s * 0.3);
+      ctx.closePath(); ctx.fill(); break;
+    case 'square':
+      ctx.rect(x - s * 0.32, y - s * 0.32, s * 0.64, s * 0.64); ctx.fill(); break;
+    case 'diamond':
+      ctx.moveTo(x, y - s * 0.42); ctx.lineTo(x + s * 0.42, y); ctx.lineTo(x, y + s * 0.42); ctx.lineTo(x - s * 0.42, y);
+      ctx.closePath(); ctx.fill(); break;
+    case 'plus':
+      ctx.rect(x - s * 0.12, y - s * 0.42, s * 0.24, s * 0.84); ctx.fill();
+      ctx.beginPath(); ctx.rect(x - s * 0.42, y - s * 0.12, s * 0.84, s * 0.24); ctx.fill(); break;
+    case 'ring':
+      ctx.arc(x, y, s * 0.32, 0, Math.PI * 2); ctx.stroke(); break;
+  }
+}
+
+/* ═══════════════════ מצב משחק ═══════════════════ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let dpr = Math.max(1, window.devicePixelRatio || 1);
+let W = 0, H = 0, cx = 0, cy = 0, ringR = 0, ballR = 0;
+
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  cx = W / 2; cy = H / 2;
+  ringR = Math.min(W, H) * 0.40;
+  ballR = ringR * 0.11;
+}
+window.addEventListener('resize', resize);
+
+let gameState = null;
+let currentLevel = null;
+let aimAngle = -Math.PI / 2;
+let isAiming = false;
+let running = false;
+let lastTime = 0;
+let displayScore = 0;
+let particles = [];
+let floaters = [];
+let shakeAmt = 0;
+let comboBadgeTimer = 0;
+let turretRecoil = 0;
+
+function startLevel(id) {
+  currentLevel = LEVELS.find(l => l.id === id) || LEVELS[0];
+  gameState = engine.createLevel(currentLevel, currentLevel.seed + Date.now() % 1000);
+  displayScore = 0;
+  particles = []; floaters = []; shakeAmt = 0;
+  aimAngle = -Math.PI / 2;
+  document.getElementById('hudLevel').textContent = currentLevel.id;
+  document.getElementById('overlayWin').hidden = true;
+  document.getElementById('overlayLose').hidden = true;
+  document.getElementById('overlayPause').hidden = true;
+  showScreen('game');
+  requestAnimationFrame(() => { resize(); });
+  running = true;
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
+
+  if (!save.tutorialSeen) {
+    document.getElementById('tutorialHint').classList.add('show');
+  }
+}
+function dismissTutorial() {
+  if (save.tutorialSeen) return;
+  save.tutorialSeen = true; persist();
+  document.getElementById('tutorialHint').classList.remove('show');
+}
+
+function endLevelResult() {
+  const won = gameState.status === 'won';
+  if (won) {
+    const stars = starsFor(currentLevel, { won: true, score: gameState.score, maxCombo: maxComboSeen });
+    const prevStars = save.stars[currentLevel.id] || 0;
+    if (stars > prevStars) save.stars[currentLevel.id] = stars;
+    if (currentLevel.id === save.unlockedLevel && save.unlockedLevel < LEVELS.length) save.unlockedLevel++;
+    persist();
+    document.getElementById('winScoreLine').textContent = 'ניקוד: ' + gameState.score;
+    const starEls = document.querySelectorAll('#winStars span');
+    starEls.forEach((el, i) => { el.classList.toggle('lit', i < stars); el.style.animationDelay = (i * 0.12) + 's'; });
+    document.getElementById('overlayWin').hidden = false;
+    sfxWin(); haptic([40, 60, 40, 60, 80]);
+  } else {
+    document.getElementById('loseScoreLine').textContent = 'ניקוד: ' + gameState.score;
+    document.getElementById('overlayLose').hidden = false;
+    sfxLose(); haptic([120]);
+  }
+  running = false;
+}
+
+let maxComboSeen = 0;
+
+function loop(now) {
+  if (!running) return;
+  let dt = (now - lastTime) / 1000;
+  lastTime = now;
+  dt = Math.min(dt, 0.05);
+
+  engine.tick(gameState, dt);
+  maxComboSeen = Math.max(maxComboSeen, gameState.combo);
+  handleEvents(gameState.lastEvents);
+
+  displayScore += (gameState.score - displayScore) * Math.min(1, dt * 8);
+  if (Math.abs(displayScore - gameState.score) < 0.5) displayScore = gameState.score;
+  document.getElementById('hudScore').textContent = Math.round(displayScore);
+
+  updateParticles(dt);
+  updateFloaters(dt);
+  if (shakeAmt > 0) shakeAmt = Math.max(0, shakeAmt - dt * 40);
+  if (turretRecoil > 0) turretRecoil = Math.max(0, turretRecoil - dt * 6);
+
+  render();
+
+  if (gameState.status !== 'playing') { endLevelResult(); return; }
+  requestAnimationFrame(loop);
+}
+
+function handleEvents(events) {
+  for (const e of events) {
+    if (e.type === 'pop') {
+      const ang = posToAngle(e.pos + gameState.cfg.ballWidth / 2, gameState.cfg.trackLength);
+      spawnParticles(cx + Math.cos(ang) * ringR, cy + Math.sin(ang) * ringR, COLORS[e.color % COLORS.length].hex, e.count);
+      spawnFloater(cx + Math.cos(ang) * ringR, cy + Math.sin(ang) * ringR, '+' + e.score, e.combo > 1);
+      sfxPop(e.combo);
+      haptic(e.combo > 2 ? [20, 30, 20] : [18]);
+      if (e.combo > 1) { shakeAmt = Math.min(14, 4 + e.combo * 1.6); showComboBadge(e.combo); }
+    }
+  }
+}
+const comboBadgeEl = document.getElementById('comboBadge');
+function showComboBadge(n) {
+  comboBadgeEl.textContent = 'שילוב ×' + n + '!';
+  comboBadgeEl.classList.add('show');
+  comboBadgeTimer = 0.9;
+}
+
+/* ── חלקיקים ── */
+function spawnParticles(x, y, color, count) {
+  const n = Math.min(18, 6 + count * 3);
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const spd = 60 + Math.random() * 140;
+    particles.push({ x, y, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, life: 0.5 + Math.random() * 0.35, age: 0, color, size: 2 + Math.random() * 3 });
+  }
+}
+function updateParticles(dt) {
+  for (const p of particles) { p.age += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92; }
+  particles = particles.filter(p => p.age < p.life);
+}
+function spawnFloater(x, y, text, big) {
+  floaters.push({ x, y, text, age: 0, life: 0.9, big });
+}
+function updateFloaters(dt) {
+  for (const f of floaters) f.age += dt;
+  floaters = floaters.filter(f => f.age < f.life);
+}
+
+/* ═══════════════════ רינדור ═══════════════════ */
+function render() {
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  let ox = 0, oy = 0;
+  if (shakeAmt > 0) { ox = (Math.random() - 0.5) * shakeAmt; oy = (Math.random() - 0.5) * shakeAmt; ctx.translate(ox, oy); }
+
+  drawBackground();
+  drawTrack();
+  drawChain();
+  drawParticles();
+  drawTurret();
+  drawFloaters();
+
+  ctx.restore();
+
+  if (comboBadgeTimer > 0) { comboBadgeTimer -= 1 / 60; if (comboBadgeTimer <= 0) comboBadgeEl.classList.remove('show'); }
+}
+
+function drawBackground() {
+  const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, Math.max(W, H) * 0.7);
+  g.addColorStop(0, '#141824'); g.addColorStop(1, '#0A0C12');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+function drawTrack() {
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR, START_ANGLE, START_ANGLE + SWEEP, false);
+  ctx.strokeStyle = '#1C2233'; ctx.lineWidth = ballR * 2.15; ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR, START_ANGLE, START_ANGLE + SWEEP, false);
+  ctx.strokeStyle = '#252C40'; ctx.lineWidth = 2; ctx.stroke();
+
+  // סמן "בור" (סוף המסלול, מקום ההפסד)
+  const drainAng = START_ANGLE + SWEEP;
+  const dx = cx + Math.cos(drainAng) * ringR, dy = cy + Math.sin(drainAng) * ringR;
+  ctx.beginPath(); ctx.arc(dx, dy, ballR * 1.1, 0, Math.PI * 2);
+  ctx.fillStyle = '#3A1620'; ctx.fill();
+  ctx.strokeStyle = '#F2545B'; ctx.lineWidth = 2; ctx.stroke();
+
+  // סמן כניסה
+  const sx = cx + Math.cos(START_ANGLE) * ringR, sy = cy + Math.sin(START_ANGLE) * ringR;
+  ctx.beginPath(); ctx.arc(sx, sy, ballR * 0.9, 0, Math.PI * 2);
+  ctx.strokeStyle = '#3A4160'; ctx.lineWidth = 2; ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawChain() {
+  if (!gameState) return;
+  const { chain, cfg } = gameState;
+  for (const b of chain) {
+    if (b.pos < -cfg.ballWidth * 1.5) continue; // עוד לא "נכנס" חזותית
+    const ang = posToAngle(Math.max(0, Math.min(b.pos, cfg.trackLength)), cfg.trackLength);
+    const x = cx + Math.cos(ang) * ringR, y = cy + Math.sin(ang) * ringR;
+    drawBall(x, y, ballR, b.color);
+  }
+}
+
+function drawBall(x, y, r, colorIdx) {
+  const c = COLORS[colorIdx % COLORS.length];
+  const grad = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r);
+  grad.addColorStop(0, shade(c.hex, 40));
+  grad.addColorStop(1, c.hex);
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
+  drawShape(ctx, c.shape, x, y, r * 1.5);
+}
+function shade(hex, pct) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = (n >> 16) + pct, g = (n >> 8 & 0xff) + pct, b = (n & 0xff) + pct;
+  r = Math.min(255, r); g = Math.min(255, g); b = Math.min(255, b);
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const t = 1 - p.age / p.life;
+    ctx.globalAlpha = Math.max(0, t);
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * t + 1, 0, Math.PI * 2);
+    ctx.fillStyle = p.color; ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawFloaters() {
+  ctx.textAlign = 'center'; ctx.font = '700 15px Heebo, Assistant, sans-serif';
+  for (const f of floaters) {
+    const t = f.age / f.life;
+    ctx.globalAlpha = Math.max(0, 1 - t);
+    ctx.fillStyle = f.big ? '#F0B429' : '#E9ECF6';
+    ctx.fillText(f.text, f.x, f.y - t * 34);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawTurret() {
+  if (!gameState) return;
+  const baseR = ringR * 0.32;
+  ctx.beginPath(); ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+  ctx.fillStyle = '#1A2030'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = '#2A3350'; ctx.stroke();
+
+  // קנה שמצביע לכיוון הכיוונון
+  const barrelLen = baseR * (0.95 - turretRecoil * 0.25);
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(aimAngle);
+  ctx.fillStyle = '#2A3350';
+  ctx.fillRect(0, -ballR * 0.55, barrelLen, ballR * 1.1);
+  ctx.restore();
+
+  // כדור נוכחי במרכז
+  drawBall(cx, cy, ballR * 0.85, gameState.shooter.current);
+
+  // תצוגה מקדימה של הכדור הבא
+  const nx = cx - baseR * 0.62, ny = cy + baseR * 0.62;
+  drawBall(nx, ny, ballR * 0.5, gameState.shooter.next);
+
+  // קו כיוונון עדין עד הטבעת
+  if (isAiming) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.setLineDash([4, 6]); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx + Math.cos(aimAngle) * baseR, cy + Math.sin(aimAngle) * baseR);
+    ctx.lineTo(cx + Math.cos(aimAngle) * ringR, cy + Math.sin(aimAngle) * ringR);
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+  }
+}
+
+/* ═══════════════════ קלט (עכבר/מגע מאוחדים) ═══════════════════ */
+function pointerPos(evt) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+}
+function updateAim(evt) {
+  const p = pointerPos(evt);
+  aimAngle = Math.atan2(p.y - cy, p.x - cx);
+}
+canvas.addEventListener('pointerdown', evt => {
+  if (!gameState || gameState.status !== 'playing') return;
+  isAiming = true; updateAim(evt);
+  dismissTutorial();
+});
+canvas.addEventListener('pointermove', evt => { if (isAiming) updateAim(evt); });
+window.addEventListener('pointerup', evt => {
+  if (!isAiming) return;
+  isAiming = false;
+  if (!gameState || gameState.status !== 'playing') return;
+  updateAim(evt);
+  const pos = angleToPos(aimAngle, gameState.cfg.trackLength);
+  engine.shoot(gameState, pos);
+  turretRecoil = 1;
+  sfxShoot();
+});
+
+/* ═══════════════════ כפתורי המשחק ═══════════════════ */
+document.getElementById('btnPause').addEventListener('click', () => {
+  if (!running) return;
+  running = false;
+  document.getElementById('overlayPause').hidden = false;
+});
+document.getElementById('btnResume').addEventListener('click', () => {
+  document.getElementById('overlayPause').hidden = true;
+  running = true; lastTime = performance.now();
+  requestAnimationFrame(loop);
+});
+document.getElementById('btnPauseSound').addEventListener('click', () => {
+  save.settings.sound = !save.settings.sound; persist();
+  document.getElementById('btnPauseSound').textContent = (save.settings.sound ? '🔊' : '🔇') + ' צליל';
+});
+document.getElementById('btnPauseMenu').addEventListener('click', () => { running = false; showScreen('menu'); });
+document.getElementById('btnWinMenu').addEventListener('click', () => showScreen('menu'));
+document.getElementById('btnLoseMenu').addEventListener('click', () => showScreen('menu'));
+document.getElementById('btnRetry').addEventListener('click', () => startLevel(currentLevel.id));
+document.getElementById('btnNextLevel').addEventListener('click', () => {
+  const next = Math.min(LEVELS.length, currentLevel.id + 1);
+  startLevel(next);
+});
+
+/* ═══════════════════ אתחול ═══════════════════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+resize();
+</script>
+</body>
+</html>
